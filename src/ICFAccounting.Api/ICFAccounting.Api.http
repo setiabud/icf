@@ -1,0 +1,6 @@
+@ICFAccounting.Api_HostAddress = http://localhost:5101
+
+GET {{ICFAccounting.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

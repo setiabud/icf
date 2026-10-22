@@ -1,0 +1,11 @@
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/bin/Debug/net10.0/ICFAccounting.Domain.deps.json
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/bin/Debug/net10.0/ICFAccounting.Domain.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/bin/Debug/net10.0/ICFAccounting.Domain.pdb
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ICFAccounting.Domain.GeneratedMSBuildEditorConfig.editorconfig
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ICFAccounting.Domain.AssemblyInfoInputs.cache
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ICFAccounting.Domain.AssemblyInfo.cs
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ICFAccounting.Domain.csproj.CoreCompileInputs.cache
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ICFAccounting.Domain.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/refint/ICFAccounting.Domain.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ICFAccounting.Domain.pdb
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Domain/obj/Debug/net10.0/ref/ICFAccounting.Domain.dll

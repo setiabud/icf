@@ -1,0 +1,15 @@
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/bin/Debug/net10.0/ICFAccounting.Data.deps.json
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/bin/Debug/net10.0/ICFAccounting.Data.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/bin/Debug/net10.0/ICFAccounting.Data.pdb
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.GeneratedMSBuildEditorConfig.editorconfig
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.AssemblyInfoInputs.cache
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.AssemblyInfo.cs
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.csproj.CoreCompileInputs.cache
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/refint/ICFAccounting.Data.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.pdb
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ref/ICFAccounting.Data.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/bin/Debug/net10.0/ICFAccounting.Domain.dll
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/bin/Debug/net10.0/ICFAccounting.Domain.pdb
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccounting.Data.csproj.AssemblyReference.cache
+/Users/joe.setiabudi/Projects/icf/src/ICFAccounting.Data/obj/Debug/net10.0/ICFAccou.9C5B6C03.Up2Date
