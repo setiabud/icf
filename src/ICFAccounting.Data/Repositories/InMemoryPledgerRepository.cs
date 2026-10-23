@@ -67,13 +67,6 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
         return Task.FromResult(PagedPledgersResult.Create(pledgers, query.Page, query.PageSize, totalCount));
     }
 
-    public Task<int> CountAsync(CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-
-        return Task.FromResult(_pledgers.Count);
-    }
-
     public Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

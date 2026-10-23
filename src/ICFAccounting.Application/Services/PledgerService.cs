@@ -54,20 +54,26 @@ public sealed class PledgerService : IPledgerService
         return pledgers;
     }
 
-    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    public async Task<Pledger?> UpdateAsync(
+        PledgerId id,
+        string pledgerName,
+        bool active,
+        CancellationToken cancellationToken = default)
     {
-        var count = await _pledgerRepository.CountAsync(cancellationToken);
-        _logger.LogInformation("Counted {PledgerCount} pledgers.", count);
-        return count;
-    }
+        ValidateId(id);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
 
-    public async Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(pledger);
-        ValidatePledgerName(pledger);
+        var pledger = await _pledgerRepository.GetByIdAsync(id, cancellationToken);
+        if (pledger is null)
+        {
+            _logger.LogInformation("Pledger {PledgerId} was not found for update.", id);
+            return null;
+        }
 
+        pledger.Update(pledgerName, active);
         await _pledgerRepository.UpdateAsync(pledger, cancellationToken);
-        _logger.LogInformation("Updated pledger {PledgerId}.", pledger.Id);
+        _logger.LogInformation("Updated pledger {PledgerId}.", id);
+        return pledger;
     }
 
     public async Task RemoveAsync(PledgerId id, CancellationToken cancellationToken = default)

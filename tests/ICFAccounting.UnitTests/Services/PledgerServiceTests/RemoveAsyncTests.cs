@@ -20,6 +20,18 @@ public sealed class RemoveAsyncTests
     }
 
     [Fact]
+    public async Task RemoveAsync_when_repository_reports_missing_pledger_propagates_key_not_found()
+    {
+        var fixture = new PledgerServiceTestFixture();
+        var id = PledgerId.New();
+        A.CallTo(() => fixture.Repository.RemoveAsync(id, A<CancellationToken>._))
+            .ThrowsAsync(new KeyNotFoundException());
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(
+            () => fixture.Service.RemoveAsync(id));
+    }
+
+    [Fact]
     public async Task RemoveAsync_with_empty_id_throws_without_calling_repository()
     {
         var fixture = new PledgerServiceTestFixture();

@@ -6,34 +6,6 @@ namespace ICFAccounting.UnitTests.Repositories;
 
 public sealed class InMemoryPledgerRepositoryTests
 {
-    [Fact]
-    public async Task CountAsync_returns_total_independent_of_pagination_and_tracks_removals()
-    {
-        var repository = new InMemoryPledgerRepository();
-        Assert.Equal(0, await repository.CountAsync());
-        var first = Pledger.Create("Alpha");
-        await repository.AddAsync(first);
-        await repository.AddAsync(Pledger.Create("Bravo"));
-        await repository.AddAsync(first);
-
-        await repository.GetAllAsync(CancellationToken.None, new PledgerQuery(1, 1));
-
-        Assert.Equal(2, await repository.CountAsync());
-        await repository.RemoveAsync(first.Id);
-        Assert.Equal(1, await repository.CountAsync());
-    }
-
-    [Fact]
-    public async Task CountAsync_with_canceled_token_throws()
-    {
-        var repository = new InMemoryPledgerRepository();
-        using var tokenSource = new CancellationTokenSource();
-        tokenSource.Cancel();
-
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => repository.CountAsync(tokenSource.Token));
-    }
-
     [Theory]
     [InlineData(1, 2, SortOrder.Ascending, "Alpha,bravo")]
     [InlineData(2, 2, SortOrder.Ascending, "Charlie,delta")]

@@ -31,7 +31,8 @@ Sorting uses the `PledgerSortBy` and `SortOrder` enums internally. This is a
 breaking query-contract change: the former `asc` and `desc` abbreviations are
 no longer accepted. Numeric enum values are also rejected.
 
-Invalid query parameters return `400 Bad Request` with a ProblemDetails body.
+Invalid query parameters, or a query the service rejects, return
+`400 Bad Request` with a ProblemDetails body.
 Unexpected retrieval failures are logged and return `500 Internal Server Error`
 with a ProblemDetails body without internal exception details.
 
@@ -45,6 +46,59 @@ Service calls without a query now use default pagination (page 1, size 10),
 instead of returning all pledgers. Repository calls without a query remain
 unpaged, returning all items as page 1 with page size equal to the item count
 (or 1 for an empty collection).
+
+## GET /pledgers/{id}
+
+Returns `200 OK` with a single pledger using the same fields as the creation
+response below.
+
+| Condition | Response |
+| --- | --- |
+| Pledger exists | `200 OK` with pledger details |
+| No pledger with that ID | `404 Not Found` |
+| `id` is not a GUID | `404 Not Found` (route does not match) |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with a ProblemDetails body |
+| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+
+## PUT /pledgers/{id}
+
+Updates an existing pledger's name and active flag. `updatedAt` is set to the
+current UTC time; `id` and `createdAt` are unchanged.
+
+Request:
+
+```json
+{
+  "pledgerName": "Mission Fund",
+  "active": false
+}
+```
+
+Both fields are required. `pledgerName` must not be null, empty, or whitespace,
+and `active` must be `true` or `false`.
+
+| Condition | Response |
+| --- | --- |
+| Pledger updated | `200 OK` with the updated pledger details |
+| No pledger with that ID | `404 Not Found` |
+| `id` is not a GUID | `404 Not Found` (route does not match) |
+| `id` is the empty GUID, the body is invalid, or the service rejects the update | `400 Bad Request` with a ProblemDetails body |
+| Unexpected update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+
+## DELETE /pledgers/{id}
+
+Removes the pledger with the given ID. There is no request body.
+
+| Condition | Response |
+| --- | --- |
+| Pledger removed | `204 No Content` with an empty body |
+| No pledger with that ID, including one already removed | `404 Not Found` |
+| `id` is not a GUID | `404 Not Found` (route does not match) |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with a ProblemDetails body |
+| Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+
+The not-found case is detected when the repository throws
+`KeyNotFoundException`, which the endpoint translates into `404 Not Found`.
 
 ## POST /pledgers
 
@@ -73,8 +127,15 @@ the following response fields:
 | `updatedAt` | UTC timestamp | Initially equal to `createdAt` |
 
 Invalid or missing names return `400 Bad Request` with an
-`application/problem+json` ProblemDetails body.
+`application/problem+json` ProblemDetails body. The same applies if the
+domain or service rejects the pledger with an `ArgumentException`; the
+exception message, without the parameter-name suffix, becomes the
+ProblemDetails `detail`.
 
-The Location header identifies the created resource; a GET route at that
-location is not currently implemented. In-memory data is lost when the
+Unexpected creation failures are logged and return
+`500 Internal Server Error` with a sanitized ProblemDetails body and no
+`Location` header.
+
+The Location header identifies the created resource, which can be retrieved
+with `GET /pledgers/{id}`. In-memory data is lost when the
 application restarts.

@@ -35,7 +35,6 @@ public sealed class GetAllAsyncTests
                 A<PledgerQuery>.That.Matches(query => query.Page == 1 && query.PageSize == 20
                     && query.SortBy == PledgerSortBy.PledgerName && query.SortOrder == SortOrder.Ascending)))
             .MustHaveHappenedOnceExactly();
-        A.CallTo(() => fixture.Repository.CountAsync(A<CancellationToken>._)).MustNotHaveHappened();
     }
 
     [Theory]
@@ -60,7 +59,6 @@ public sealed class GetAllAsyncTests
         Assert.Equal(2, result.TotalPages);
         A.CallTo(() => fixture.Repository.GetAllAsync(tokenSource.Token, query))
             .MustHaveHappenedOnceExactly();
-        A.CallTo(() => fixture.Repository.CountAsync(A<CancellationToken>._)).MustNotHaveHappened();
     }
 
     [Theory]

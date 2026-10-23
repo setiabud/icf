@@ -1,6 +1,6 @@
 @ICFAccounting.Api_HostAddress = http://localhost:5101
 
-GET {{ICFAccounting.Api_HostAddress}}/weatherforecast/
+GET {{ICFAccounting.Api_HostAddress}}/pledgers/
 Accept: application/json
 
 ###
