@@ -1,4 +1,4 @@
-namespace ICFAccounting.Api.Models;
+namespace ICFAccounting.Api.Models.PledgerModels;
 
 /// <summary>
 /// Request to create a pledger.

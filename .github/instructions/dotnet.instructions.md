@@ -101,7 +101,6 @@ When refactoring, prefer these constraints to keep code small and intention-reve
   - API documentation: `docs/api/`
   - User guides and tutorials: `docs/guides/`
   - Design documents: `docs/design/`
-  - Lab exercises and workshop materials: `docs/labs/` or `docs/`
 - Use clear, descriptive filenames: `docs/api/authentication-guide.md` not `docs/auth.md`
 - Always link to docs from main README.md with relative paths
 - When generating documentation, ask: "Should this go in docs/ or is it the main README?"
@@ -149,7 +148,7 @@ Write a Conventional Commit subject (<=72 chars) and a PR description with:
 
 ---
 
-## 10) Guardrails (Workshop)
+## 10) Guardrails
 - Do **not** invent external dependencies without being asked.  
 - Keep domain logic **out of Api/Data**.  
 - Prefer small, composable methods; log meaningfully with `ILogger<T>`.  

@@ -1,4 +1,4 @@
-namespace ICFAccounting.Api.Models;
+namespace ICFAccounting.Api.Models.PledgerModels;
 
 /// <summary>
 /// A page of pledgers and the pagination metadata for the complete collection.

@@ -1,4 +1,5 @@
 using ICFAccounting.Api.Models;
+using ICFAccounting.Api.Models.PledgerModels;
 using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.Pledgers;
@@ -76,7 +77,7 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -124,7 +125,7 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger update",
-                detail: GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -162,7 +163,7 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -226,7 +227,7 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger query",
-                detail: GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -264,7 +265,7 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger",
-                detail: GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -274,15 +275,6 @@ public static class PledgerEndpointExtensions
                 title: "An unexpected error occurred",
                 detail: "Pledger could not be created.");
         }
-    }
-
-    // ArgumentException.Message appends " (Parameter 'name')"; strip it so internal parameter names are not exposed.
-    private static string GetClientSafeMessage(ArgumentException exception)
-    {
-        var parameterSuffix = $" (Parameter '{exception.ParamName}')";
-        return exception.ParamName is not null && exception.Message.EndsWith(parameterSuffix, StringComparison.Ordinal)
-            ? exception.Message[..^parameterSuffix.Length]
-            : exception.Message;
     }
 
     private static PledgerResponse ToPledgerResponse(Pledger pledger)

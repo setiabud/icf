@@ -1,4 +1,4 @@
-namespace ICFAccounting.Api.Models;
+namespace ICFAccounting.Api.Models.PledgerModels;
 
 /// <summary>
 /// Pledger details returned by the API.

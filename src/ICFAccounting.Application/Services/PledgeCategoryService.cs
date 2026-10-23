@@ -46,17 +46,32 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
     public async Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pledgeCategory);
+        ValidateCategoryName(pledgeCategory);
 
         await _pledgeCategoryRepository.AddAsync(pledgeCategory, cancellationToken);
         _logger.LogInformation("Added pledge category {PledgeCategoryId}.", pledgeCategory.Id);
     }
 
-    public async Task UpdateAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
+    public async Task<PledgeCategory?> UpdateAsync(
+        PledgeCategoryId id,
+        string categoryName,
+        bool active,
+        CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(pledgeCategory);
+        ValidateId(id);
+        ArgumentException.ThrowIfNullOrWhiteSpace(categoryName);
 
+        var pledgeCategory = await _pledgeCategoryRepository.GetByIdAsync(id, cancellationToken);
+        if (pledgeCategory is null)
+        {
+            _logger.LogInformation("Pledge category {PledgeCategoryId} was not found for update.", id);
+            return null;
+        }
+
+        pledgeCategory.Update(categoryName, active);
         await _pledgeCategoryRepository.UpdateAsync(pledgeCategory, cancellationToken);
-        _logger.LogInformation("Updated pledge category {PledgeCategoryId}.", pledgeCategory.Id);
+        _logger.LogInformation("Updated pledge category {PledgeCategoryId}.", id);
+        return pledgeCategory;
     }
 
     public async Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken = default)
@@ -73,5 +88,10 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
         {
             throw new ArgumentException("Pledge category ID cannot be empty.", nameof(id));
         }
+    }
+
+    private static void ValidateCategoryName(PledgeCategory pledgeCategory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(pledgeCategory.CategoryName);
     }
 }

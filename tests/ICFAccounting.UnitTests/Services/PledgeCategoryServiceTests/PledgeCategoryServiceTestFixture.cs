@@ -1,5 +1,6 @@
 using FakeItEasy;
 using ICFAccounting.Application.Services;
+using ICFAccounting.Domain.PledgeCategories;
 using ICFAccounting.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
@@ -19,4 +20,12 @@ internal sealed class PledgeCategoryServiceTestFixture
     public ILogger<PledgeCategoryService> Logger { get; }
 
     public PledgeCategoryService Service { get; }
+
+    // PledgeCategory.Create rejects blank names, so reflection is needed to build an invalid entity.
+    public static PledgeCategory CreatePledgeCategoryWithName(string? name)
+    {
+        var pledgeCategory = PledgeCategory.Create("Tithe");
+        typeof(PledgeCategory).GetProperty(nameof(PledgeCategory.CategoryName))!.SetValue(pledgeCategory, name);
+        return pledgeCategory;
+    }
 }

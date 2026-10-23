@@ -16,9 +16,11 @@ public static class ServiceExtensions
     {
         // Register repositories
         services.AddSingleton<IPledgerRepository, InMemoryPledgerRepository>();
+        services.AddSingleton<IPledgeCategoryRepository, InMemoryPledgeCategoryRepository>();
 
         // Register application services
         services.AddScoped<IPledgerService, PledgerService>();
+        services.AddScoped<IPledgeCategoryService, PledgeCategoryService>();
 
         services.AddProblemDetails();
         services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(options =>

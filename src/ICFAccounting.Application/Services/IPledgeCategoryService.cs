@@ -10,7 +10,11 @@ public interface IPledgeCategoryService
 
     Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken);
 
-    Task UpdateAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken);
+     Task<PledgeCategory?> UpdateAsync(
+        PledgeCategoryId id,
+        string categoryName,
+        bool active,
+        CancellationToken cancellationToken);
 
     Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken);
 }

@@ -19,6 +19,7 @@ public sealed class UpdateAsyncTests
         var result = await fixture.Service.UpdateAsync(pledger.Id, "Mission Fund", false, cancellationToken);
 
         Assert.Same(pledger, result);
+        Assert.NotNull(result);
         Assert.Equal("Mission Fund", result.PledgerName);
         Assert.False(result.Active);
         Assert.True(result.UpdatedAt >= originalUpdatedAt);
