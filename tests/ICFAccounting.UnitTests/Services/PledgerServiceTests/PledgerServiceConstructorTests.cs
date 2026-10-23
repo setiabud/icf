@@ -3,7 +3,7 @@ using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace ICFAccounting.UnitTests.Services.PledgerService;
+namespace ICFAccounting.UnitTests.Services.PledgerServiceTests;
 
 public sealed class PledgerServiceConstructorTests
 {

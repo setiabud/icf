@@ -8,7 +8,9 @@ public interface IPledgerRepository
 
     Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken);
 
-    Task<IReadOnlyList<Pledger>> GetAllAsync(CancellationToken cancellationToken);
+    Task<PagedPledgersResult> GetAllAsync(CancellationToken cancellationToken, PledgerQuery? query = null);
+
+    Task<int> CountAsync(CancellationToken cancellationToken);
 
     Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken);
 

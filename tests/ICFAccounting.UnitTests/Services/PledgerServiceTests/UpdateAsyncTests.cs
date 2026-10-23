@@ -1,7 +1,7 @@
 using FakeItEasy;
 using ICFAccounting.Domain.Pledgers;
 
-namespace ICFAccounting.UnitTests.Services.PledgerService;
+namespace ICFAccounting.UnitTests.Services.PledgerServiceTests;
 
 public sealed class UpdateAsyncTests
 {

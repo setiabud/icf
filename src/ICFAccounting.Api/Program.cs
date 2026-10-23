@@ -9,13 +9,14 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services
-            .AddApplicationServices() 
+            .AddApplicationServices()
             .AddApplicationLogging()
             .AddOpenApiDocumentation();
 
         var app = builder.Build();
 
         app.UseHttpsRedirection();
+        app.UseStatusCodePages();
         app.UseApplicationLogging();
         app.UseOpenApiDocumentation();
         app.MapEndpoints();

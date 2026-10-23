@@ -10,7 +10,7 @@ public sealed class PledgerTests
         var pledger = Pledger.Create("Community Fund");
 
         Assert.NotEqual(Guid.Empty, pledger.Id.Value);
-        Assert.Equal("Community Fund", pledger.Name);
+        Assert.Equal("Community Fund", pledger.PledgerName);
         Assert.True(pledger.Active);
         Assert.Equal(DateTimeKind.Utc, pledger.CreatedAt.Kind);
         Assert.Equal(pledger.CreatedAt, pledger.UpdatedAt);
@@ -34,7 +34,7 @@ public sealed class PledgerTests
 
         pledger.Update("Education Fund", active);
 
-        Assert.Equal("Education Fund", pledger.Name);
+        Assert.Equal("Education Fund", pledger.PledgerName);
         Assert.Equal(active, pledger.Active);
     }
 
@@ -49,7 +49,7 @@ public sealed class PledgerTests
 
         Assert.ThrowsAny<ArgumentException>(() => pledger.Update(name!, false));
 
-        Assert.Equal("Community Fund", pledger.Name);
+        Assert.Equal("Community Fund", pledger.PledgerName);
         Assert.True(pledger.Active);
         Assert.Equal(originalUpdatedAt, pledger.UpdatedAt);
     }

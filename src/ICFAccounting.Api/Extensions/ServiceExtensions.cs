@@ -15,10 +15,14 @@ public static class ServiceExtensions
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
         // Register repositories
-        services.AddSingleton<IWeatherForecastRepository, InMemoryWeatherForecastRepository>();
+        services.AddSingleton<IPledgerRepository, InMemoryPledgerRepository>();
 
         // Register application services
-        services.AddScoped<IWeatherService, WeatherService>();
+        services.AddScoped<IPledgerService, PledgerService>();
+
+        services.AddProblemDetails();
+        services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(options =>
+            options.ThrowOnBadRequest = false);
 
         return services;
     }

@@ -44,11 +44,21 @@ public sealed class PledgerService : IPledgerService
         return pledger;
     }
 
-    public async Task<IReadOnlyList<Pledger>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedPledgersResult> GetAllAsync(
+        CancellationToken cancellationToken = default,
+        PledgerQuery? query = null)
     {
-        var pledgers = await _pledgerRepository.GetAllAsync(cancellationToken);
-        _logger.LogInformation("Retrieved {PledgerCount} pledgers.", pledgers.Count);
+        query ??= new PledgerQuery();
+        var pledgers = await _pledgerRepository.GetAllAsync(cancellationToken, query);
+        _logger.LogInformation("Retrieved {PledgerCount} pledgers.", pledgers.Items.Count);
         return pledgers;
+    }
+
+    public async Task<int> CountAsync(CancellationToken cancellationToken = default)
+    {
+        var count = await _pledgerRepository.CountAsync(cancellationToken);
+        _logger.LogInformation("Counted {PledgerCount} pledgers.", count);
+        return count;
     }
 
     public async Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken = default)
@@ -78,6 +88,6 @@ public sealed class PledgerService : IPledgerService
 
     private static void ValidatePledgerName(Pledger pledger)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(pledger.Name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pledger.PledgerName);
     }
 }

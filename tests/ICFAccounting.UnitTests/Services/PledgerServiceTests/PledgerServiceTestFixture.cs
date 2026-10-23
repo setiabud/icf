@@ -4,7 +4,7 @@ using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace ICFAccounting.UnitTests.Services.PledgerService;
+namespace ICFAccounting.UnitTests.Services.PledgerServiceTests;
 
 internal sealed class PledgerServiceTestFixture
 {
@@ -24,7 +24,7 @@ internal sealed class PledgerServiceTestFixture
     public static Pledger CreatePledgerWithName(string? name)
     {
         var pledger = Pledger.Create("Community Fund");
-        typeof(Pledger).GetProperty(nameof(Pledger.Name))!.SetValue(pledger, name);
+        typeof(Pledger).GetProperty(nameof(Pledger.PledgerName))!.SetValue(pledger, name);
         return pledger;
     }
 }

@@ -4,13 +4,13 @@ public sealed class Pledger
 {
     private Pledger(
         PledgerId id,
-        string name,
+        string pledgerName,
         bool active,
         DateTime createdAt,
         DateTime updatedAt)
     {
         Id = id;
-        Name = name;
+        PledgerName = pledgerName;
         Active = active;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
@@ -18,7 +18,7 @@ public sealed class Pledger
 
     public PledgerId Id { get; }
 
-    public string Name { get; private set; }
+    public string PledgerName { get; private set; }
 
     public bool Active { get; private set; }
 
@@ -26,19 +26,19 @@ public sealed class Pledger
 
     public DateTime UpdatedAt { get; private set; }
 
-    public static Pledger Create(string name)
+    public static Pledger Create(string pledgerName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
 
         var createdAt = DateTime.UtcNow;
-        return new Pledger(PledgerId.New(), name, true, createdAt, createdAt);
+        return new Pledger(PledgerId.New(), pledgerName, true, createdAt, createdAt);
     }
 
-    public void Update(string name, bool active)
+    public void Update(string pledgerName, bool active)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
 
-        Name = name;
+        PledgerName = pledgerName;
         Active = active;
         UpdatedAt = DateTime.UtcNow;
     }
