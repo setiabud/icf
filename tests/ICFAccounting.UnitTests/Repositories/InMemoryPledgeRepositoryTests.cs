@@ -123,11 +123,13 @@ public sealed class InMemoryPledgeRepositoryTests
     }
 
     [Theory]
-    [InlineData(1, 2, SortOrder.Ascending, "2021,2023")]
-    [InlineData(2, 2, SortOrder.Ascending, "2025")]
-    [InlineData(1, 10, SortOrder.Descending, "2025,2023,2021")]
+    [InlineData(1, 2, SortOrder.Ascending, "2021,2023", 2)]
+    [InlineData(2, 2, SortOrder.Ascending, "2025", 2)]
+    [InlineData(3, 2, SortOrder.Ascending, "", 2)]
+    [InlineData(1, 10, SortOrder.Descending, "2025,2023,2021", 1)]
+    [InlineData(int.MaxValue, 100, SortOrder.Ascending, "", 1)]
     public async Task GetByCategoryAsync_filters_sorts_and_pages(
-        int page, int pageSize, SortOrder sortOrder, string expectedYears)
+        int page, int pageSize, SortOrder sortOrder, string expectedYears, int expectedTotalPages)
     {
         var repository = await CreateSeededRepositoryAsync();
 
@@ -137,6 +139,9 @@ public sealed class InMemoryPledgeRepositoryTests
         Assert.Equal(expectedYears, string.Join(",", result.Items.Select(pledge => pledge.Year)));
         Assert.All(result.Items, pledge => Assert.Equal(CategoryA, pledge.PledgeCategoryId));
         Assert.Equal(3, result.TotalCount);
+        Assert.Equal(page, result.Page);
+        Assert.Equal(pageSize, result.PageSize);
+        Assert.Equal(expectedTotalPages, result.TotalPages);
     }
 
     [Fact]
@@ -160,28 +165,44 @@ public sealed class InMemoryPledgeRepositoryTests
     [Fact]
     public async Task GetByCategoryAsync_without_query_applies_default_pagination()
     {
-        var repository = await CreateSeededRepositoryAsync();
+        var repository = new InMemoryPledgeRepository();
+        foreach (var year in Enumerable.Range(2030, 22))
+        {
+            await repository.AddAsync(CreatePledge(year, PledgerA, CategoryB), CancellationToken.None);
+        }
+
+        await repository.AddAsync(CreatePledge(2099, PledgerB, CategoryA), CancellationToken.None);
 
         var result = await repository.GetByCategoryAsync(CategoryB);
 
-        Assert.Equal("2030,2024,2022", string.Join(",", result.Items.Select(pledge => pledge.Year)));
+        Assert.Equal(Enumerable.Range(2032, 20).Reverse(), result.Items.Select(pledge => pledge.Year));
+        Assert.All(result.Items, pledge => Assert.Equal(CategoryB, pledge.PledgeCategoryId));
         Assert.Equal(1, result.Page);
         Assert.Equal(20, result.PageSize);
+        Assert.Equal(22, result.TotalCount);
+        Assert.Equal(2, result.TotalPages);
     }
 
-    [Fact]
-    public async Task GetByPledgerAsync_with_equal_years_uses_identity_for_stable_pages()
+    [Theory]
+    [InlineData(SortOrder.Ascending)]
+    [InlineData(SortOrder.Descending)]
+    public async Task GetByPledgerAsync_with_equal_years_uses_identity_for_stable_pages(SortOrder sortOrder)
     {
         var repository = new InMemoryPledgeRepository();
-        var first = CreatePledge(2025, PledgerA, CategoryA);
-        var second = CreatePledge(2025, PledgerA, CategoryA);
-        await repository.AddAsync(first, CancellationToken.None);
-        await repository.AddAsync(second, CancellationToken.None);
+        var pledges = new[] { CreatePledge(2025, PledgerA, CategoryA), CreatePledge(2025, PledgerA, CategoryA) }
+            .OrderBy(pledge => pledge.Id.Value)
+            .ToArray();
+        foreach (var pledge in pledges.Reverse())
+        {
+            await repository.AddAsync(pledge, CancellationToken.None);
+        }
 
-        var pageOne = await repository.GetByPledgerAsync(PledgerA, new PledgeQuery(1, 1), CancellationToken.None);
-        var pageTwo = await repository.GetByPledgerAsync(PledgerA, new PledgeQuery(2, 1), CancellationToken.None);
+        var pageOne = await repository.GetByPledgerAsync(
+            PledgerA, new PledgeQuery(1, 1, sortOrder: sortOrder), CancellationToken.None);
+        var pageTwo = await repository.GetByPledgerAsync(
+            PledgerA, new PledgeQuery(2, 1, sortOrder: sortOrder), CancellationToken.None);
 
-        Assert.Equal(new[] { first.Id.Value, second.Id.Value }.Order(),
+        Assert.Equal(pledges.Select(pledge => pledge.Id.Value),
             pageOne.Items.Concat(pageTwo.Items).Select(pledge => pledge.Id.Value));
     }
 
@@ -198,22 +219,97 @@ public sealed class InMemoryPledgeRepositoryTests
     }
 
     [Fact]
-    public async Task Methods_with_canceled_token_throw()
+    public async Task AddAsync_with_canceled_token_throws_without_adding_pledge()
     {
         var repository = new InMemoryPledgeRepository();
+        var existingPledge = CreatePledge(2024, PledgerA, CategoryA);
+        await repository.AddAsync(existingPledge);
         var pledge = CreatePledge(2025, PledgerA, CategoryA);
         using var tokenSource = new CancellationTokenSource();
         tokenSource.Cancel();
-        var token = tokenSource.Token;
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.AddAsync(pledge, token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.GetByIdAsync(pledge.Id, token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.UpdateAsync(pledge, token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.RemoveAsync(pledge.Id, token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => repository.GetByPledgerAsync(PledgerA, cancellationToken: token));
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => repository.GetByCategoryAsync(CategoryA, cancellationToken: token));
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.AddAsync(pledge, tokenSource.Token));
+
+        Assert.Equal(tokenSource.Token, exception.CancellationToken);
+        Assert.Null(await repository.GetByIdAsync(pledge.Id));
+        Assert.Same(existingPledge, Assert.Single((await repository.GetByPledgerAsync(PledgerA)).Items));
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_with_canceled_token_throws()
+    {
+        var repository = new InMemoryPledgeRepository();
+        var pledge = CreatePledge(2025, PledgerA, CategoryA);
+        await repository.AddAsync(pledge);
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.GetByIdAsync(pledge.Id, tokenSource.Token));
+
+        Assert.Equal(tokenSource.Token, exception.CancellationToken);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_with_canceled_token_throws_without_inserting_pledge()
+    {
+        var repository = new InMemoryPledgeRepository();
+        var existingPledge = CreatePledge(2024, PledgerA, CategoryA);
+        await repository.AddAsync(existingPledge);
+        var pledge = CreatePledge(2025, PledgerA, CategoryA);
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.UpdateAsync(pledge, tokenSource.Token));
+
+        Assert.Equal(tokenSource.Token, exception.CancellationToken);
+        Assert.Null(await repository.GetByIdAsync(pledge.Id));
+        Assert.Same(existingPledge, Assert.Single((await repository.GetByPledgerAsync(PledgerA)).Items));
+    }
+
+    [Fact]
+    public async Task RemoveAsync_with_canceled_token_throws_without_removing_pledge()
+    {
+        var repository = new InMemoryPledgeRepository();
+        var pledge = CreatePledge(2025, PledgerA, CategoryA);
+        await repository.AddAsync(pledge);
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.RemoveAsync(pledge.Id, tokenSource.Token));
+
+        Assert.Equal(tokenSource.Token, exception.CancellationToken);
+        Assert.Same(pledge, await repository.GetByIdAsync(pledge.Id));
+        Assert.Same(pledge, Assert.Single((await repository.GetByPledgerAsync(PledgerA)).Items));
+    }
+
+    [Fact]
+    public async Task GetByPledgerAsync_with_canceled_token_throws()
+    {
+        var repository = await CreateSeededRepositoryAsync();
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.GetByPledgerAsync(PledgerA, cancellationToken: tokenSource.Token));
+
+        Assert.Equal(tokenSource.Token, exception.CancellationToken);
+    }
+
+    [Fact]
+    public async Task GetByCategoryAsync_with_canceled_token_throws()
+    {
+        var repository = await CreateSeededRepositoryAsync();
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        var exception = await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.GetByCategoryAsync(CategoryA, cancellationToken: tokenSource.Token));
+
+        Assert.Equal(tokenSource.Token, exception.CancellationToken);
     }
 
     private static async Task<InMemoryPledgeRepository> CreateSeededRepositoryAsync()

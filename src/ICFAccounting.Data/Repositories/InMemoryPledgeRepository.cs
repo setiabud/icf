@@ -6,10 +6,14 @@ using ICFAccounting.Domain.Repositories;
 
 namespace ICFAccounting.Data.Repositories;
 
+/// <summary>
+/// Stores pledges in memory for the lifetime of this repository instance.
+/// </summary>
 public sealed class InMemoryPledgeRepository : IPledgeRepository
 {
     private readonly Dictionary<PledgeId, Pledge> _pledges = [];
 
+    /// <inheritdoc />
     public Task AddAsync(Pledge pledge, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pledge, nameof(pledge));
@@ -19,6 +23,7 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task<Pledge?> GetByIdAsync(PledgeId pledgeId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -27,6 +32,7 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
         return Task.FromResult(pledge);
     }
 
+    /// <inheritdoc />
     public Task<PagedPledgesResult> GetByPledgerAsync(
         PledgerId pledgerId,
         PledgeQuery? query = null,
@@ -38,6 +44,7 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
         return Task.FromResult(CreatePage(matches, query ?? new PledgeQuery()));
     }
 
+    /// <inheritdoc />
     public Task<PagedPledgesResult> GetByCategoryAsync(
         PledgeCategoryId pledgeCategoryId,
         PledgeQuery? query = null,
@@ -49,6 +56,7 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
         return Task.FromResult(CreatePage(matches, query ?? new PledgeQuery()));
     }
 
+    /// <inheritdoc />
     public Task UpdateAsync(Pledge pledge, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pledge, nameof(pledge));
@@ -58,6 +66,7 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task RemoveAsync(PledgeId pledgeId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

@@ -4,10 +4,14 @@ using ICFAccounting.Domain.Common;
 
 namespace ICFAccounting.Data.Repositories;
 
+/// <summary>
+/// Stores pledgers in memory for the lifetime of this repository instance.
+/// </summary>
 public sealed class InMemoryPledgerRepository : IPledgerRepository
 {
     private readonly Dictionary<PledgerId, Pledger> _pledgers = [];
 
+    /// <inheritdoc />
     public Task<Pledger?> GetByIdAsync(PledgerId pledgerId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -16,6 +20,7 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
         return Task.FromResult(pledger);
     }
 
+    /// <inheritdoc />
     public Task AddAsync(Pledger pledger, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -24,6 +29,7 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task RemoveAsync(PledgerId pledgerId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -36,6 +42,7 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
         return Task.CompletedTask;
     }
 
+    /// <inheritdoc />
     public Task<PagedPledgersResult> GetAllAsync(
         PledgerQuery? query = null,
         CancellationToken cancellationToken = default)
@@ -67,6 +74,7 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
         return Task.FromResult(PagedPledgersResult.Create(pledgers, query.Page, query.PageSize, totalCount));
     }
 
+    /// <inheritdoc />
     public Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
