@@ -1,4 +1,5 @@
 using FakeItEasy;
+using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.PledgeCategories;
 
 namespace ICFAccounting.UnitTests.Services.PledgeCategoryServiceTests;
@@ -45,5 +46,18 @@ public sealed class GetByIdAsyncTests
 
         A.CallTo(() => fixture.Repository.GetByIdAsync(A<PledgeCategoryId>._, A<CancellationToken>._))
             .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_through_interface_without_token_uses_none()
+    {
+        var fixture = new PledgeCategoryServiceTestFixture();
+        IPledgeCategoryService service = fixture.Service;
+        var id = PledgeCategoryId.New();
+
+        await service.GetByIdAsync(id);
+
+        A.CallTo(() => fixture.Repository.GetByIdAsync(id, CancellationToken.None))
+            .MustHaveHappenedOnceExactly();
     }
 }

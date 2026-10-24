@@ -71,7 +71,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
         });
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
-        var originalCount = (await repository.GetAllAsync(CancellationToken.None)).TotalCount;
+        var originalCount = (await repository.GetAllAsync()).TotalCount;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PostAsync("/pledgers", content);
@@ -83,7 +83,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
         Assert.Equal(400, problem.Status);
         Assert.False(string.IsNullOrWhiteSpace(problem.Title));
         Assert.Null(response.Headers.Location);
-        Assert.Equal(originalCount, (await repository.GetAllAsync(CancellationToken.None)).TotalCount);
+        Assert.Equal(originalCount, (await repository.GetAllAsync()).TotalCount);
     }
 
     [Fact]
@@ -713,7 +713,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     private sealed class FailingPledgerRepository : IPledgerRepository
     {
         public Task<PagedPledgersResult> GetAllAsync(
-            CancellationToken cancellationToken, PledgerQuery? query = null)
+            PledgerQuery? query = null, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("Internal repository failure");
 
         public Task AddAsync(Pledger pledger, CancellationToken cancellationToken)
@@ -740,7 +740,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
             => throw new ArgumentException(RejectionMessage, nameof(id));
 
         public Task<PagedPledgersResult> GetAllAsync(
-            CancellationToken cancellationToken, PledgerQuery? query = null)
+            PledgerQuery? query = null, CancellationToken cancellationToken = default)
             => throw new ArgumentException(RejectionMessage, nameof(query));
 
         public Task<Pledger?> UpdateAsync(

@@ -34,7 +34,7 @@ public sealed class InMemoryPledgeCategoryRepository : IPledgeCategoryRepository
 
         return Task.CompletedTask;
     }
-    
+
     public Task UpdateAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -43,7 +43,7 @@ public sealed class InMemoryPledgeCategoryRepository : IPledgeCategoryRepository
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken)
+    public Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult<IReadOnlyList<PledgeCategory>>([.. _pledgeCategories.Values]);
     }

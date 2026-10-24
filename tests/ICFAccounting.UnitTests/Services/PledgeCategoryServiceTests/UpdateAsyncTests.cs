@@ -9,8 +9,9 @@ public sealed class UpdateAsyncTests
     public async Task UpdateAsync_with_existing_id_updates_and_returns_category()
     {
         var fixture = new PledgeCategoryServiceTestFixture();
-        var category = PledgeCategory.Create("Tithe");
-        var originalUpdatedAt = category.UpdatedAt;
+        var category = PledgeCategory.Create("Tithe", fixture.Clock);
+        var originalCreatedAt = category.CreatedAt;
+        fixture.Clock.Advance(TimeSpan.FromMinutes(5));
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
         A.CallTo(() => fixture.Repository.GetByIdAsync(category.Id, cancellationToken))
@@ -22,7 +23,8 @@ public sealed class UpdateAsyncTests
         Assert.NotNull(result);
         Assert.Equal("Building Fund", result.CategoryName);
         Assert.False(result.Active);
-        Assert.True(result.UpdatedAt >= originalUpdatedAt);
+        Assert.Equal(originalCreatedAt, result.CreatedAt);
+        Assert.Equal(PledgeCategoryServiceTestFixture.StartTime.AddMinutes(5).UtcDateTime, result.UpdatedAt);
         A.CallTo(() => fixture.Repository.UpdateAsync(category, cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
@@ -40,6 +42,23 @@ public sealed class UpdateAsyncTests
         Assert.Null(result);
         A.CallTo(() => fixture.Repository.UpdateAsync(A<PledgeCategory>._, A<CancellationToken>._))
             .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_when_repository_update_fails_propagates_exception()
+    {
+        var fixture = new PledgeCategoryServiceTestFixture();
+        var category = PledgeCategory.Create("Tithe");
+        var exception = new InvalidOperationException("Repository update failed.");
+        A.CallTo(() => fixture.Repository.GetByIdAsync(category.Id, A<CancellationToken>._))
+            .Returns(category);
+        A.CallTo(() => fixture.Repository.UpdateAsync(category, A<CancellationToken>._))
+            .ThrowsAsync(exception);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => fixture.Service.UpdateAsync(category.Id, "Building Fund", true));
+
+        Assert.Same(exception, result);
     }
 
     [Fact]

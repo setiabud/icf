@@ -9,8 +9,9 @@ public sealed class UpdateAsyncTests
     public async Task UpdateAsync_with_existing_id_updates_and_returns_pledger()
     {
         var fixture = new PledgerServiceTestFixture();
-        var pledger = Pledger.Create("Community Fund");
-        var originalUpdatedAt = pledger.UpdatedAt;
+        var pledger = Pledger.Create("Community Fund", fixture.Clock);
+        var originalCreatedAt = pledger.CreatedAt;
+        fixture.Clock.Advance(TimeSpan.FromMinutes(5));
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
         A.CallTo(() => fixture.Repository.GetByIdAsync(pledger.Id, cancellationToken))
@@ -22,7 +23,8 @@ public sealed class UpdateAsyncTests
         Assert.NotNull(result);
         Assert.Equal("Mission Fund", result.PledgerName);
         Assert.False(result.Active);
-        Assert.True(result.UpdatedAt >= originalUpdatedAt);
+        Assert.Equal(originalCreatedAt, result.CreatedAt);
+        Assert.Equal(PledgerServiceTestFixture.StartTime.AddMinutes(5).UtcDateTime, result.UpdatedAt);
         A.CallTo(() => fixture.Repository.UpdateAsync(pledger, cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
@@ -40,6 +42,23 @@ public sealed class UpdateAsyncTests
         Assert.Null(result);
         A.CallTo(() => fixture.Repository.UpdateAsync(A<Pledger>._, A<CancellationToken>._))
             .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_when_repository_update_fails_propagates_exception()
+    {
+        var fixture = new PledgerServiceTestFixture();
+        var pledger = Pledger.Create("Community Fund");
+        var exception = new InvalidOperationException("Repository update failed.");
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledger.Id, A<CancellationToken>._))
+            .Returns(pledger);
+        A.CallTo(() => fixture.Repository.UpdateAsync(pledger, A<CancellationToken>._))
+            .ThrowsAsync(exception);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => fixture.Service.UpdateAsync(pledger.Id, "Mission Fund", true));
+
+        Assert.Same(exception, result);
     }
 
     [Fact]

@@ -10,9 +10,9 @@ public sealed class PledgerServiceConstructorTests
     [Fact]
     public void Constructor_with_null_repository_throws()
     {
-        var logger = A.Fake<ILogger<ICFAccounting.Application.Services.PledgerService>>();
+        var logger = A.Fake<ILogger<PledgerService>>();
 
-        Assert.Throws<ArgumentNullException>(() => new ICFAccounting.Application.Services.PledgerService(null!, logger));
+        Assert.Throws<ArgumentNullException>(() => new PledgerService(null!, logger, TimeProvider.System));
     }
 
     [Fact]
@@ -20,6 +20,16 @@ public sealed class PledgerServiceConstructorTests
     {
         var repository = A.Fake<IPledgerRepository>();
 
-        Assert.Throws<ArgumentNullException>(() => new ICFAccounting.Application.Services.PledgerService(repository, null!));
+        Assert.Throws<ArgumentNullException>(() => new PledgerService(repository, null!, TimeProvider.System));
+    }
+
+    [Fact]
+    public void Constructor_with_null_time_provider_throws()
+    {
+        var repository = A.Fake<IPledgerRepository>();
+        var logger = A.Fake<ILogger<PledgerService>>();
+
+        var exception = Assert.Throws<ArgumentNullException>(() => new PledgerService(repository, logger, null!));
+        Assert.Equal("timeProvider", exception.ParamName);
     }
 }

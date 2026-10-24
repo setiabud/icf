@@ -18,12 +18,12 @@ public sealed class GetAllAsyncTests
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
         var repositoryResult = PagedPledgersResult.Create(pledgers, 1, 10, 12);
-        A.CallTo(() => fixture.Repository.GetAllAsync(cancellationToken,
+        var defaultQueryCall = A.CallTo(() => fixture.Repository.GetAllAsync(
                 A<PledgerQuery>.That.Matches(query => query.Page == 1 && query.PageSize == 20
-                    && query.SortBy == PledgerSortBy.PledgerName && query.SortOrder == SortOrder.Ascending)))
-            .Returns(repositoryResult);
+                    && query.SortBy == PledgerSortBy.PledgerName && query.SortOrder == SortOrder.Ascending), cancellationToken));
+        defaultQueryCall.Returns(repositoryResult);
 
-        var result = await fixture.Service.GetAllAsync(cancellationToken);
+        var result = await fixture.Service.GetAllAsync(cancellationToken: cancellationToken);
 
         Assert.Same(repositoryResult, result);
         Assert.Equal(pledgers, result.Items);
@@ -31,10 +31,7 @@ public sealed class GetAllAsyncTests
         Assert.Equal(10, result.PageSize);
         Assert.Equal(12, result.TotalCount);
         Assert.Equal(2, result.TotalPages);
-        A.CallTo(() => fixture.Repository.GetAllAsync(cancellationToken,
-                A<PledgerQuery>.That.Matches(query => query.Page == 1 && query.PageSize == 20
-                    && query.SortBy == PledgerSortBy.PledgerName && query.SortOrder == SortOrder.Ascending)))
-            .MustHaveHappenedOnceExactly();
+        defaultQueryCall.MustHaveHappenedOnceExactly();
     }
 
     [Theory]
@@ -47,9 +44,9 @@ public sealed class GetAllAsyncTests
         using var tokenSource = new CancellationTokenSource();
         IReadOnlyList<Pledger> pledgers = [Pledger.Create("Education Fund")];
         var repositoryResult = PagedPledgersResult.Create(pledgers, 2, 5, 6);
-        A.CallTo(() => fixture.Repository.GetAllAsync(tokenSource.Token, query)).Returns(repositoryResult);
+        A.CallTo(() => fixture.Repository.GetAllAsync(query, tokenSource.Token)).Returns(repositoryResult);
 
-        var result = await fixture.Service.GetAllAsync(tokenSource.Token, query);
+        var result = await fixture.Service.GetAllAsync(query, tokenSource.Token);
 
         Assert.Same(repositoryResult, result);
         Assert.Equal(pledgers, result.Items);
@@ -57,7 +54,7 @@ public sealed class GetAllAsyncTests
         Assert.Equal(5, result.PageSize);
         Assert.Equal(6, result.TotalCount);
         Assert.Equal(2, result.TotalPages);
-        A.CallTo(() => fixture.Repository.GetAllAsync(tokenSource.Token, query))
+        A.CallTo(() => fixture.Repository.GetAllAsync(query, tokenSource.Token))
             .MustHaveHappenedOnceExactly();
     }
 
@@ -68,10 +65,10 @@ public sealed class GetAllAsyncTests
     {
         var fixture = new PledgerServiceTestFixture();
         var query = new PledgerQuery(page: 3);
-        A.CallTo(() => fixture.Repository.GetAllAsync(CancellationToken.None, query))
+        A.CallTo(() => fixture.Repository.GetAllAsync(query, CancellationToken.None))
             .Returns(PagedPledgersResult.Create([], 3, 10, totalCount));
 
-        var result = await fixture.Service.GetAllAsync(CancellationToken.None, query);
+        var result = await fixture.Service.GetAllAsync(query, CancellationToken.None);
 
         Assert.Empty(result.Items);
         Assert.Equal(3, result.Page);

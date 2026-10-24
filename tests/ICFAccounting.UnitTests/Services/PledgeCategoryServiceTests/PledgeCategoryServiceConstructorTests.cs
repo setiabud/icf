@@ -12,7 +12,7 @@ public sealed class PledgeCategoryServiceConstructorTests
     {
         var logger = A.Fake<ILogger<PledgeCategoryService>>();
 
-        Assert.Throws<ArgumentNullException>(() => new PledgeCategoryService(null!, logger));
+        Assert.Throws<ArgumentNullException>(() => new PledgeCategoryService(null!, logger, TimeProvider.System));
     }
 
     [Fact]
@@ -20,6 +20,16 @@ public sealed class PledgeCategoryServiceConstructorTests
     {
         var repository = A.Fake<IPledgeCategoryRepository>();
 
-        Assert.Throws<ArgumentNullException>(() => new PledgeCategoryService(repository, null!));
+        Assert.Throws<ArgumentNullException>(() => new PledgeCategoryService(repository, null!, TimeProvider.System));
+    }
+
+    [Fact]
+    public void Constructor_with_null_time_provider_throws()
+    {
+        var repository = A.Fake<IPledgeCategoryRepository>();
+        var logger = A.Fake<ILogger<PledgeCategoryService>>();
+
+        var exception = Assert.Throws<ArgumentNullException>(() => new PledgeCategoryService(repository, logger, null!));
+        Assert.Equal("timeProvider", exception.ParamName);
     }
 }

@@ -24,7 +24,7 @@ public sealed class InMemoryPledgerRepositoryTests
         }
 
         var result = await repository.GetAllAsync(
-            CancellationToken.None, new PledgerQuery(page, pageSize, sortOrder: sortOrder));
+            new PledgerQuery(page, pageSize, sortOrder: sortOrder), CancellationToken.None);
 
         Assert.Equal(expectedNames, string.Join(",", result.Items.Select(pledger => pledger.PledgerName)));
         Assert.Equal(5, result.TotalCount);
@@ -42,7 +42,7 @@ public sealed class InMemoryPledgerRepositoryTests
             await repository.AddAsync(Pledger.Create($"Pledger {number:D2}"));
         }
 
-        var result = await repository.GetAllAsync(CancellationToken.None, new PledgerQuery());
+        var result = await repository.GetAllAsync(new PledgerQuery(), CancellationToken.None);
 
         Assert.Equal(Enumerable.Range(1, 20).Select(number => $"Pledger {number:D2}"),
             result.Items.Select(pledger => pledger.PledgerName));
@@ -65,8 +65,8 @@ public sealed class InMemoryPledgerRepositoryTests
         await repository.AddAsync(first);
         await repository.AddAsync(second);
 
-        var pageOne = await repository.GetAllAsync(CancellationToken.None, new PledgerQuery(1, 1));
-        var pageTwo = await repository.GetAllAsync(CancellationToken.None, new PledgerQuery(2, 1));
+        var pageOne = await repository.GetAllAsync(new PledgerQuery(1, 1), CancellationToken.None);
+        var pageTwo = await repository.GetAllAsync(new PledgerQuery(2, 1), CancellationToken.None);
 
         Assert.Equal(new[] { first.Id.Value, second.Id.Value }.Order(),
             pageOne.Items.Concat(pageTwo.Items).Select(pledger => pledger.Id.Value));
@@ -80,7 +80,7 @@ public sealed class InMemoryPledgerRepositoryTests
         var repository = new InMemoryPledgerRepository();
 
         var result = await repository.GetAllAsync(
-            CancellationToken.None, paginated ? new PledgerQuery(3, 5) : null);
+            paginated ? new PledgerQuery(3, 5) : null, CancellationToken.None);
 
         Assert.Empty(result.Items);
         Assert.Equal(0, result.TotalCount);
@@ -97,6 +97,21 @@ public sealed class InMemoryPledgerRepositoryTests
         tokenSource.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => repository.GetAllAsync(tokenSource.Token, new PledgerQuery()));
+            () => repository.GetAllAsync(new PledgerQuery(), tokenSource.Token));
+    }
+
+    [Fact]
+    public async Task RemoveAsync_with_canceled_token_throws_without_removing_pledger()
+    {
+        var repository = new InMemoryPledgerRepository();
+        var pledger = Pledger.Create("Community Fund");
+        await repository.AddAsync(pledger);
+        using var tokenSource = new CancellationTokenSource();
+        tokenSource.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => repository.RemoveAsync(pledger.Id, tokenSource.Token));
+
+        Assert.Same(pledger, await repository.GetByIdAsync(pledger.Id));
     }
 }

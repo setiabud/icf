@@ -4,94 +4,99 @@ using Microsoft.Extensions.Logging;
 
 namespace ICFAccounting.Application.Services;
 
+/// <summary>
+/// Implements application operations for managing pledge categories.
+/// </summary>
 public sealed class PledgeCategoryService : IPledgeCategoryService
 {
     private readonly IPledgeCategoryRepository _pledgeCategoryRepository;
     private readonly ILogger<PledgeCategoryService> _logger;
+    private readonly TimeProvider _timeProvider;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PledgeCategoryService"/> class.
+    /// </summary>
+    /// <param name="pledgeCategoryRepository">The repository used to retrieve and persist pledge categories.</param>
+    /// <param name="logger">The logger used to record service operations.</param>
+    /// <param name="timeProvider">The time provider used to timestamp category updates.</param>
     public PledgeCategoryService(
         IPledgeCategoryRepository pledgeCategoryRepository,
-        ILogger<PledgeCategoryService> logger)
+        ILogger<PledgeCategoryService> logger,
+        TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(pledgeCategoryRepository);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentNullException.ThrowIfNull(timeProvider);
 
         _pledgeCategoryRepository = pledgeCategoryRepository;
         _logger = logger;
+        _timeProvider = timeProvider;
     }
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         var pledgeCategories = await _pledgeCategoryRepository.GetAllAsync(cancellationToken);
         IReadOnlyList<PledgeCategory> result = [.. pledgeCategories];
-        _logger.LogInformation("Retrieved {PledgeCategoryCount} pledge categories.", result.Count);
+        _logger.PledgeCategoriesRetrieved(result.Count);
         return result;
     }
 
+    /// <inheritdoc />
     public async Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken = default)
     {
-        ValidateId(id);
+        ServiceGuard.ThrowIfEmptyId(id, "Pledge category");
 
         var pledgeCategory = await _pledgeCategoryRepository.GetByIdAsync(id, cancellationToken);
         if (pledgeCategory is null)
         {
-            _logger.LogInformation("Pledge category {PledgeCategoryId} was not found.", id);
+            _logger.PledgeCategoryNotFound(id);
             return null;
         }
 
-        _logger.LogInformation("Retrieved pledge category {PledgeCategoryId}.", id);
+        _logger.PledgeCategoryRetrieved(id);
         return pledgeCategory;
     }
 
+    /// <inheritdoc />
     public async Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pledgeCategory);
-        ValidateCategoryName(pledgeCategory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(pledgeCategory.CategoryName);
 
         await _pledgeCategoryRepository.AddAsync(pledgeCategory, cancellationToken);
-        _logger.LogInformation("Added pledge category {PledgeCategoryId}.", pledgeCategory.Id);
+        _logger.PledgeCategoryAdded(pledgeCategory.Id);
     }
 
+    /// <inheritdoc />
     public async Task<PledgeCategory?> UpdateAsync(
         PledgeCategoryId id,
         string categoryName,
         bool active,
         CancellationToken cancellationToken = default)
     {
-        ValidateId(id);
+        ServiceGuard.ThrowIfEmptyId(id, "Pledge category");
         ArgumentException.ThrowIfNullOrWhiteSpace(categoryName);
 
         var pledgeCategory = await _pledgeCategoryRepository.GetByIdAsync(id, cancellationToken);
         if (pledgeCategory is null)
         {
-            _logger.LogInformation("Pledge category {PledgeCategoryId} was not found for update.", id);
+            _logger.PledgeCategoryNotFoundForUpdate(id);
             return null;
         }
 
-        pledgeCategory.Update(categoryName, active);
+        pledgeCategory.Update(categoryName, active, _timeProvider);
         await _pledgeCategoryRepository.UpdateAsync(pledgeCategory, cancellationToken);
-        _logger.LogInformation("Updated pledge category {PledgeCategoryId}.", id);
+        _logger.PledgeCategoryUpdated(id);
         return pledgeCategory;
     }
 
+    /// <inheritdoc />
     public async Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken = default)
     {
-        ValidateId(id);
+        ServiceGuard.ThrowIfEmptyId(id, "Pledge category");
 
         await _pledgeCategoryRepository.RemoveAsync(id, cancellationToken);
-        _logger.LogInformation("Removed pledge category {PledgeCategoryId}.", id);
-    }
-
-    private static void ValidateId(PledgeCategoryId id)
-    {
-        if (id == default)
-        {
-            throw new ArgumentException("Pledge category ID cannot be empty.", nameof(id));
-        }
-    }
-
-    private static void ValidateCategoryName(PledgeCategory pledgeCategory)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(pledgeCategory.CategoryName);
+        _logger.PledgeCategoryRemoved(id);
     }
 }

@@ -212,7 +212,7 @@ public static class PledgerEndpointExtensions
 
         try
         {
-            var pledgers = await pledgerService.GetAllAsync(cancellationToken, query);
+            var pledgers = await pledgerService.GetAllAsync(query, cancellationToken);
             return Results.Ok(new PledgerPageResponse
             {
                 Items = pledgers.Items.Select(ToPledgerResponse).ToArray(),

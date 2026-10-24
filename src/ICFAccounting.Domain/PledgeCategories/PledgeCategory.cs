@@ -26,11 +26,11 @@ public sealed class PledgeCategory
 
     public DateTime UpdatedAt { get; private set; }
 
-    public static PledgeCategory Create(string categoryName)
+    public static PledgeCategory Create(string categoryName, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(categoryName);
 
-        var createdAt = DateTime.UtcNow;
+        var createdAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         return new PledgeCategory(
             PledgeCategoryId.New(),
             categoryName,
@@ -39,12 +39,12 @@ public sealed class PledgeCategory
             createdAt);
     }
 
-    public void Update(string categoryName, bool active)
+    public void Update(string categoryName, bool active, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(categoryName);
 
         CategoryName = categoryName;
         Active = active;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
     }
 }

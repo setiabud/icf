@@ -4,13 +4,13 @@ namespace ICFAccounting.Domain.Repositories;
 
 public interface IPledgerRepository
 {
-    Task AddAsync(Pledger pledger, CancellationToken cancellationToken);
+    Task AddAsync(Pledger pledger, CancellationToken cancellationToken = default);
 
-    Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken);
+    Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken = default);
 
-    Task<PagedPledgersResult> GetAllAsync(CancellationToken cancellationToken, PledgerQuery? query = null);
+    Task<PagedPledgersResult> GetAllAsync(PledgerQuery? query = null, CancellationToken cancellationToken = default);
 
-    Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken);
+    Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken = default);
 
-    Task RemoveAsync(PledgerId id, CancellationToken cancellationToken);
+    Task RemoveAsync(PledgerId id, CancellationToken cancellationToken = default);
 }

@@ -4,13 +4,13 @@ namespace ICFAccounting.Domain.Repositories;
 
 public interface IPledgeCategoryRepository
 {
-    Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken);
+    Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default);
 
-    Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken);
+    Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken);
+    Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task UpdateAsync(PledgeCategory pledger, CancellationToken cancellationToken);
+    Task UpdateAsync(PledgeCategory pledger, CancellationToken cancellationToken = default);
 
-    Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken);
+    Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken = default);
 }

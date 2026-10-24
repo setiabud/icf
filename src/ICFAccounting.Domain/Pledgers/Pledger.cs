@@ -26,20 +26,20 @@ public sealed class Pledger
 
     public DateTime UpdatedAt { get; private set; }
 
-    public static Pledger Create(string pledgerName)
+    public static Pledger Create(string pledgerName, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
 
-        var createdAt = DateTime.UtcNow;
+        var createdAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         return new Pledger(PledgerId.New(), pledgerName, true, createdAt, createdAt);
     }
 
-    public void Update(string pledgerName, bool active)
+    public void Update(string pledgerName, bool active, TimeProvider? timeProvider = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
 
         PledgerName = pledgerName;
         Active = active;
-        UpdatedAt = DateTime.UtcNow;
+        UpdatedAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
     }
 }

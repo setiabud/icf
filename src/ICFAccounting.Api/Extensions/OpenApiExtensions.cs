@@ -13,7 +13,7 @@ public static class OpenApiExtensions
         services.AddOpenApi();
         return services;
     }
-    
+
     /// <summary>
     /// Configure OpenAPI middleware pipeline
     /// </summary>
@@ -23,7 +23,7 @@ public static class OpenApiExtensions
         {
             app.MapOpenApi();
         }
-        
+
         return app;
     }
 }

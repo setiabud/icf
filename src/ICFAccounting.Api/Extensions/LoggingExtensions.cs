@@ -14,7 +14,7 @@ public static class LoggingExtensions
         // This extension is here for consistency and future enhancements
         return services;
     }
-    
+
     /// <summary>
     /// Configure logging middleware
     /// </summary>

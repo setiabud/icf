@@ -33,4 +33,20 @@ public sealed class GetAllAsyncTests
 
         Assert.Empty(result);
     }
+
+    [Fact]
+    public async Task GetAllAsync_returns_copy_isolated_from_repository_collection()
+    {
+        var fixture = new PledgeCategoryServiceTestFixture();
+        var tithe = PledgeCategory.Create("Tithe");
+        var repositoryCategories = new List<PledgeCategory> { tithe };
+        A.CallTo(() => fixture.Repository.GetAllAsync(A<CancellationToken>._))
+            .Returns(repositoryCategories);
+
+        var result = await fixture.Service.GetAllAsync();
+        repositoryCategories.Add(PledgeCategory.Create("Missions"));
+
+        Assert.NotSame(repositoryCategories, result);
+        Assert.Same(tithe, Assert.Single(result));
+    }
 }

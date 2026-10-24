@@ -1,4 +1,5 @@
 using FakeItEasy;
+using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.Pledgers;
 
 namespace ICFAccounting.UnitTests.Services.PledgerServiceTests;
@@ -47,5 +48,18 @@ public sealed class GetByIdAsyncTests
 
         A.CallTo(() => fixture.Repository.GetByIdAsync(A<PledgerId>._, A<CancellationToken>._))
             .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_through_interface_without_token_uses_none()
+    {
+        var fixture = new PledgerServiceTestFixture();
+        IPledgerService service = fixture.Service;
+        var id = PledgerId.New();
+
+        await service.GetByIdAsync(id);
+
+        A.CallTo(() => fixture.Repository.GetByIdAsync(id, CancellationToken.None))
+            .MustHaveHappenedOnceExactly();
     }
 }

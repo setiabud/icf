@@ -37,8 +37,8 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
     }
 
     public Task<PagedPledgersResult> GetAllAsync(
-        CancellationToken cancellationToken = default,
-        PledgerQuery? query = null)
+        PledgerQuery? query = null,
+        CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
         var snapshot = _pledgers.Values.ToList();
@@ -67,7 +67,7 @@ public sealed class InMemoryPledgerRepository : IPledgerRepository
         return Task.FromResult(PagedPledgersResult.Create(pledgers, query.Page, query.PageSize, totalCount));
     }
 
-    public Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken)
+    public Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
