@@ -77,4 +77,14 @@ public sealed class PledgerTests
         Assert.True(pledger.Active);
         Assert.Equal(originalUpdatedAt, pledger.UpdatedAt);
     }
+
+    [Fact]
+    public void PledgerId_has_value_equality_and_generates_nonempty_ids()
+    {
+        var pledgerId = PledgerId.New();
+
+        Assert.NotEqual(Guid.Empty, pledgerId.Value);
+        Assert.Equal(pledgerId, new PledgerId(pledgerId.Value));
+        Assert.NotEqual(pledgerId, PledgerId.New());
+    }
 }

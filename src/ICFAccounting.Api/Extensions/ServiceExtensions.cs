@@ -25,6 +25,7 @@ public static class ServiceExtensions
         // Register application services
         services.AddScoped<IPledgerService, PledgerService>();
         services.AddScoped<IPledgeCategoryService, PledgeCategoryService>();
+        services.AddScoped<IPledgeService, PledgeService>();
 
         services.AddProblemDetails();
         services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(options =>

@@ -93,7 +93,7 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
             : matches.OrderBy(pledge => pledge.Year);
 
         IReadOnlyList<Pledge> pledges = [.. orderedPledges
-            .ThenBy(pledge => pledge.Id.Value)
+            .ThenByDescending(pledge => pledge.Id.Value)
             .Skip((int)offset)
             .Take(query.PageSize)];
         return PagedPledgesResult.Create(pledges, query.Page, query.PageSize, totalCount);

@@ -4,3 +4,42 @@ GET {{ICFAccounting.Api_HostAddress}}/pledgers/
 Accept: application/json
 
 ###
+
+@pledgeId = 00000000-0000-0000-0000-000000000001
+
+GET {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
+Accept: application/json
+
+###
+
+@pledgerId = 00000000-0000-0000-0000-000000000004
+
+GET {{ICFAccounting.Api_HostAddress}}/pledges/pledger/{{pledgerId}}?page=1&pageSize=10&sortBy=Year&sortOrder=Descending
+Accept: application/json
+
+###
+
+@pledgeCategoryId = 00000000-0000-0000-0000-000000000005
+
+GET {{ICFAccounting.Api_HostAddress}}/pledges/pledge-category/{{pledgeCategoryId}}?page=1&pageSize=10&sortBy=Year&sortOrder=Descending
+Accept: application/json
+
+###
+
+PUT {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
+Content-Type: application/json
+
+{
+	"year": 2026,
+	"amount": 100.00,
+	"pledgerId": "00000000-0000-0000-0000-000000000002",
+	"pledgeCategoryId": "00000000-0000-0000-0000-000000000003",
+	"comment": "Annual pledge"
+}
+
+###
+
+DELETE {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
+Accept: application/json
+
+###

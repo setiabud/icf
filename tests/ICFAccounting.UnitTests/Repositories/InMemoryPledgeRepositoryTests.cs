@@ -186,11 +186,12 @@ public sealed class InMemoryPledgeRepositoryTests
     [Theory]
     [InlineData(SortOrder.Ascending)]
     [InlineData(SortOrder.Descending)]
-    public async Task GetByPledgerAsync_with_equal_years_uses_identity_for_stable_pages(SortOrder sortOrder)
+    public async Task GetByPledgerAsync_with_equal_years_uses_descending_identity_for_stable_pages(
+        SortOrder sortOrder)
     {
         var repository = new InMemoryPledgeRepository();
         var pledges = new[] { CreatePledge(2025, PledgerA, CategoryA), CreatePledge(2025, PledgerA, CategoryA) }
-            .OrderBy(pledge => pledge.Id.Value)
+            .OrderByDescending(pledge => pledge.Id.Value)
             .ToArray();
         foreach (var pledge in pledges.Reverse())
         {

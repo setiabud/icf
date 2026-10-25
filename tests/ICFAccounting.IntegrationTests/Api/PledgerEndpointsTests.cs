@@ -10,6 +10,7 @@ using ICFAccounting.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
@@ -25,11 +26,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Post_with_required_fields_returns_created_details_and_location()
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false
-        });
+        using var client = CreateClient(_factory, allowAutoRedirect: false);
         var request = new CreatePledgerRequest { PledgerName = "Community Fund" };
         var beforeRequest = DateTime.UtcNow;
 
@@ -64,11 +61,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [InlineData("""{"pledgerName":"\t\r\n"}""")]
     public async Task Post_with_invalid_name_returns_bad_request_problem_details(string json)
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false
-        });
+        using var client = CreateClient(_factory, allowAutoRedirect: false);
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var originalCount = (await repository.GetAllAsync()).TotalCount;
@@ -91,11 +84,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddScoped<IPledgerService>(_ => new RejectingPledgerService())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false
-        });
+        using var client = CreateClient(factory, allowAutoRedirect: false);
 
         using var response = await client.PostAsJsonAsync(
             "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
@@ -115,11 +104,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false
-        });
+        using var client = CreateClient(factory, allowAutoRedirect: false);
 
         using var response = await client.PostAsJsonAsync(
             "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
@@ -139,10 +124,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Get_without_query_returns_default_sorted_page_and_response_details()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledgers = Enumerable.Range(1, 12)
@@ -182,10 +164,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
         string query, string expectedNames, int page, int pageSize, int totalPages)
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         foreach (var name in new[] { "Charlie", "Echo", "Alpha", "delta", "bravo" })
@@ -228,10 +207,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [InlineData("?sortOrder=Ascending,Descending")]
     public async Task Get_with_invalid_query_returns_bad_request_problem_details(string query)
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
 
         using var response = await client.GetAsync($"/pledgers{query}");
 
@@ -249,10 +225,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Get_with_empty_repository_returns_empty_page(string query, int page, int pageSize)
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledgers{query}");
 
@@ -271,10 +244,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
 
         using var response = await client.GetAsync("/pledgers");
 
@@ -292,10 +262,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Get_by_id_with_existing_id_returns_pledger_details()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
@@ -317,11 +284,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Get_by_id_returns_pledger_created_via_post_location()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false
-        });
+        using var client = CreateClient(factory, allowAutoRedirect: false);
         using var postResponse = await client.PostAsJsonAsync(
             "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
         var created = await postResponse.Content.ReadFromJsonAsync<PledgerResponse>();
@@ -336,10 +299,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Get_by_id_with_unknown_id_returns_not_found()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledgers/{Guid.NewGuid()}");
 
@@ -351,10 +311,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [InlineData("123")]
     public async Task Get_by_id_with_non_guid_id_returns_not_found(string id)
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
 
         using var response = await client.GetAsync($"/pledgers/{id}");
 
@@ -364,10 +321,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Get_by_id_with_empty_guid_returns_bad_request_problem_details()
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
 
         using var response = await client.GetAsync($"/pledgers/{Guid.Empty}");
 
@@ -384,10 +338,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledgers/{Guid.NewGuid()}");
 
@@ -405,10 +356,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Put_with_existing_id_updates_and_returns_pledger()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
@@ -438,10 +386,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Put_with_unknown_id_returns_not_found()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.NewGuid()}", request);
@@ -452,10 +397,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Put_with_non_guid_id_returns_not_found()
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
         var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
 
         using var response = await client.PutAsJsonAsync("/pledgers/abc", request);
@@ -466,10 +408,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Put_with_empty_guid_returns_bad_request_problem_details()
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
         var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.Empty}", request);
@@ -488,10 +427,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Put_with_invalid_body_returns_bad_request_without_updating(string json)
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
@@ -514,10 +450,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.NewGuid()}", request);
@@ -536,10 +469,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Delete_with_existing_id_removes_pledger_and_returns_no_content()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
@@ -556,11 +486,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Delete_then_get_by_id_returns_not_found()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = false
-        });
+        using var client = CreateClient(factory, allowAutoRedirect: false);
         using var createResponse = await client.PostAsJsonAsync(
             "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
         var location = createResponse.Headers.Location;
@@ -577,10 +503,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Delete_with_unknown_id_returns_not_found()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
 
         using var response = await client.DeleteAsync($"/pledgers/{Guid.NewGuid()}");
 
@@ -591,10 +514,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     public async Task Delete_twice_returns_not_found_on_second_request()
     {
         using var factory = CreateIsolatedFactory();
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
@@ -612,10 +532,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [InlineData("123")]
     public async Task Delete_with_non_guid_id_returns_not_found(string id)
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
 
         using var response = await client.DeleteAsync($"/pledgers/{id}");
 
@@ -625,10 +542,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     [Fact]
     public async Task Delete_with_empty_guid_returns_bad_request_problem_details()
     {
-        using var client = _factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(_factory);
 
         using var response = await client.DeleteAsync($"/pledgers/{Guid.Empty}");
 
@@ -640,10 +554,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
 
         using var response = await client.DeleteAsync($"/pledgers/{Guid.NewGuid()}");
 
@@ -672,10 +583,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddScoped<IPledgerService>(_ => new RejectingPledgerService())));
-        using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
+        using var client = CreateClient(factory);
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         if (method == "PUT")
         {
@@ -696,11 +604,7 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
 
     private static async Task AssertBadRequestProblemAsync(HttpResponseMessage response)
     {
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.NotNull(problem);
-        Assert.Equal(400, problem.Status);
+        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.False(string.IsNullOrWhiteSpace(problem.Title));
     }
 

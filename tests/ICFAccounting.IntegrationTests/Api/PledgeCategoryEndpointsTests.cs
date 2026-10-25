@@ -9,6 +9,7 @@ using ICFAccounting.Domain.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
@@ -514,25 +515,6 @@ public sealed class PledgeCategoryEndpointsTests : IClassFixture<WebApplicationF
         Assert.Equal("Pledge category could not be removed.", problem.Detail);
         Assert.DoesNotContain("Internal repository failure", body);
         Assert.DoesNotContain(nameof(InvalidOperationException), body);
-    }
-
-    private static HttpClient CreateClient(WebApplicationFactory<Program> factory)
-    {
-        return factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost")
-        });
-    }
-
-    private static async Task<ProblemDetails> AssertProblemAsync(
-        HttpResponseMessage response, HttpStatusCode expectedStatus)
-    {
-        Assert.Equal(expectedStatus, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        Assert.NotNull(problem);
-        Assert.Equal((int)expectedStatus, problem.Status);
-        return problem;
     }
 
     private WebApplicationFactory<Program> CreateIsolatedFactory()

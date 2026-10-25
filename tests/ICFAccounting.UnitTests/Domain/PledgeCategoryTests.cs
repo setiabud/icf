@@ -80,4 +80,14 @@ public sealed class PledgeCategoryTests
         Assert.True(category.Active);
         Assert.Equal(originalUpdatedAt, category.UpdatedAt);
     }
+
+    [Fact]
+    public void PledgeCategoryId_has_value_equality_and_generates_nonempty_ids()
+    {
+        var categoryId = PledgeCategoryId.New();
+
+        Assert.NotEqual(Guid.Empty, categoryId.Value);
+        Assert.Equal(categoryId, new PledgeCategoryId(categoryId.Value));
+        Assert.NotEqual(categoryId, PledgeCategoryId.New());
+    }
 }
