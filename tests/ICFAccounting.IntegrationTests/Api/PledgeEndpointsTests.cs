@@ -137,7 +137,6 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
     [Theory]
     [InlineData("?page=0")]
     [InlineData("?pageSize=101")]
-    [InlineData("?sortBy=Amount")]
     [InlineData("?sortBy=0")]
     [InlineData("?sortOrder=asc")]
     [InlineData("?sortOrder=2")]
@@ -178,6 +177,32 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
     }
 
     [Theory]
+    [InlineData("Ascending", "50,100,150")]
+    [InlineData("Descending", "150,100,50")]
+    public async Task Get_by_pledger_sorts_by_amount(string sortOrder, string expectedAmounts)
+    {
+        using var factory = CreateIsolatedFactory();
+        using var client = CreateClient(factory);
+        using var scope = factory.Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
+        var pledgerId = PledgerId.New();
+        var categoryId = PledgeCategoryId.New();
+        foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
+        {
+            await repository.AddAsync(
+                Pledge.Create(year, amount, pledgerId, categoryId), CancellationToken.None);
+        }
+
+        using var response = await client.GetAsync(
+            $"/pledges/pledger/{pledgerId.Value}?sortBy=Amount&sortOrder={sortOrder}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
+        Assert.NotNull(result);
+        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(pledge => pledge.Amount)));
+    }
+
+    [Theory]
     [InlineData("Ascending", 1, 2023)]
     [InlineData("Ascending", 2, 2024)]
     [InlineData("Descending", 1, 2025)]
@@ -215,7 +240,6 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
     [Theory]
     [InlineData("?page=0")]
     [InlineData("?pageSize=101")]
-    [InlineData("?sortBy=Amount")]
     [InlineData("?sortOrder=desc")]
     public async Task Get_by_category_with_invalid_query_returns_bad_request(string query)
     {
@@ -254,6 +278,32 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         var problem = await AssertProblemAsync(response, HttpStatusCode.InternalServerError);
         Assert.Equal("Pledges could not be retrieved.", problem.Detail);
         Assert.DoesNotContain("Internal repository failure", body);
+    }
+
+    [Theory]
+    [InlineData("Ascending", "50,100,150")]
+    [InlineData("Descending", "150,100,50")]
+    public async Task Get_by_category_sorts_by_amount(string sortOrder, string expectedAmounts)
+    {
+        using var factory = CreateIsolatedFactory();
+        using var client = CreateClient(factory);
+        using var scope = factory.Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
+        var categoryId = PledgeCategoryId.New();
+        var pledgerId = PledgerId.New();
+        foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
+        {
+            await repository.AddAsync(
+                Pledge.Create(year, amount, pledgerId, categoryId), CancellationToken.None);
+        }
+
+        using var response = await client.GetAsync(
+            $"/pledges/pledge-category/{categoryId.Value}?sortBy=Amount&sortOrder={sortOrder}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
+        Assert.NotNull(result);
+        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(pledge => pledge.Amount)));
     }
 
     [Fact]

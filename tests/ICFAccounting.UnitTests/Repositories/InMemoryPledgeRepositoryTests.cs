@@ -144,6 +144,46 @@ public sealed class InMemoryPledgeRepositoryTests
         Assert.Equal(expectedTotalPages, result.TotalPages);
     }
 
+    [Theory]
+    [InlineData(SortOrder.Ascending, "50,100,150")]
+    [InlineData(SortOrder.Descending, "150,100,50")]
+    public async Task GetByPledgerAsync_sorts_by_amount(SortOrder sortOrder, string expectedAmounts)
+    {
+        var repository = new InMemoryPledgeRepository();
+        foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
+        {
+            await repository.AddAsync(
+                Pledge.Create(year, amount, PledgerA, CategoryA), CancellationToken.None);
+        }
+
+        var result = await repository.GetByPledgerAsync(
+            PledgerA,
+            new PledgeQuery(sortBy: PledgeSortBy.Amount, sortOrder: sortOrder),
+            CancellationToken.None);
+
+        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(pledge => pledge.Amount)));
+    }
+
+    [Theory]
+    [InlineData(SortOrder.Ascending, "50,100,150")]
+    [InlineData(SortOrder.Descending, "150,100,50")]
+    public async Task GetByCategoryAsync_sorts_by_amount(SortOrder sortOrder, string expectedAmounts)
+    {
+        var repository = new InMemoryPledgeRepository();
+        foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
+        {
+            await repository.AddAsync(
+                Pledge.Create(year, amount, PledgerA, CategoryA), CancellationToken.None);
+        }
+
+        var result = await repository.GetByCategoryAsync(
+            CategoryA,
+            new PledgeQuery(sortBy: PledgeSortBy.Amount, sortOrder: sortOrder),
+            CancellationToken.None);
+
+        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(pledge => pledge.Amount)));
+    }
+
     [Fact]
     public async Task GetByPledgerAsync_without_query_applies_default_pagination()
     {

@@ -17,13 +17,15 @@ public sealed class PledgeQueryTests
     }
 
     [Theory]
-    [InlineData(SortOrder.Ascending)]
-    [InlineData(SortOrder.Descending)]
-    public void Constructor_accepts_sort_options(SortOrder sortOrder)
+    [InlineData(PledgeSortBy.Year, SortOrder.Ascending)]
+    [InlineData(PledgeSortBy.Year, SortOrder.Descending)]
+    [InlineData(PledgeSortBy.Amount, SortOrder.Ascending)]
+    [InlineData(PledgeSortBy.Amount, SortOrder.Descending)]
+    public void Constructor_accepts_sort_options(PledgeSortBy sortBy, SortOrder sortOrder)
     {
-        var query = new PledgeQuery(sortBy: PledgeSortBy.Year, sortOrder: sortOrder);
+        var query = new PledgeQuery(sortBy: sortBy, sortOrder: sortOrder);
 
-        Assert.Equal(PledgeSortBy.Year, query.SortBy);
+        Assert.Equal(sortBy, query.SortBy);
         Assert.Equal(sortOrder, query.SortOrder);
     }
 
@@ -40,7 +42,7 @@ public sealed class PledgeQueryTests
 
     [Theory]
     [InlineData((PledgeSortBy)(-1), SortOrder.Ascending)]
-    [InlineData((PledgeSortBy)1, SortOrder.Ascending)]
+    [InlineData((PledgeSortBy)2, SortOrder.Ascending)]
     [InlineData(PledgeSortBy.Year, (SortOrder)(-1))]
     [InlineData(PledgeSortBy.Year, (SortOrder)2)]
     public void Constructor_rejects_unsupported_sorting(PledgeSortBy sortBy, SortOrder sortOrder)

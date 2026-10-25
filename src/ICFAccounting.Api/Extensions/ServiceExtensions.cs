@@ -19,6 +19,7 @@ public static class ServiceExtensions
         services.AddSingleton<IPledgerRepository, InMemoryPledgerRepository>();
         services.AddSingleton<IPledgeCategoryRepository, InMemoryPledgeCategoryRepository>();
         services.AddSingleton<IPledgeRepository, InMemoryPledgeRepository>();
+        services.AddSingleton<IPledgePaymentRepository, InMemoryPledgePaymentRepository>();
 
         services.TryAddSingleton(TimeProvider.System);
 
@@ -26,6 +27,7 @@ public static class ServiceExtensions
         services.AddScoped<IPledgerService, PledgerService>();
         services.AddScoped<IPledgeCategoryService, PledgeCategoryService>();
         services.AddScoped<IPledgeService, PledgeService>();
+        services.AddScoped<IPledgePaymentService, PledgePaymentService>();
 
         services.AddProblemDetails();
         services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(options =>

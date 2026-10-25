@@ -78,7 +78,7 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: "SortBy must be Year and SortOrder must be Ascending or Descending.");
+                detail: "SortBy must be Year or Amount, and SortOrder must be Ascending or Descending.");
         }
 
         PledgeQuery query;
@@ -155,7 +155,7 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: "SortBy must be Year and SortOrder must be Ascending or Descending.");
+                detail: "SortBy must be Year or Amount, and SortOrder must be Ascending or Descending.");
         }
 
         PledgeQuery query;

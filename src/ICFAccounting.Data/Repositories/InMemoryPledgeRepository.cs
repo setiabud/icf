@@ -88,9 +88,13 @@ public sealed class InMemoryPledgeRepository : IPledgeRepository
             return PagedPledgesResult.Create([], query.Page, query.PageSize, totalCount);
         }
 
-        var orderedPledges = query.SortOrder == SortOrder.Descending
-            ? matches.OrderByDescending(pledge => pledge.Year)
-            : matches.OrderBy(pledge => pledge.Year);
+        var orderedPledges = query.SortBy == PledgeSortBy.Amount
+            ? query.SortOrder == SortOrder.Descending
+                ? matches.OrderByDescending(pledge => pledge.Amount)
+                : matches.OrderBy(pledge => pledge.Amount)
+            : query.SortOrder == SortOrder.Descending
+                ? matches.OrderByDescending(pledge => pledge.Year)
+                : matches.OrderBy(pledge => pledge.Year);
 
         IReadOnlyList<Pledge> pledges = [.. orderedPledges
             .ThenByDescending(pledge => pledge.Id.Value)
