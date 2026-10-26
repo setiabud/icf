@@ -354,10 +354,12 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
         var payment = PledgePayment.Create(PledgeId.New(), 100m, new DateTime(2026, 1, 10), "Original");
+        var updatedPledgeId = PledgeId.New();
         var createdAt = payment.CreatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
         var request = new UpdatePledgePaymentRequest
         {
+            PledgeId = updatedPledgeId.Value,
             Amount = 125.50m,
             PaymentDate = new DateTime(2026, 1, 20),
             Comment = "Updated payment",
@@ -370,7 +372,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         var result = await response.Content.ReadFromJsonAsync<PledgePaymentResponse>();
         Assert.NotNull(result);
         Assert.Equal(payment.Id.Value, result.Id);
-        Assert.Equal(payment.PledgeId.Value, result.PledgeId);
+        Assert.Equal(updatedPledgeId.Value, result.PledgeId);
         Assert.Equal(request.Amount, result.Amount);
         Assert.Equal(request.PaymentDate, result.PaymentDate);
         Assert.Equal(request.Comment, result.Comment);
@@ -380,6 +382,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
 
         var storedPayment = await repository.GetByIdAsync(payment.Id, CancellationToken.None);
         Assert.NotNull(storedPayment);
+        Assert.Equal(updatedPledgeId, storedPayment.PledgeId);
         Assert.Equal(125.50m, storedPayment.Amount);
         Assert.False(storedPayment.Active);
         Assert.Equal(result.UpdatedAt, storedPayment.UpdatedAt);
@@ -425,9 +428,10 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
     [InlineData("""{"paymentDate":"2026-01-20T00:00:00","active":true}""")]
     [InlineData("""{"amount":100,"active":true}""")]
     [InlineData("""{"amount":100,"paymentDate":"2026-01-20T00:00:00"}""")]
-    [InlineData("""{"amount":0,"paymentDate":"2026-01-20T00:00:00","active":true}""")]
-    [InlineData("""{"amount":1.001,"paymentDate":"2026-01-20T00:00:00","active":true}""")]
-    [InlineData("""{"amount":100,"paymentDate":"0001-01-01T00:00:00","active":true}""")]
+    [InlineData("""{"pledgeId":"00000000-0000-0000-0000-000000000000","amount":100,"paymentDate":"2026-01-20T00:00:00","active":true}""")]
+    [InlineData("""{"pledgeId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a00","amount":0,"paymentDate":"2026-01-20T00:00:00","active":true}""")]
+    [InlineData("""{"pledgeId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a00","amount":1.001,"paymentDate":"2026-01-20T00:00:00","active":true}""")]
+    [InlineData("""{"pledgeId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a00","amount":100,"paymentDate":"0001-01-01T00:00:00","active":true}""")]
     public async Task Put_with_invalid_body_returns_bad_request_without_updating(string json)
     {
         using var factory = CreateIsolatedFactory();
@@ -445,6 +449,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         Assert.Equal("Invalid pledge payment update", problem.Title);
         var storedPayment = await repository.GetByIdAsync(payment.Id, CancellationToken.None);
         Assert.NotNull(storedPayment);
+        Assert.Equal(payment.PledgeId, storedPayment.PledgeId);
         Assert.Equal(100m, storedPayment.Amount);
         Assert.Equal(new DateTime(2026, 1, 10), storedPayment.PaymentDate);
         Assert.Equal("Original", storedPayment.Comment);
@@ -551,6 +556,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
     {
         return new UpdatePledgePaymentRequest
         {
+            PledgeId = Guid.NewGuid(),
             Amount = 100m,
             PaymentDate = new DateTime(2026, 1, 20),
             Active = true

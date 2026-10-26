@@ -29,7 +29,7 @@ public sealed class PledgePayment
 
     public PledgePaymentId Id { get; }
 
-    public PledgeId PledgeId { get; }
+    public PledgeId PledgeId { get; private set; }
 
     public decimal Amount { get; private set; }
 
@@ -68,17 +68,19 @@ public sealed class PledgePayment
     }
 
     /// <summary>
-    /// Revalidates and replaces payment details while preserving identity and pledge association.
+    /// Revalidates and replaces payment details and pledge association while preserving identity.
     /// </summary>
     public void Update(
+        PledgeId pledgeId,
         decimal amount,
         DateTime paymentDate,
         string? comment,
         bool active,
         TimeProvider? timeProvider = null)
     {
-        Validate(PledgeId, amount, paymentDate);
+        Validate(pledgeId, amount, paymentDate);
 
+        PledgeId = pledgeId;
         Amount = amount;
         PaymentDate = paymentDate;
         Comment = NormalizeComment(comment);

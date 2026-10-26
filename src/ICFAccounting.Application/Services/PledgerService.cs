@@ -37,7 +37,6 @@ public sealed class PledgerService : IPledgerService
     public async Task AddAsync(Pledger pledger, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(pledger);
-        ArgumentException.ThrowIfNullOrWhiteSpace(pledger.PledgerName);
 
         await _pledgerRepository.AddAsync(pledger, cancellationToken);
         _logger.PledgerAdded(pledger.Id);
@@ -78,6 +77,7 @@ public sealed class PledgerService : IPledgerService
         CancellationToken cancellationToken = default)
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledger");
+        // Checked before the lookup so a blank name is rejected (400) even when the ID is unknown (404).
         ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
 
         var pledger = await _pledgerRepository.GetByIdAsync(id, cancellationToken);

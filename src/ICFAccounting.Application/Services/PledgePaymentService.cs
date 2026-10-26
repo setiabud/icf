@@ -78,6 +78,7 @@ public sealed class PledgePaymentService : IPledgePaymentService
     /// <inheritdoc />
     public async Task<PledgePayment?> UpdateAsync(
         PledgePaymentId id,
+        PledgeId pledgeId,
         decimal amount,
         DateTime paymentDate,
         string? comment,
@@ -85,6 +86,7 @@ public sealed class PledgePaymentService : IPledgePaymentService
         CancellationToken cancellationToken = default)
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge payment");
+        ServiceGuard.ThrowIfEmptyId(pledgeId, "Pledge");
 
         var pledgePayment = await _pledgePaymentRepository.GetByIdAsync(id, cancellationToken);
         if (pledgePayment is null)
@@ -93,7 +95,7 @@ public sealed class PledgePaymentService : IPledgePaymentService
             return null;
         }
 
-        pledgePayment.Update(amount, paymentDate, comment, active, _timeProvider);
+        pledgePayment.Update(pledgeId, amount, paymentDate, comment, active, _timeProvider);
         await _pledgePaymentRepository.UpdateAsync(pledgePayment, cancellationToken);
         _logger.PledgePaymentUpdated(id);
         return pledgePayment;

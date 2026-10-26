@@ -88,20 +88,21 @@ public sealed class PledgePaymentTests
     }
 
     [Fact]
-    public void Update_changes_payment_fields_and_preserves_identity_and_pledge()
+    public void Update_changes_payment_fields_and_pledge_while_preserving_identity()
     {
         var clock = new FakeTimeProvider(StartTime);
         var pledgeId = PledgeId.New();
+        var updatedPledgeId = PledgeId.New();
         var paymentDate = new DateTime(2026, 1, 10);
         var payment = PledgePayment.Create(pledgeId, 10m, paymentDate, "Original", clock);
         var originalId = payment.Id;
         var originalCreatedAt = payment.CreatedAt;
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        payment.Update(25.50m, new DateTime(2026, 1, 20), "  Updated  ", false, clock);
+        payment.Update(updatedPledgeId, 25.50m, new DateTime(2026, 1, 20), "  Updated  ", false, clock);
 
         Assert.Equal(originalId, payment.Id);
-        Assert.Equal(pledgeId, payment.PledgeId);
+        Assert.Equal(updatedPledgeId, payment.PledgeId);
         Assert.Equal(25.50m, payment.Amount);
         Assert.Equal(new DateTime(2026, 1, 20), payment.PaymentDate);
         Assert.Equal("Updated", payment.Comment);
@@ -122,7 +123,7 @@ public sealed class PledgePaymentTests
         clock.Advance(TimeSpan.FromMinutes(5));
 
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => payment.Update(0m, StartTime.UtcDateTime, "Changed", false, clock));
+            () => payment.Update(payment.PledgeId, 0m, StartTime.UtcDateTime, "Changed", false, clock));
 
         Assert.Equal(originalId, payment.Id);
         Assert.Equal(originalPledgeId, payment.PledgeId);

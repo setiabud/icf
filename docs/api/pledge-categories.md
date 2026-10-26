@@ -1,7 +1,16 @@
 # Pledge Categories API
 
-Pledge categories are stored in an in-memory repository, so data is lost when
-the application restarts.
+## Conventions
+
+These apply to every endpoint below.
+
+- Data is stored in an in-memory repository and is lost when the application restarts.
+- Error responses use a ProblemDetails body (`application/problem+json`).
+- A route ID that is not a GUID returns `404 Not Found` because the route does not match.
+- Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
+- Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
+- Error responses from POST do not include a `Location` header.
+- Request cancellation is allowed to propagate and is not translated into an error response.
 
 ## POST /pledge-categories
 
@@ -26,13 +35,10 @@ GET by ID below. The Location URL can be used to retrieve the created category.
 | Condition | Response |
 | --- | --- |
 | Pledge category created | `201 Created` with a Location header and pledge category details |
-| Missing or invalid name, or an argument rejected by the domain or service | `400 Bad Request` with a ProblemDetails body |
+| `categoryName` is absent or the body is malformed | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs, so there is no custom title) |
+| `categoryName` is null, empty, or whitespace | `400 Bad Request` with title `Invalid pledge category name` |
+| The domain or service rejects the category | `400 Bad Request` with title `Invalid pledge category` |
 | Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
-
-Domain and service argument errors use the exception message without its
-parameter-name suffix. Unexpected failures are logged without exposing internal
-exception details. Error responses do not include a Location header.
-Request cancellation is allowed to propagate.
 
 ## GET /pledge-categories
 
@@ -44,16 +50,12 @@ sorting parameters are supported, and no particular order is guaranteed.
 | --- | --- |
 | Pledge categories exist | `200 OK` with an array of pledge category details |
 | No pledge categories exist | `200 OK` with `[]` |
-| The service rejects an argument | `400 Bad Request` with a ProblemDetails body |
+| The service throws an `ArgumentException` (defensive; this endpoint takes no input, so not expected in practice) | `400 Bad Request` with title `Invalid pledge category query` |
 | Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
-
-Argument errors use the exception message without its parameter-name suffix.
-Unexpected failures are logged without exposing internal exception details.
-Request cancellation is allowed to propagate.
 
 ## GET /pledge-categories/{id}
 
-Returns a single pledge category.
+Returns `200 OK` with a single pledge category:
 
 | Field | Type | Description |
 | --- | --- | --- |
@@ -68,7 +70,7 @@ Returns a single pledge category.
 | Pledge category exists | `200 OK` with the pledge category details |
 | No pledge category with that ID | `404 Not Found` |
 | `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with a ProblemDetails body |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge category ID` |
 | Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## PUT /pledge-categories/{id}
@@ -93,12 +95,9 @@ and `active` must be `true` or `false`.
 | Pledge category updated | `200 OK` with the updated pledge category details |
 | No pledge category with that ID | `404 Not Found` |
 | `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, the body is invalid, or the service rejects an argument | `400 Bad Request` with a ProblemDetails body |
+| `id` is the empty GUID | `400 Bad Request` with title `Invalid pledge category ID` |
+| The body is invalid, or the service rejects the update | `400 Bad Request` with title `Invalid pledge category update` |
 | Unexpected lookup or update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
-
-Argument errors from the service use the exception message without its
-parameter-name suffix. Unexpected failures are logged without exposing internal
-exception details in the response. Request cancellation is allowed to propagate.
 
 ## DELETE /pledge-categories/{id}
 
@@ -109,10 +108,10 @@ Removes the pledge category with the given ID. There is no request body.
 | Pledge category removed | `204 No Content` with an empty body |
 | No pledge category with that ID, including one already removed | `404 Not Found` |
 | `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects an argument | `400 Bad Request` with a ProblemDetails body |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge category ID` |
 | Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
-The endpoint translates `KeyNotFoundException` from the service into `404 Not Found`.
-Argument errors use the exception message without its parameter-name suffix.
-Unexpected failures are logged without exposing internal exception details.
-Request cancellation is allowed to propagate.
+The repository throws `KeyNotFoundException` for an unknown ID (passed through
+by the service), which the endpoint translates into `404 Not Found`.
+
+Removing a pledge category does not remove or update pledges that reference it.

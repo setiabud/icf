@@ -133,7 +133,7 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: exception.Message);
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
         }
 
         try

@@ -48,7 +48,7 @@ public sealed class InMemoryPledgePaymentRepositoryTests
         var payment = CreatePayment(PledgeA, 100m, new DateTime(2026, 1, 10));
         await repository.AddAsync(payment, CancellationToken.None);
 
-        payment.Update(125m, new DateTime(2026, 1, 15), "Updated", false);
+        payment.Update(PledgeA, 125m, new DateTime(2026, 1, 15), "Updated", false);
         await repository.UpdateAsync(payment, CancellationToken.None);
 
         var storedPayment = await repository.GetByIdAsync(payment.Id, CancellationToken.None);

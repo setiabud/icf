@@ -39,7 +39,7 @@ public interface IPledgeRepository
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>A snapshot of the selected entries and pagination metadata for all matching pledges.</returns>
     /// <remarks>
-    /// Ascending identifiers break year ties regardless of the primary sort direction.
+    /// Descending identifiers break year ties regardless of the primary sort direction.
     /// The snapshot fixes collection membership, not the state of individual entities.
     /// </remarks>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>
@@ -57,7 +57,7 @@ public interface IPledgeRepository
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>A snapshot of the selected entries and pagination metadata for all matching pledges.</returns>
     /// <remarks>
-    /// Ascending identifiers break year ties regardless of the primary sort direction.
+    /// Descending identifiers break year ties regardless of the primary sort direction.
     /// The snapshot fixes collection membership, not the state of individual entities.
     /// </remarks>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>

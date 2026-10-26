@@ -39,6 +39,7 @@ public interface IPledgePaymentService
     /// Updates a payment and returns it, or returns null when no payment has the given identifier.
     /// </summary>
     /// <param name="id">The identifier of the payment to update.</param>
+    /// <param name="pledgeId">The updated pledge identifier.</param>
     /// <param name="amount">The updated payment amount.</param>
     /// <param name="paymentDate">The updated payment date.</param>
     /// <param name="comment">The updated optional comment.</param>
@@ -47,6 +48,7 @@ public interface IPledgePaymentService
     /// <returns>The updated payment, or <see langword="null"/> if no payment has the identifier.</returns>
     Task<PledgePayment?> UpdateAsync(
         PledgePaymentId id,
+        PledgeId pledgeId,
         decimal amount,
         DateTime paymentDate,
         string? comment,

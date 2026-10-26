@@ -85,6 +85,7 @@ PUT {{ICFAccounting.Api_HostAddress}}/pledge-payments/{{pledgePaymentId}}
 Content-Type: application/json
 
 {
+	"pledgeId": "{{pledgeId}}",
 	"amount": 50.00,
 	"paymentDate": "2026-01-20T00:00:00",
 	"comment": "Monthly payment",

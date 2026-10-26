@@ -1,4 +1,5 @@
 using FakeItEasy;
+using ICFAccounting.Domain.Pledges;
 
 namespace ICFAccounting.UnitTests.Services.PledgePaymentServiceTests;
 
@@ -16,7 +17,7 @@ public sealed class EmptyIdValidationTests
             "GetById" => () => fixture.Service.GetByIdAsync(default),
             "GetByPledge" => () => fixture.Service.GetByPledgeAsync(default),
             "Update" => () => fixture.Service.UpdateAsync(
-                default, 10m, PledgePaymentServiceTestFixture.StartTime.UtcDateTime, null, true),
+                default, PledgeId.New(), 10m, PledgePaymentServiceTestFixture.StartTime.UtcDateTime, null, true),
             "Remove" => () => fixture.Service.RemoveAsync(default),
             _ => throw new ArgumentOutOfRangeException(nameof(operation))
         };

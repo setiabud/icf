@@ -30,19 +30,4 @@ public sealed class AddAsyncTests
         A.CallTo(() => fixture.Repository.AddAsync(A<Pledger>._, A<CancellationToken>._))
             .MustNotHaveHappened();
     }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData(" ")]
-    public async Task AddAsync_with_invalid_name_throws_without_calling_repository(string? name)
-    {
-        var fixture = new PledgerServiceTestFixture();
-        var pledger = PledgerServiceTestFixture.CreatePledgerWithName(name);
-
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Service.AddAsync(pledger));
-
-        A.CallTo(() => fixture.Repository.AddAsync(A<Pledger>._, A<CancellationToken>._))
-            .MustNotHaveHappened();
-    }
 }

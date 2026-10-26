@@ -46,4 +46,39 @@ public sealed class UpdateAsyncTests
         A.CallTo(() => fixture.Repository.UpdateAsync(A<Pledge>._, A<CancellationToken>._))
             .MustNotHaveHappened();
     }
+
+    [Fact]
+    public async Task UpdateAsync_when_domain_rejects_values_throws_without_persisting_or_changing_pledge()
+    {
+        var fixture = new PledgeServiceTestFixture();
+        var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New(), "Original", fixture.Clock);
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._)).Returns(pledge);
+
+        await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Service.UpdateAsync(
+            pledge.Id, 2019, 125m, PledgerId.New(), PledgeCategoryId.New(), "Updated"));
+
+        Assert.Equal(2026, pledge.Year);
+        Assert.Equal(100m, pledge.Amount);
+        Assert.Equal("Original", pledge.Comment);
+        A.CallTo(() => fixture.Repository.UpdateAsync(A<Pledge>._, A<CancellationToken>._))
+            .MustNotHaveHappened();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_forwards_cancellation_token_to_repository()
+    {
+        var fixture = new PledgeServiceTestFixture();
+        var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New(), null, fixture.Clock);
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, cancellationToken)).Returns(pledge);
+
+        await fixture.Service.UpdateAsync(
+            pledge.Id, 2027, 125m, pledge.PledgerId, pledge.PledgeCategoryId, null, cancellationToken);
+
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, cancellationToken))
+            .MustHaveHappenedOnceExactly();
+        A.CallTo(() => fixture.Repository.UpdateAsync(pledge, cancellationToken))
+            .MustHaveHappenedOnceExactly();
+    }
 }

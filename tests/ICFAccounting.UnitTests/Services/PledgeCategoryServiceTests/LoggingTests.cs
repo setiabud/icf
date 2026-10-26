@@ -9,13 +9,16 @@ namespace ICFAccounting.UnitTests.Services.PledgeCategoryServiceTests;
 
 public sealed class LoggingTests
 {
-    private readonly IPledgeCategoryRepository _repository = A.Fake<IPledgeCategoryRepository>();
-    private readonly FakeLogger<PledgeCategoryService> _logger = new();
+    private readonly IPledgeCategoryRepository _repository;
+    private readonly FakeLogger<PledgeCategoryService> _logger;
     private readonly PledgeCategoryService _service;
 
     public LoggingTests()
     {
-        _service = new PledgeCategoryService(_repository, _logger, TimeProvider.System);
+        var fixture = new PledgeCategoryServiceTestFixture();
+        _repository = fixture.Repository;
+        _logger = fixture.Logger;
+        _service = fixture.Service;
     }
 
     [Fact]

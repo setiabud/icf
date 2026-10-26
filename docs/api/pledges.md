@@ -1,9 +1,21 @@
 # Pledges API
 
+## Conventions
+
+These apply to every endpoint below.
+
+- Data is stored in an in-memory repository and is lost when the application restarts.
+- Error responses use a ProblemDetails body (`application/problem+json`).
+- A route ID that is not a GUID returns `404 Not Found` because the route does not match.
+- Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
+- Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
+- Error responses from POST do not include a `Location` header.
+- Request cancellation is allowed to propagate and is not translated into an error response.
+
 ## POST /pledges
 
-Creates a pledge using the in-memory repository. The referenced pledger and
-pledge category are not checked for existence.
+Creates a pledge. The referenced pledger and pledge category are not checked
+for existence.
 
 Request:
 
@@ -28,32 +40,9 @@ same fields as `GET /pledges/{id}`, with `updatedAt` equal to `createdAt`.
 | Condition | Response |
 | --- | --- |
 | Pledge created | `201 Created` with pledge details and `Location` header |
-| A required field is missing or the body is malformed | `400 Bad Request` with a ProblemDetails body |
+| A required field is missing or the body is malformed | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs, so there is no custom title) |
 | A field value is rejected by the domain or service | `400 Bad Request` with title `Invalid pledge` and the validation message as `detail` |
-| Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body and no `Location` header |
-
-## GET /pledges/{id}
-
-Returns `200 OK` with a single pledge:
-
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | UUID | Pledge identity |
-| `year` | integer | Pledge year (2020-2099) |
-| `amount` | decimal | Pledged amount |
-| `pledgerId` | UUID | Associated pledger |
-| `pledgeCategoryId` | UUID | Associated pledge category |
-| `comment` | string or `null` | Optional comment |
-| `createdAt` | UTC timestamp | Creation time |
-| `updatedAt` | UTC timestamp | Last update time |
-
-| Condition | Response |
-| --- | --- |
-| Pledge exists | `200 OK` with pledge details |
-| No pledge with that ID | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge ID` |
-| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## GET /pledges/pledger/{pledgerId}
 
@@ -81,7 +70,8 @@ the requested page and the collection's totals.
 | `sortBy` | `Year` | `Year`, `Amount` (case-insensitive) |
 | `sortOrder` | `Descending` | `Ascending`, `Descending` (case-insensitive) |
 
-Pledges with equal sort values are ordered by ID to keep page boundaries
+Pledges with equal sort values are ordered by ID descending, regardless of
+`sortOrder`, to keep page boundaries
 stable. Numeric enum values and abbreviations such as `asc` are rejected. For
 example: `GET /pledges/pledger/{pledgerId}?page=2&pageSize=10&sortBy=Amount&sortOrder=Ascending`.
 
@@ -92,6 +82,29 @@ example: `GET /pledges/pledger/{pledgerId}?page=2&pageSize=10&sortBy=Amount&sort
 | `pledgerId` is the empty GUID | `400 Bad Request` with title `Invalid pledger ID` |
 | `pledgeCategoryId` is the empty GUID | `400 Bad Request` with title `Invalid pledge category ID` |
 | Invalid query parameters, or a query the service rejects | `400 Bad Request` with title `Invalid pledge query` |
+| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+
+## GET /pledges/{id}
+
+Returns `200 OK` with a single pledge:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | UUID | Pledge identity |
+| `year` | integer | Pledge year (2020-2099) |
+| `amount` | decimal | Pledged amount |
+| `pledgerId` | UUID | Associated pledger |
+| `pledgeCategoryId` | UUID | Associated pledge category |
+| `comment` | string or `null` | Optional comment |
+| `createdAt` | UTC timestamp | Creation time |
+| `updatedAt` | UTC timestamp | Last update time |
+
+| Condition | Response |
+| --- | --- |
+| Pledge exists | `200 OK` with pledge details |
+| No pledge with that ID | `404 Not Found` |
+| `id` is not a GUID | `404 Not Found` (route does not match) |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge ID` |
 | Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## PUT /pledges/{id}
@@ -137,7 +150,7 @@ Removes the pledge with the given ID. There is no request body.
 | `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge ID` |
 | Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
-The not-found case is detected when the repository throws
-`KeyNotFoundException`, which the endpoint translates into `404 Not Found`.
+The repository throws `KeyNotFoundException` for an unknown ID (passed through
+by the service), which the endpoint translates into `404 Not Found`.
 
 Removing a pledge does not remove its pledge payments.

@@ -32,4 +32,32 @@ public sealed class RemoveAsyncTests
 
         Assert.Same(exception, result);
     }
+
+    [Fact]
+    public async Task RemoveAsync_when_repository_cancels_propagates_cancellation()
+    {
+        var fixture = new PledgePaymentServiceTestFixture();
+        var id = PledgePaymentId.New();
+        using var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationToken = cancellationTokenSource.Token;
+        A.CallTo(() => fixture.Repository.RemoveAsync(id, cancellationToken))
+            .ThrowsAsync(new OperationCanceledException(cancellationToken));
+
+        var exception = await Assert.ThrowsAsync<OperationCanceledException>(
+            () => fixture.Service.RemoveAsync(id, cancellationToken));
+
+        Assert.Equal(cancellationToken, exception.CancellationToken);
+    }
+
+    [Fact]
+    public async Task RemoveAsync_with_empty_id_throws_without_calling_repository()
+    {
+        var fixture = new PledgePaymentServiceTestFixture();
+
+        await Assert.ThrowsAsync<ArgumentException>(
+            () => fixture.Service.RemoveAsync(default));
+
+        A.CallTo(() => fixture.Repository.RemoveAsync(A<PledgePaymentId>._, A<CancellationToken>._))
+            .MustNotHaveHappened();
+    }
 }

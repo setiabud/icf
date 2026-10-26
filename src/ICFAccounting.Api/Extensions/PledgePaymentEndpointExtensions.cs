@@ -173,20 +173,22 @@ public static class PledgePaymentEndpointExtensions
                 detail: "Pledge payment ID cannot be empty.");
         }
 
-        if (request.Amount is not { } amount
+        if (request.PledgeId is not { } pledgeId
+            || request.Amount is not { } amount
             || request.PaymentDate is not { } paymentDate
             || request.Active is not { } active)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment update",
-                detail: "Amount, PaymentDate, and Active are required.");
+                detail: "PledgeId, Amount, PaymentDate, and Active are required.");
         }
 
         try
         {
             var pledgePayment = await pledgePaymentService.UpdateAsync(
-                new PledgePaymentId(id), amount, paymentDate, request.Comment, active, cancellationToken);
+                new PledgePaymentId(id), new PledgeId(pledgeId), amount, paymentDate,
+                request.Comment, active, cancellationToken);
             return pledgePayment is null
                 ? Results.NotFound()
                 : Results.Ok(ToPledgePaymentResponse(pledgePayment));

@@ -97,6 +97,8 @@ public sealed class PledgeService : IPledgeService
         CancellationToken cancellationToken = default)
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge");
+        ServiceGuard.ThrowIfEmptyId(pledgerId, "Pledger");
+        ServiceGuard.ThrowIfEmptyId(pledgeCategoryId, "Pledge category");
 
         var pledge = await _pledgeRepository.GetByIdAsync(id, cancellationToken);
         if (pledge is null)
