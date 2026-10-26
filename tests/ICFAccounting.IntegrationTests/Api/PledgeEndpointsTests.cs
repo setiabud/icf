@@ -15,11 +15,133 @@ namespace ICFAccounting.IntegrationTests.Api;
 
 public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
 {
+    private const string ValidPledgerId = "6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01";
+    private const string ValidCategoryId = "6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02";
+    private const string EmptyGuid = "00000000-0000-0000-0000-000000000000";
+
     private readonly WebApplicationFactory<Program> _factory;
 
     public PledgeEndpointsTests(WebApplicationFactory<Program> factory)
     {
         _factory = factory;
+    }
+
+    [Fact]
+    public async Task Post_with_valid_request_returns_created_details_and_location()
+    {
+        using var factory = CreateIsolatedFactory();
+        using var client = CreateClient(factory, allowAutoRedirect: false);
+        var request = new CreatePledgeRequest
+        {
+            Year = 2026,
+            Amount = 125.50m,
+            PledgerId = Guid.NewGuid(),
+            PledgeCategoryId = Guid.NewGuid(),
+            Comment = "  Annual pledge  "
+        };
+        var beforeRequest = DateTime.UtcNow;
+
+        using var response = await client.PostAsJsonAsync("/pledges", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PledgeResponse>();
+        Assert.NotNull(result);
+        Assert.NotEqual(Guid.Empty, result.Id);
+        Assert.Equal(request.Year, result.Year);
+        Assert.Equal(request.Amount, result.Amount);
+        Assert.Equal(request.PledgerId, result.PledgerId);
+        Assert.Equal(request.PledgeCategoryId, result.PledgeCategoryId);
+        Assert.Equal("Annual pledge", result.Comment);
+        Assert.InRange(result.CreatedAt, beforeRequest, DateTime.UtcNow);
+        Assert.Equal(result.CreatedAt, result.UpdatedAt);
+        Assert.Equal($"/pledges/{result.Id}", response.Headers.Location?.OriginalString);
+
+        using var scope = factory.Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
+        var storedPledge = await repository.GetByIdAsync(new PledgeId(result.Id), CancellationToken.None);
+        Assert.NotNull(storedPledge);
+        Assert.Equal(request.Amount, storedPledge.Amount);
+        Assert.Equal(result.CreatedAt, storedPledge.CreatedAt);
+    }
+
+    [Fact]
+    public async Task Post_then_get_by_location_returns_created_pledge()
+    {
+        using var factory = CreateIsolatedFactory();
+        using var client = CreateClient(factory, allowAutoRedirect: false);
+
+        using var postResponse = await client.PostAsJsonAsync("/pledges", CreateValidCreateRequest());
+        using var getResponse = await client.GetAsync(postResponse.Headers.Location);
+
+        Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+        var created = await postResponse.Content.ReadFromJsonAsync<PledgeResponse>();
+        var retrieved = await getResponse.Content.ReadFromJsonAsync<PledgeResponse>();
+        Assert.Equal(created, retrieved);
+    }
+
+    [Theory]
+    [InlineData(2019, "100", ValidPledgerId, ValidCategoryId, "Year must be between 2020 and 2099.")]
+    [InlineData(2100, "100", ValidPledgerId, ValidCategoryId, "Year must be between 2020 and 2099.")]
+    [InlineData(2026, "0", ValidPledgerId, ValidCategoryId, "Amount must be greater than zero.")]
+    [InlineData(2026, "-5", ValidPledgerId, ValidCategoryId, "Amount must be greater than zero.")]
+    [InlineData(2026, "1.001", ValidPledgerId, ValidCategoryId, "Amount must have at most two decimal places.")]
+    [InlineData(2026, "100", EmptyGuid, ValidCategoryId, "Pledger ID cannot be empty.")]
+    [InlineData(2026, "100", ValidPledgerId, EmptyGuid, "Pledge category ID cannot be empty.")]
+    public async Task Post_with_invalid_values_returns_bad_request_without_creating(
+        int year, string amount, string pledgerId, string pledgeCategoryId, string expectedDetail)
+    {
+        using var factory = CreateIsolatedFactory();
+        using var client = CreateClient(factory, allowAutoRedirect: false);
+        var json = $$"""{"year":{{year}},"amount":{{amount}},"pledgerId":"{{pledgerId}}","pledgeCategoryId":"{{pledgeCategoryId}}"}""";
+        using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        using var response = await client.PostAsync("/pledges", content);
+
+        var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
+        Assert.Equal("Invalid pledge", problem.Title);
+        Assert.Equal(expectedDetail, problem.Detail);
+        Assert.Null(response.Headers.Location);
+        using var scope = factory.Services.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
+        var stored = await repository.GetByCategoryAsync(
+            new PledgeCategoryId(Guid.Parse(ValidCategoryId)), cancellationToken: CancellationToken.None);
+        Assert.Equal(0, stored.TotalCount);
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("""{"amount":100,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01","pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}""")]
+    [InlineData("""{"year":2026,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01","pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}""")]
+    [InlineData("""{"year":2026,"amount":100,"pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}""")]
+    [InlineData("""{"year":2026,"amount":100,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01"}""")]
+    [InlineData("not json")]
+    public async Task Post_with_missing_fields_or_malformed_body_returns_bad_request(string json)
+    {
+        using var client = CreateClient(_factory, allowAutoRedirect: false);
+        using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+        using var response = await client.PostAsync("/pledges", content);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Null(response.Headers.Location);
+    }
+
+    [Fact]
+    public async Task Post_when_repository_fails_returns_sanitized_internal_server_error()
+    {
+        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var client = CreateClient(factory, allowAutoRedirect: false);
+
+        using var response = await client.PostAsJsonAsync("/pledges", CreateValidCreateRequest());
+
+        var body = await response.Content.ReadAsStringAsync();
+        var problem = await AssertProblemAsync(response, HttpStatusCode.InternalServerError);
+        Assert.Equal("An unexpected error occurred", problem.Title);
+        Assert.Equal("Pledge could not be created.", problem.Detail);
+        Assert.Null(response.Headers.Location);
+        Assert.DoesNotContain("Internal repository failure", body);
+        Assert.DoesNotContain(nameof(InvalidOperationException), body);
     }
 
     [Fact]
@@ -526,6 +648,17 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         Assert.Equal("Pledge could not be removed.", problem.Detail);
         Assert.DoesNotContain("Internal repository failure", body);
         Assert.DoesNotContain(nameof(InvalidOperationException), body);
+    }
+
+    private static CreatePledgeRequest CreateValidCreateRequest()
+    {
+        return new CreatePledgeRequest
+        {
+            Year = 2026,
+            Amount = 100m,
+            PledgerId = PledgerId.New().Value,
+            PledgeCategoryId = PledgeCategoryId.New().Value
+        };
     }
 
     private static UpdatePledgeRequest CreateValidUpdateRequest()

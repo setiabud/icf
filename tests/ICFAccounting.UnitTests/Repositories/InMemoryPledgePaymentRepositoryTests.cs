@@ -151,6 +151,47 @@ public sealed class InMemoryPledgePaymentRepositoryTests
     }
 
     [Fact]
+    public async Task GetByPledgeAsync_with_page_beyond_end_returns_empty_items_with_totals()
+    {
+        var repository = CreateRepository();
+        await repository.AddAsync(CreatePayment(PledgeA, 100m, new DateTime(2026, 1, 1)));
+        await repository.AddAsync(CreatePayment(PledgeA, 200m, new DateTime(2026, 1, 2)));
+
+        var result = await repository.GetByPledgeAsync(PledgeA, new PledgePaymentQuery(page: 3, pageSize: 2));
+
+        Assert.Empty(result.Items);
+        Assert.Equal(3, result.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(1, result.TotalPages);
+    }
+
+    [Theory]
+    [InlineData(PledgePaymentSortBy.PaymentDate)]
+    [InlineData(PledgePaymentSortBy.Amount)]
+    public async Task GetByPledgeAsync_with_equal_sort_values_orders_by_id_descending(PledgePaymentSortBy sortBy)
+    {
+        var repository = CreateRepository();
+        var payments = Enumerable.Range(0, 5)
+            .Select(_ => CreatePayment(PledgeA, 100m, new DateTime(2026, 1, 1)))
+            .ToList();
+        foreach (var payment in payments)
+        {
+            await repository.AddAsync(payment);
+        }
+
+        var firstPage = await repository.GetByPledgeAsync(
+            PledgeA, new PledgePaymentQuery(page: 1, pageSize: 3, sortBy: sortBy, sortOrder: SortOrder.Ascending));
+        var secondPage = await repository.GetByPledgeAsync(
+            PledgeA, new PledgePaymentQuery(page: 2, pageSize: 3, sortBy: sortBy, sortOrder: SortOrder.Ascending));
+
+        var expectedIds = payments.Select(payment => payment.Id.Value).OrderByDescending(id => id);
+        Assert.Equal(
+            expectedIds,
+            firstPage.Items.Concat(secondPage.Items).Select(payment => payment.Id.Value));
+    }
+
+    [Fact]
     public async Task AddAsync_with_canceled_token_throws_without_adding_payment()
     {
         var repository = CreateRepository();

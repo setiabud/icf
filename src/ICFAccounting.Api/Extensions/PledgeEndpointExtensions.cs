@@ -11,6 +11,13 @@ public static class PledgeEndpointExtensions
 {
     public static void MapPledgeEndpoints(this WebApplication app)
     {
+        app.MapPost("/pledges", CreatePledgeAsync)
+            .WithName("CreatePledge")
+            .WithSummary("Create a pledge")
+            .Produces<PledgeResponse>(StatusCodes.Status201Created)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
         app.MapGet("/pledges/{id:guid}", GetPledgeByIdAsync)
             .WithName("GetPledgeById")
             .WithSummary("Get a pledge by ID")
@@ -48,6 +55,41 @@ public static class PledgeEndpointExtensions
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+    }
+
+    private static async Task<IResult> CreatePledgeAsync(
+        CreatePledgeRequest request,
+        IPledgeService pledgeService,
+        ILogger<Program> logger,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var pledge = Pledge.Create(
+                request.Year,
+                request.Amount,
+                new PledgerId(request.PledgerId),
+                new PledgeCategoryId(request.PledgeCategoryId),
+                request.Comment);
+            await pledgeService.AddAsync(pledge, cancellationToken);
+
+            return Results.Created($"/pledges/{pledge.Id.Value}", ToPledgeResponse(pledge));
+        }
+        catch (ArgumentException exception)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid pledge",
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "An unexpected error occurred while creating a pledge.");
+            return Results.Problem(
+                statusCode: StatusCodes.Status500InternalServerError,
+                title: "An unexpected error occurred",
+                detail: "Pledge could not be created.");
+        }
     }
 
     private static async Task<IResult> GetPledgesByPledgerAsync(

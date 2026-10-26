@@ -7,6 +7,19 @@ Accept: application/json
 
 @pledgeId = 00000000-0000-0000-0000-000000000001
 
+POST {{ICFAccounting.Api_HostAddress}}/pledges
+Content-Type: application/json
+
+{
+	"year": 2026,
+	"amount": 100.00,
+	"pledgerId": "00000000-0000-0000-0000-000000000002",
+	"pledgeCategoryId": "00000000-0000-0000-0000-000000000003",
+	"comment": "Annual pledge"
+}
+
+###
+
 GET {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
 Accept: application/json
 
@@ -40,6 +53,47 @@ Content-Type: application/json
 ###
 
 DELETE {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
+Accept: application/json
+
+###
+
+@pledgePaymentId = 00000000-0000-0000-0000-000000000006
+
+POST {{ICFAccounting.Api_HostAddress}}/pledge-payments
+Content-Type: application/json
+
+{
+	"pledgeId": "{{pledgeId}}",
+	"amount": 50.00,
+	"paymentDate": "2026-01-20T00:00:00",
+	"comment": "Monthly payment"
+}
+
+###
+
+GET {{ICFAccounting.Api_HostAddress}}/pledge-payments/{{pledgePaymentId}}
+Accept: application/json
+
+###
+
+GET {{ICFAccounting.Api_HostAddress}}/pledge-payments/pledge/{{pledgeId}}?page=1&pageSize=20&sortBy=PaymentDate&sortOrder=Descending
+Accept: application/json
+
+###
+
+PUT {{ICFAccounting.Api_HostAddress}}/pledge-payments/{{pledgePaymentId}}
+Content-Type: application/json
+
+{
+	"amount": 50.00,
+	"paymentDate": "2026-01-20T00:00:00",
+	"comment": "Monthly payment",
+	"active": true
+}
+
+###
+
+DELETE {{ICFAccounting.Api_HostAddress}}/pledge-payments/{{pledgePaymentId}}
 Accept: application/json
 
 ###

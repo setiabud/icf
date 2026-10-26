@@ -12,5 +12,6 @@ public static class EndpointExtensions
         app.MapPledgerEndpoints();
         app.MapPledgeCategoryEndpoints();
         app.MapPledgeEndpoints();
+        app.MapPledgePaymentEndpoints();
     }
 }

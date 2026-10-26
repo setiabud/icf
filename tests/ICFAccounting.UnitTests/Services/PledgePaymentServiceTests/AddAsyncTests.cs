@@ -28,4 +28,19 @@ public sealed class AddAsyncTests
                 A<CancellationToken>._))
             .MustNotHaveHappened();
     }
+
+    [Fact]
+    public async Task AddAsync_when_repository_fails_propagates_exception()
+    {
+        var fixture = new PledgePaymentServiceTestFixture();
+        var payment = PledgePaymentServiceTestFixture.CreatePayment();
+        var exception = new InvalidOperationException("Repository failure.");
+        A.CallTo(() => fixture.Repository.AddAsync(payment, A<CancellationToken>._))
+            .ThrowsAsync(exception);
+
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => fixture.Service.AddAsync(payment));
+
+        Assert.Same(exception, result);
+    }
 }
