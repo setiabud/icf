@@ -4,8 +4,9 @@
 
 These apply to every endpoint below.
 
-- Data is stored in an in-memory repository and is lost when the application restarts.
+- Data is persisted in SQL Server and survives application restarts.
 - Error responses use a ProblemDetails body (`application/problem+json`).
+- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; SQL internals are not exposed.
 - A route ID that is not a GUID returns `404 Not Found` because the route does not match.
 - Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
 - Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
@@ -14,8 +15,8 @@ These apply to every endpoint below.
 
 ## POST /pledges
 
-Creates a pledge. The referenced pledger and pledge category are not checked
-for existence.
+Creates a pledge. Both the referenced pledger and pledge category must exist;
+SQL foreign keys enforce these relationships.
 
 Request:
 
@@ -42,6 +43,7 @@ same fields as `GET /pledges/{id}`, with `updatedAt` equal to `createdAt`.
 | Pledge created | `201 Created` with pledge details and `Location` header |
 | A required field is missing or the body is malformed | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs, so there is no custom title) |
 | A field value is rejected by the domain or service | `400 Bad Request` with title `Invalid pledge` and the validation message as `detail` |
+| The referenced pledger or pledge category does not exist | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no pledge is created |
 | Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## GET /pledges/pledger/{pledgerId}
@@ -70,7 +72,7 @@ the requested page and the collection's totals.
 | `sortBy` | `Year` | `Year`, `Amount` (case-insensitive) |
 | `sortOrder` | `Descending` | `Ascending`, `Descending` (case-insensitive) |
 
-Pledges with equal sort values are ordered by ID descending, regardless of
+Pledges with equal sort values are ordered by native SQL Server GUID order descending, regardless of
 `sortOrder`, to keep page boundaries
 stable. Numeric enum values and abbreviations such as `asc` are rejected. For
 example: `GET /pledges/pledger/{pledgerId}?page=2&pageSize=10&sortBy=Amount&sortOrder=Ascending`.
@@ -136,6 +138,7 @@ rather than a deserialization error.
 | `id` is not a GUID | `404 Not Found` (route does not match) |
 | `id` is the empty GUID | `400 Bad Request` with title `Invalid pledge ID` |
 | A required field is missing, an ID in the body is empty, or the domain or service rejects the update | `400 Bad Request` with title `Invalid pledge update` |
+| The referenced pledger or pledge category does not exist | `409 Conflict` with sanitized relationship-conflict ProblemDetails; the stored pledge is unchanged |
 | Unexpected update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## DELETE /pledges/{id}
@@ -148,9 +151,10 @@ Removes the pledge with the given ID. There is no request body.
 | No pledge with that ID, including one already removed | `404 Not Found` |
 | `id` is not a GUID | `404 Not Found` (route does not match) |
 | `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge ID` |
+| Payments reference the pledge | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no related records are removed |
 | Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 The repository throws `KeyNotFoundException` for an unknown ID (passed through
 by the service), which the endpoint translates into `404 Not Found`.
 
-Removing a pledge does not remove its pledge payments.
+Remove its payments before deleting a pledge. Deletes do not cascade.

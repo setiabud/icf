@@ -1,26 +1,22 @@
 using System.Net;
 using System.Net.Http.Json;
-using ICFAccounting.Api;
 using ICFAccounting.Api.Models;
 using ICFAccounting.Api.Models.PledgerModels;
 using ICFAccounting.Application.Services;
-using ICFAccounting.Data.Repositories;
 using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Repositories;
+using ICFAccounting.IntegrationTests.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection(nameof(SqlServerTestCollection))]
+public sealed class PledgerEndpointsTests : SqlServerApiTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public PledgerEndpointsTests(WebApplicationFactory<Program> factory)
+    public PledgerEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
     {
-        _factory = factory;
     }
 
     [Fact]
@@ -606,12 +602,6 @@ public sealed class PledgerEndpointsTests : IClassFixture<WebApplicationFactory<
     {
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.False(string.IsNullOrWhiteSpace(problem.Title));
-    }
-
-    private WebApplicationFactory<Program> CreateIsolatedFactory()
-    {
-        return _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgerRepository, InMemoryPledgerRepository>()));
     }
 
     private sealed class FailingPledgerRepository : IPledgerRepository

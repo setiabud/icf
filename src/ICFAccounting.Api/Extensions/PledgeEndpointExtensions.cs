@@ -4,6 +4,7 @@ using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.PledgeCategories;
 using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Pledges;
+using ICFAccounting.Domain.Repositories;
 
 namespace ICFAccounting.Api.Extensions;
 
@@ -16,6 +17,7 @@ public static class PledgeEndpointExtensions
             .WithSummary("Create a pledge")
             .Produces<PledgeResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         app.MapGet("/pledges/{id:guid}", GetPledgeByIdAsync)
@@ -46,6 +48,7 @@ public static class PledgeEndpointExtensions
             .Produces<PledgeResponse>()
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         app.MapDelete("/pledges/{id:guid}", RemovePledgeAsync)
@@ -54,6 +57,7 @@ public static class PledgeEndpointExtensions
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
@@ -74,6 +78,10 @@ public static class PledgeEndpointExtensions
             await pledgeService.AddAsync(pledge, cancellationToken);
 
             return Results.Created($"/pledges/{pledge.Id.Value}", ToPledgeResponse(pledge));
+        }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
         }
         catch (ArgumentException exception)
         {
@@ -294,6 +302,10 @@ public static class PledgeEndpointExtensions
                 ? Results.NotFound()
                 : Results.Ok(ToPledgeResponse(pledge));
         }
+            catch (RelationshipConflictException exception)
+            {
+                return ProblemDetailsHelpers.RelationshipConflict(exception);
+            }
         catch (ArgumentException exception)
         {
             return Results.Problem(
@@ -367,6 +379,10 @@ public static class PledgeEndpointExtensions
         {
             await pledgeService.RemoveAsync(new PledgeId(id), cancellationToken);
             return Results.NoContent();
+        }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
         }
         catch (KeyNotFoundException)
         {

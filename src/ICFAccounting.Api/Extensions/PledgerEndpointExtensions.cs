@@ -3,6 +3,7 @@ using ICFAccounting.Api.Models.PledgerModels;
 using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.Pledgers;
+using ICFAccounting.Domain.Repositories;
 
 namespace ICFAccounting.Api.Extensions;
 
@@ -46,6 +47,7 @@ public static class PledgerEndpointExtensions
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
@@ -67,6 +69,10 @@ public static class PledgerEndpointExtensions
         {
             await pledgerService.RemoveAsync(new PledgerId(id), cancellationToken);
             return Results.NoContent();
+        }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
         }
         catch (KeyNotFoundException)
         {

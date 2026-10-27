@@ -24,7 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ICFAccounting.Application\ICFAccounting.Application.csproj" />
     <ProjectReference Include="..\..\src\ICFAccounting.Domain\ICFAccounting.Domain.csproj" />
-    <ProjectReference Include="..\..\src\ICFAccounting.Data\ICFAccounting.Data.csproj" />
   </ItemGroup>
 
 </Project>

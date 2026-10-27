@@ -3,6 +3,7 @@ using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.PledgePayments;
 using ICFAccounting.Domain.Pledges;
+using ICFAccounting.Domain.Repositories;
 
 namespace ICFAccounting.Api.Extensions;
 
@@ -15,6 +16,7 @@ public static class PledgePaymentEndpointExtensions
             .WithSummary("Create a pledge payment")
             .Produces<PledgePaymentResponse>(StatusCodes.Status201Created)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         app.MapGet("/pledge-payments/{id:guid}", GetPledgePaymentByIdAsync)
@@ -38,6 +40,7 @@ public static class PledgePaymentEndpointExtensions
             .Produces<PledgePaymentResponse>()
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         app.MapDelete("/pledge-payments/{id:guid}", RemovePledgePaymentAsync)
@@ -64,6 +67,10 @@ public static class PledgePaymentEndpointExtensions
             return Results.Created(
                 $"/pledge-payments/{pledgePayment.Id.Value}", ToPledgePaymentResponse(pledgePayment));
         }
+            catch (RelationshipConflictException exception)
+            {
+                return ProblemDetailsHelpers.RelationshipConflict(exception);
+            }
         catch (ArgumentException exception)
         {
             return Results.Problem(
@@ -193,6 +200,10 @@ public static class PledgePaymentEndpointExtensions
                 ? Results.NotFound()
                 : Results.Ok(ToPledgePaymentResponse(pledgePayment));
         }
+            catch (RelationshipConflictException exception)
+            {
+                return ProblemDetailsHelpers.RelationshipConflict(exception);
+            }
         catch (ArgumentException exception)
         {
             return Results.Problem(

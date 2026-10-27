@@ -4,8 +4,9 @@
 
 These apply to every endpoint below.
 
-- Data is stored in an in-memory repository and is lost when the application restarts.
+- Data is persisted in SQL Server and survives application restarts.
 - Error responses use a ProblemDetails body (`application/problem+json`).
+- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; SQL internals are not exposed.
 - A route ID that is not a GUID returns `404 Not Found` because the route does not match.
 - Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
 - Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
@@ -14,8 +15,8 @@ These apply to every endpoint below.
 
 ## POST /pledge-payments
 
-Creates an active pledge payment. The referenced pledge is not checked for
-existence.
+Creates an active pledge payment. The referenced pledge must exist; a SQL
+foreign key enforces the relationship.
 
 Request:
 
@@ -44,6 +45,7 @@ and the same fields as `GET /pledge-payments/{id}`, with `active` set to
 | Payment created | `201 Created` with payment details and `Location` header |
 | A required field is missing or the body is malformed | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs, so there is no custom title) |
 | A field value is rejected by the domain or service | `400 Bad Request` with title `Invalid pledge payment` and the validation message as `detail` |
+| The referenced pledge does not exist | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no payment is created |
 | Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## GET /pledge-payments/pledge/{pledgeId}
@@ -70,7 +72,7 @@ the requested page and the collection's totals.
 | `sortBy` | `PaymentDate` | `PaymentDate`, `Amount` (case-insensitive) |
 | `sortOrder` | `Descending` | `Ascending`, `Descending` (case-insensitive) |
 
-Payments with equal sort values are ordered by ID descending, regardless of
+Payments with equal sort values are ordered by native SQL Server GUID order descending, regardless of
 `sortOrder`, to keep page boundaries
 stable. Numeric enum values and abbreviations such as `asc` are rejected. For
 example: `GET /pledge-payments/pledge/{pledgeId}?page=2&pageSize=10&sortBy=Amount&sortOrder=Ascending`.
@@ -109,7 +111,7 @@ Returns `200 OK` with a single pledge payment:
 ## PUT /pledge-payments/{id}
 
 Updates an existing payment's pledge association, amount, payment date, comment,
-and active flag. The referenced pledge is not checked for existence. `updatedAt`
+and active flag. The referenced pledge must exist. `updatedAt`
 is set to the current UTC time; `id` and `createdAt` are unchanged.
 
 Request:
@@ -134,6 +136,7 @@ same rules as `POST /pledge-payments`; `comment` is optional.
 | `id` is not a GUID | `404 Not Found` (route does not match) |
 | `id` is the empty GUID | `400 Bad Request` with title `Invalid pledge payment ID` |
 | A required field is missing, or the domain or service rejects the update | `400 Bad Request` with title `Invalid pledge payment update` |
+| The referenced pledge does not exist | `409 Conflict` with sanitized relationship-conflict ProblemDetails; the stored payment is unchanged |
 | Unexpected update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## DELETE /pledge-payments/{id}

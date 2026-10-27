@@ -1,25 +1,21 @@
 using System.Net;
 using System.Net.Http.Json;
-using ICFAccounting.Api;
 using ICFAccounting.Api.Models.PledgeCategoryModels;
 using ICFAccounting.Application.Services;
-using ICFAccounting.Data.Repositories;
 using ICFAccounting.Domain.PledgeCategories;
 using ICFAccounting.Domain.Repositories;
+using ICFAccounting.IntegrationTests.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-public sealed class PledgeCategoryEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection(nameof(SqlServerTestCollection))]
+public sealed class PledgeCategoryEndpointsTests : SqlServerApiTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public PledgeCategoryEndpointsTests(WebApplicationFactory<Program> factory)
+    public PledgeCategoryEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
     {
-        _factory = factory;
     }
 
     [Fact]
@@ -515,12 +511,6 @@ public sealed class PledgeCategoryEndpointsTests : IClassFixture<WebApplicationF
         Assert.Equal("Pledge category could not be removed.", problem.Detail);
         Assert.DoesNotContain("Internal repository failure", body);
         Assert.DoesNotContain(nameof(InvalidOperationException), body);
-    }
-
-    private WebApplicationFactory<Program> CreateIsolatedFactory()
-    {
-        return _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeCategoryRepository, InMemoryPledgeCategoryRepository>()));
     }
 
     private sealed class FailingPledgeCategoryRepository : IPledgeCategoryRepository

@@ -1,6 +1,7 @@
 using ICFAccounting.Api.Models.PledgeCategoryModels;
 using ICFAccounting.Application.Services;
 using ICFAccounting.Domain.PledgeCategories;
+using ICFAccounting.Domain.Repositories;
 
 namespace ICFAccounting.Api.Extensions;
 
@@ -44,6 +45,7 @@ public static class PledgeCategoryEndpointExtensions
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status409Conflict)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
     }
 
@@ -131,6 +133,10 @@ public static class PledgeCategoryEndpointExtensions
         {
             await pledgeCategoryService.RemoveAsync(new PledgeCategoryId(id), cancellationToken);
             return Results.NoContent();
+        }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
         }
         catch (KeyNotFoundException)
         {

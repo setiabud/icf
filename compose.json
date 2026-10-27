@@ -1,0 +1,31 @@
+{
+  "services": {
+    "sqlserver": {
+      "image": "mcr.microsoft.com/mssql/server:2022-CU24-ubuntu-22.04",
+      "environment": {
+        "ACCEPT_EULA": "Y",
+        "MSSQL_PID": "Developer",
+        "MSSQL_SA_PASSWORD": "${MSSQL_SA_PASSWORD:?Set MSSQL_SA_PASSWORD to a strong local development password}"
+      },
+      "ports": [
+        "127.0.0.1:${MSSQL_PORT:-1433}:1433"
+      ],
+      "volumes": [
+        "sqlserver-data:/var/opt/mssql"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "SQLCMDPASSWORD=\"$${MSSQL_SA_PASSWORD}\" /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -l 5 -Q \"SELECT 1\" > /dev/null"
+        ],
+        "interval": "10s",
+        "timeout": "10s",
+        "retries": 12,
+        "start_period": "30s"
+      }
+    }
+  },
+  "volumes": {
+    "sqlserver-data": {}
+  }
+}

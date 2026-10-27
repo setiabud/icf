@@ -1,24 +1,34 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using ICFAccounting.Api;
 using ICFAccounting.Api.Models.PledgePaymentModels;
-using ICFAccounting.Data.Repositories;
+using ICFAccounting.Data;
+using ICFAccounting.Domain.PledgeCategories;
 using ICFAccounting.Domain.PledgePayments;
+using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Pledges;
 using ICFAccounting.Domain.Repositories;
+using ICFAccounting.IntegrationTests.Data;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection(nameof(SqlServerTestCollection))]
+public sealed class PledgePaymentEndpointsTests : SqlServerApiTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly Pledger _pledger = Pledger.Create("Payment test pledger");
+    private readonly PledgeCategory _category = PledgeCategory.Create("Payment test category");
+    private readonly Pledge _pledge;
+    private readonly Pledge _otherPledge;
 
-    public PledgePaymentEndpointsTests(WebApplicationFactory<Program> factory)
+    public PledgePaymentEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
     {
-        _factory = factory;
+        _pledge = Pledge.Create(2026, 1000m, _pledger.Id, _category.Id);
+        _otherPledge = Pledge.Create(2025, 1000m, _pledger.Id, _category.Id);
     }
 
     [Fact]
@@ -28,7 +38,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         using var client = CreateClient(factory, allowAutoRedirect: false);
         var request = new CreatePledgePaymentRequest
         {
-            PledgeId = Guid.NewGuid(),
+            PledgeId = _pledge.Id.Value,
             Amount = 125.50m,
             PaymentDate = new DateTime(2026, 1, 20),
             Comment = "  Monthly payment  "
@@ -140,7 +150,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
-        var payment = PledgePayment.Create(PledgeId.New(), 125.50m, new DateTime(2026, 1, 10), "Monthly payment");
+        var payment = PledgePayment.Create(_pledge.Id, 125.50m, new DateTime(2026, 1, 10), "Monthly payment");
         await repository.AddAsync(payment, CancellationToken.None);
 
         using var response = await client.GetAsync($"/pledge-payments/{payment.Id.Value}");
@@ -251,7 +261,8 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePaymentPageResponse>();
         Assert.NotNull(result);
-        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(payment => payment.Amount)));
+        Assert.Equal(expectedAmounts.Split(',').Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
+            result.Items.Select(payment => payment.Amount));
     }
 
     [Fact]
@@ -270,7 +281,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         Assert.Equal(20, result.PageSize);
         Assert.Equal(3, result.TotalCount);
         Assert.Equal(1, result.TotalPages);
-        Assert.Equal("100,50,150", string.Join(",", result.Items.Select(payment => payment.Amount)));
+        Assert.Equal([100m, 50m, 150m], result.Items.Select(payment => payment.Amount));
     }
 
     [Fact]
@@ -353,8 +364,8 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
-        var payment = PledgePayment.Create(PledgeId.New(), 100m, new DateTime(2026, 1, 10), "Original");
-        var updatedPledgeId = PledgeId.New();
+        var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
+        var updatedPledgeId = _otherPledge.Id;
         var createdAt = payment.CreatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
         var request = new UpdatePledgePaymentRequest
@@ -438,7 +449,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
-        var payment = PledgePayment.Create(PledgeId.New(), 100m, new DateTime(2026, 1, 10), "Original");
+        var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
         var originalUpdatedAt = payment.UpdatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
@@ -482,7 +493,7 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
-        var payment = PledgePayment.Create(PledgeId.New(), 100m, new DateTime(2026, 1, 10), "Original");
+        var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
         await repository.AddAsync(payment, CancellationToken.None);
 
         using var response = await client.DeleteAsync($"/pledge-payments/{payment.Id.Value}");
@@ -542,32 +553,38 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         Assert.DoesNotContain(nameof(InvalidOperationException), body);
     }
 
-    private static CreatePledgePaymentRequest CreateValidCreateRequest()
+    protected override async Task SeedAsync(ICFAccountingDbContext context)
+    {
+        context.AddRange(_pledger, _category, _pledge, _otherPledge);
+        await context.SaveChangesAsync();
+    }
+
+    private CreatePledgePaymentRequest CreateValidCreateRequest()
     {
         return new CreatePledgePaymentRequest
         {
-            PledgeId = Guid.NewGuid(),
+            PledgeId = _pledge.Id.Value,
             Amount = 100m,
             PaymentDate = new DateTime(2026, 1, 20)
         };
     }
 
-    private static UpdatePledgePaymentRequest CreateValidUpdateRequest()
+    private UpdatePledgePaymentRequest CreateValidUpdateRequest()
     {
         return new UpdatePledgePaymentRequest
         {
-            PledgeId = Guid.NewGuid(),
+            PledgeId = _otherPledge.Id.Value,
             Amount = 100m,
             PaymentDate = new DateTime(2026, 1, 20),
             Active = true
         };
     }
 
-    private static async Task<PledgeId> SeedPaymentsAsync(WebApplicationFactory<Program> factory)
+    private async Task<PledgeId> SeedPaymentsAsync(WebApplicationFactory<Program> factory)
     {
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
-        var pledgeId = PledgeId.New();
+        var pledgeId = _pledge.Id;
         foreach (var (amount, paymentDate) in new[]
         {
             (100m, new DateTime(2026, 1, 3)),
@@ -580,14 +597,8 @@ public sealed class PledgePaymentEndpointsTests : IClassFixture<WebApplicationFa
         }
 
         await repository.AddAsync(
-            PledgePayment.Create(PledgeId.New(), 1m, new DateTime(2026, 1, 4)), CancellationToken.None);
+            PledgePayment.Create(_otherPledge.Id, 1m, new DateTime(2026, 1, 4)), CancellationToken.None);
         return pledgeId;
-    }
-
-    private WebApplicationFactory<Program> CreateIsolatedFactory()
-    {
-        return _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgePaymentRepository, InMemoryPledgePaymentRepository>()));
     }
 
     private sealed class FailingPledgePaymentRepository : IPledgePaymentRepository

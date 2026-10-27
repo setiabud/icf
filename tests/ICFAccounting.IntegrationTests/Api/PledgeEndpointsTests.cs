@@ -1,29 +1,33 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
-using ICFAccounting.Api;
 using ICFAccounting.Api.Models.PledgeModels;
-using ICFAccounting.Data.Repositories;
+using ICFAccounting.Data;
 using ICFAccounting.Domain.PledgeCategories;
 using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Pledges;
 using ICFAccounting.Domain.Repositories;
-using Microsoft.AspNetCore.Mvc.Testing;
+using ICFAccounting.IntegrationTests.Data;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<Program>>
+[Collection(nameof(SqlServerTestCollection))]
+public sealed class PledgeEndpointsTests : SqlServerApiTestBase
 {
     private const string ValidPledgerId = "6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01";
     private const string ValidCategoryId = "6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02";
     private const string EmptyGuid = "00000000-0000-0000-0000-000000000000";
 
-    private readonly WebApplicationFactory<Program> _factory;
+    private readonly Pledger _pledger = Pledger.Create("Test pledger");
+    private readonly Pledger _otherPledger = Pledger.Create("Other pledger");
+    private readonly PledgeCategory _category = PledgeCategory.Create("Test category");
+    private readonly PledgeCategory _otherCategory = PledgeCategory.Create("Other category");
 
-    public PledgeEndpointsTests(WebApplicationFactory<Program> factory)
+    public PledgeEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
     {
-        _factory = factory;
     }
 
     [Fact]
@@ -35,8 +39,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         {
             Year = 2026,
             Amount = 125.50m,
-            PledgerId = Guid.NewGuid(),
-            PledgeCategoryId = Guid.NewGuid(),
+            PledgerId = _pledger.Id.Value,
+            PledgeCategoryId = _category.Id.Value,
             Comment = "  Annual pledge  "
         };
         var beforeRequest = DateTime.UtcNow;
@@ -151,7 +155,7 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledge = Pledge.Create(2026, 125.50m, PledgerId.New(), PledgeCategoryId.New(), "Annual pledge");
+        var pledge = Pledge.Create(2026, 125.50m, _pledger.Id, _category.Id, "Annual pledge");
         await repository.AddAsync(pledge, CancellationToken.None);
 
         using var response = await client.GetAsync($"/pledges/{pledge.Id.Value}");
@@ -232,8 +236,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledgerId = PledgerId.New();
-        var categoryId = PledgeCategoryId.New();
+        var pledgerId = _pledger.Id;
+        var categoryId = _category.Id;
         foreach (var year in new[] { 2025, 2023, 2024 })
         {
             await repository.AddAsync(
@@ -241,7 +245,7 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         }
 
         await repository.AddAsync(
-            Pledge.Create(2026, 100m, PledgerId.New(), categoryId), CancellationToken.None);
+            Pledge.Create(2026, 100m, _otherPledger.Id, categoryId), CancellationToken.None);
 
         using var response = await client.GetAsync(
             $"/pledges/pledger/{pledgerId.Value}?page={page}&pageSize=1&sortBy=Year&sortOrder={sortOrder}");
@@ -307,8 +311,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledgerId = PledgerId.New();
-        var categoryId = PledgeCategoryId.New();
+        var pledgerId = _pledger.Id;
+        var categoryId = _category.Id;
         foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
         {
             await repository.AddAsync(
@@ -321,7 +325,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
         Assert.NotNull(result);
-        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(pledge => pledge.Amount)));
+        Assert.Equal(expectedAmounts.Split(',').Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
+            result.Items.Select(pledge => pledge.Amount));
     }
 
     [Theory]
@@ -335,8 +340,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var categoryId = PledgeCategoryId.New();
-        var pledgerId = PledgerId.New();
+        var categoryId = _category.Id;
+        var pledgerId = _pledger.Id;
         foreach (var year in new[] { 2025, 2023, 2024 })
         {
             await repository.AddAsync(
@@ -344,7 +349,7 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         }
 
         await repository.AddAsync(
-            Pledge.Create(2026, 100m, pledgerId, PledgeCategoryId.New()), CancellationToken.None);
+            Pledge.Create(2026, 100m, pledgerId, _otherCategory.Id), CancellationToken.None);
 
         using var response = await client.GetAsync(
             $"/pledges/pledge-category/{categoryId.Value}?page={page}&pageSize=1&sortBy=Year&sortOrder={sortOrder}");
@@ -411,8 +416,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var categoryId = PledgeCategoryId.New();
-        var pledgerId = PledgerId.New();
+        var categoryId = _category.Id;
+        var pledgerId = _pledger.Id;
         foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
         {
             await repository.AddAsync(
@@ -425,7 +430,8 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
         Assert.NotNull(result);
-        Assert.Equal(expectedAmounts, string.Join(",", result.Items.Select(pledge => pledge.Amount)));
+        Assert.Equal(expectedAmounts.Split(',').Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
+            result.Items.Select(pledge => pledge.Amount));
     }
 
     [Fact]
@@ -435,11 +441,11 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledge = Pledge.Create(2025, 100m, PledgerId.New(), PledgeCategoryId.New(), "Original");
+        var pledge = Pledge.Create(2025, 100m, _pledger.Id, _category.Id, "Original");
         var createdAt = pledge.CreatedAt;
         await repository.AddAsync(pledge, CancellationToken.None);
-        var updatedPledgerId = PledgerId.New();
-        var updatedCategoryId = PledgeCategoryId.New();
+        var updatedPledgerId = _otherPledger.Id;
+        var updatedCategoryId = _otherCategory.Id;
         var request = new UpdatePledgeRequest
         {
             Year = 2026,
@@ -526,7 +532,7 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledge = Pledge.Create(2025, 100m, PledgerId.New(), PledgeCategoryId.New(), "Original");
+        var pledge = Pledge.Create(2025, 100m, _pledger.Id, _category.Id, "Original");
         var originalUpdatedAt = pledge.UpdatedAt;
         await repository.AddAsync(pledge, CancellationToken.None);
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
@@ -550,7 +556,7 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledge = Pledge.Create(2025, 100m, PledgerId.New(), PledgeCategoryId.New(), "Original");
+        var pledge = Pledge.Create(2025, 100m, _pledger.Id, _category.Id, "Original");
         var originalUpdatedAt = pledge.UpdatedAt;
         await repository.AddAsync(pledge, CancellationToken.None);
         var request = CreateValidUpdateRequest() with { Year = 2019 };
@@ -590,7 +596,7 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New());
+        var pledge = Pledge.Create(2026, 100m, _pledger.Id, _category.Id);
         await repository.AddAsync(pledge, CancellationToken.None);
 
         using var response = await client.DeleteAsync($"/pledges/{pledge.Id.Value}");
@@ -650,32 +656,32 @@ public sealed class PledgeEndpointsTests : IClassFixture<WebApplicationFactory<P
         Assert.DoesNotContain(nameof(InvalidOperationException), body);
     }
 
-    private static CreatePledgeRequest CreateValidCreateRequest()
+    protected override async Task SeedAsync(ICFAccountingDbContext context)
+    {
+        context.AddRange(_pledger, _otherPledger, _category, _otherCategory);
+        await context.SaveChangesAsync();
+    }
+
+    private CreatePledgeRequest CreateValidCreateRequest()
     {
         return new CreatePledgeRequest
         {
             Year = 2026,
             Amount = 100m,
-            PledgerId = PledgerId.New().Value,
-            PledgeCategoryId = PledgeCategoryId.New().Value
+            PledgerId = _pledger.Id.Value,
+            PledgeCategoryId = _category.Id.Value
         };
     }
 
-    private static UpdatePledgeRequest CreateValidUpdateRequest()
+    private UpdatePledgeRequest CreateValidUpdateRequest()
     {
         return new UpdatePledgeRequest
         {
             Year = 2026,
             Amount = 100m,
-            PledgerId = PledgerId.New().Value,
-            PledgeCategoryId = PledgeCategoryId.New().Value
+            PledgerId = _otherPledger.Id.Value,
+            PledgeCategoryId = _otherCategory.Id.Value
         };
-    }
-
-    private WebApplicationFactory<Program> CreateIsolatedFactory()
-    {
-        return _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository, InMemoryPledgeRepository>()));
     }
 
     private sealed class FailingPledgeRepository : IPledgeRepository

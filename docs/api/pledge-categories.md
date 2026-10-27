@@ -4,8 +4,9 @@
 
 These apply to every endpoint below.
 
-- Data is stored in an in-memory repository and is lost when the application restarts.
+- Data is persisted in SQL Server and survives application restarts.
 - Error responses use a ProblemDetails body (`application/problem+json`).
+- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; SQL internals are not exposed.
 - A route ID that is not a GUID returns `404 Not Found` because the route does not match.
 - Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
 - Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
@@ -109,9 +110,10 @@ Removes the pledge category with the given ID. There is no request body.
 | No pledge category with that ID, including one already removed | `404 Not Found` |
 | `id` is not a GUID | `404 Not Found` (route does not match) |
 | `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge category ID` |
+| Pledges reference the category | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no related records are removed |
 | Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 The repository throws `KeyNotFoundException` for an unknown ID (passed through
 by the service), which the endpoint translates into `404 Not Found`.
 
-Removing a pledge category does not remove or update pledges that reference it.
+Remove or reassign its pledges before deleting a category. Deletes do not cascade.

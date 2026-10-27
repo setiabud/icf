@@ -1,4 +1,5 @@
 using ICFAccounting.Api.Extensions;
+using ICFAccounting.Data.Extensions;
 
 namespace ICFAccounting.Api;
 
@@ -9,6 +10,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services
+            .AddDataServices(builder.Configuration)
             .AddApplicationServices()
             .AddApplicationLogging()
             .AddOpenApiDocumentation();
