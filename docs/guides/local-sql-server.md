@@ -139,7 +139,7 @@ automatic fallback.
 Run the repository contracts with Docker Desktop running:
 
 ```zsh
-dotnet test tests/ICFAccounting.IntegrationTests/ICFAccounting.IntegrationTests.csproj --filter FullyQualifiedName~SqlServerRepositoryTests
+dotnet test tests/ICFAccounting.IntegrationTests/ICFAccounting.IntegrationTests.csproj --filter FullyQualifiedName~ICFAccounting.IntegrationTests.Repositories
 ```
 
 Each repository test gets an isolated migrated database in a disposable SQL
