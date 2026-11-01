@@ -5,7 +5,10 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: 'localhost',
     port: 5173,
+    cors: true,
+    open: true,
     strictPort: true,
   },
   test: {
