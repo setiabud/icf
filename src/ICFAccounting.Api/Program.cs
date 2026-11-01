@@ -13,10 +13,13 @@ public class Program
             .AddDataServices(builder.Configuration)
             .AddApplicationServices()
             .AddApplicationLogging()
-            .AddOpenApiDocumentation();
+            .AddOpenApiDocumentation()
+            .AddDevelopmentCors(builder.Configuration, builder.Environment);
 
         var app = builder.Build();
 
+        // CORS runs before HTTPS redirection so preflight requests are not redirected.
+        app.UseDevelopmentCors();
         app.UseHttpsRedirection();
         app.UseStatusCodePages();
         app.UseApplicationLogging();

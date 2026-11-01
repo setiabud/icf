@@ -48,5 +48,7 @@ dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
 - `src/ICFAccounting.Application`: application services and orchestration.
 - `src/ICFAccounting.Data`: SQL repositories, EF mappings, and migrations.
 - `src/ICFAccounting.Api`: HTTP endpoints and response contracts.
+- `src/ICFAccounting.Web`: React and TypeScript accounting administration
+  frontend. See its [setup instructions](src/ICFAccounting.Web/README.md).
 - `tests/ICFAccounting.UnitTests`: Domain and Application tests.
 - `tests/ICFAccounting.IntegrationTests`: SQL persistence and API tests.
