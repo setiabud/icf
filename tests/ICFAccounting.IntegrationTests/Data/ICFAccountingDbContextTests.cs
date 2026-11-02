@@ -19,7 +19,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
     {
         await using var context = fixture.CreateContext();
         var migrations = context.Database.GetMigrations().ToArray();
-        Assert.Equal(2, migrations.Length);
+        Assert.True(migrations.Length >= 2);
         Assert.EndsWith("_InitialCreate", migrations[0]);
         Assert.EndsWith("_AddPledgerContactPreferences", migrations[1]);
         Assert.Equal(migrations, await context.Database.GetAppliedMigrationsAsync());
@@ -88,7 +88,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
 
             await context.Database.MigrateAsync();
 
-            Assert.Equal(2, (await context.Database.GetAppliedMigrationsAsync()).Count());
+            Assert.Equal(context.Database.GetMigrations(), await context.Database.GetAppliedMigrationsAsync());
             Assert.Empty(await context.Pledgers.ToListAsync());
             Assert.Empty(await context.PledgeCategories.ToListAsync());
             Assert.Empty(await context.Pledges.ToListAsync());

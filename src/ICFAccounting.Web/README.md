@@ -16,7 +16,9 @@ using the API in `../ICFAccounting.Api`.
 1. Start SQL Server, apply the API database migrations, trust the local HTTPS
    development certificate, and run `ICFAccounting.Api` with its `https`
    launch profile. The API listens on `https://localhost:7206` and
-   `http://localhost:5101`.
+   `http://localhost:5101`. Follow the
+   [authentication guide](../../docs/guides/authentication.md) to apply the
+   Identity migration, export the Vite HTTPS certificate, and provision a user.
 2. In this directory, install the frontend dependencies:
 
    ```sh
@@ -24,23 +26,24 @@ using the API in `../ICFAccounting.Api`.
    ```
 
 3. Optionally copy `.env.example` to `.env.local` and set
-   `VITE_API_BASE_URL` to the API's base URL. The default is
-   `https://localhost:7206`; use `http://localhost:5101` if you prefer HTTP.
-   The HTTPS development certificate must be trusted by the browser.
+   `VITE_API_BASE_URL` if necessary. The default `/api` uses Vite's HTTPS proxy
+   to `https://localhost:7206`; remove old HTTP overrides. Secure authentication
+   cookies require HTTPS.
 4. Start Vite:
 
    ```sh
    npm run dev
    ```
 
-   Open `http://localhost:5173`. The API allows this origin in the ASP.NET
-   Core Development environment only. Additional local development origins can
-   be set in the API's `Cors:DevelopmentOrigins` configuration; production
-   builds do not enable CORS.
+   Open `https://localhost:5173` and sign in with administrator-provisioned
+   credentials. Production likewise serves React and `/api` on one HTTPS origin.
+   There is no public registration.
 
 The UI displays an actionable connection error when the API is unavailable.
 It does not use sample data. Pledges are browsed through a selected pledger or
 category, and payments through a selected pledge.
+Sessions are restored before protected content is rendered; URL hash navigation
+preserves the intended section/selection through login and expiration.
 
 ## Checks
 

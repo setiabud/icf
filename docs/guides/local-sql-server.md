@@ -214,11 +214,15 @@ Enter the complete connection string without placing it in shell history:
 read -rs 'ConnectionStrings__ICFAccounting?ICFAccounting connection string: '
 export ConnectionStrings__ICFAccounting
 dotnet ef database update --project src/ICFAccounting.Data --startup-project src/ICFAccounting.Data --context ICFAccountingDbContext
+dotnet ef database update --project src/ICFAccounting.Data --startup-project src/ICFAccounting.Data --context AuthenticationDbContext
 ```
 
-This command creates `ICFAccounting` if it does not exist, applies all pending
+These commands create `ICFAccounting` if it does not exist, apply all pending
 migrations (including `AddPledgerContactPreferences`), and records them in
-`dbo.__EFMigrationsHistory`.
+`dbo.__EFMigrationsHistory`. Identity uses its own `auth` schema and
+`auth.__IdentityMigrationsHistory`. Follow the
+[authentication guide](authentication.md) to provision credentials and configure
+local HTTPS before logging in.
 The login must have permission to create the database and modify its schema;
 `sa` is used here for local development only. No sample data is inserted.
 Repeated updates apply only pending migrations. No application-startup

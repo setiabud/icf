@@ -1,4 +1,5 @@
 using ICFAccounting.Api.Extensions;
+using ICFAccounting.Api;
 using ICFAccounting.Data;
 using ICFAccounting.Data.Extensions;
 using ICFAccounting.Data.Repositories;
@@ -11,6 +12,12 @@ namespace ICFAccounting.IntegrationTests.Api;
 
 public sealed class ServiceRegistrationTests
 {
+    [Fact]
+    public async Task Provisioning_rejects_extra_arguments_before_starting_a_host()
+    {
+        Assert.Equal(1, await Program.Main(["users", "create", "--password", "test-only-placeholder"]));
+    }
+
     [Fact]
     public void Api_startup_rejects_missing_connection_string_without_a_fallback()
     {

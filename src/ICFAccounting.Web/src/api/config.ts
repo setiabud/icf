@@ -1,4 +1,4 @@
-export const DEFAULT_API_BASE_URL = 'http://localhost:5101'
+export const DEFAULT_API_BASE_URL = '/api'
 
 export function resolveApiBaseUrl(configured: string | undefined): string {
   const value = configured?.trim()

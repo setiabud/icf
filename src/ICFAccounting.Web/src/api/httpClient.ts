@@ -2,6 +2,7 @@ import { ApiError, type ProblemDetails } from './ApiError'
 import { apiBaseUrl } from './config'
 
 type QueryValue = string | number | boolean | undefined | null
+export const SESSION_EXPIRED_EVENT = 'accounting:session-expired'
 
 export interface RequestOptions {
   query?: Record<string, QueryValue>
@@ -17,7 +18,7 @@ export interface HttpClient {
 }
 
 export function buildUrl(baseUrl: string, path: string, query?: Record<string, QueryValue>): string {
-  const url = new URL(baseUrl + path)
+  const url = new URL(baseUrl + path, window.location.origin)
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value !== undefined && value !== null && value !== '') {
       url.searchParams.set(key, String(value))
@@ -48,6 +49,13 @@ export function createHttpClient(baseUrl: string, fetchImpl: typeof fetch = (...
     if (options.body !== undefined) {
       headers['Content-Type'] = 'application/json'
     }
+    if (method !== 'GET') {
+      const token = await send<{ requestToken: string }>('GET', '/auth/csrf', { signal: options.signal })
+      if (!token?.requestToken) {
+        throw new ApiError('http', 'The API did not issue a security token. Refresh the page and try again.')
+      }
+      headers['X-CSRF-TOKEN'] = token.requestToken
+    }
 
     let response: Response
     try {
@@ -56,6 +64,7 @@ export function createHttpClient(baseUrl: string, fetchImpl: typeof fetch = (...
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
         signal: options.signal,
+        credentials: 'include',
       })
     } catch (error) {
       if (options.signal?.aborted) {
@@ -66,6 +75,9 @@ export function createHttpClient(baseUrl: string, fetchImpl: typeof fetch = (...
 
     if (!response.ok) {
       const problem = await readProblem(response)
+      if (response.status === 401 && !path.startsWith('/auth/')) {
+        window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT))
+      }
       throw new ApiError(
         'http',
         problem?.title ?? `Request failed with status ${response.status}.`,

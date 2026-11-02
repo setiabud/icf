@@ -1,4 +1,15 @@
-@ICFAccounting.Api_HostAddress = http://localhost:5101
+@ICFAccounting.Api_HostAddress = https://localhost:7206
+
+# These requests require an authenticated cookie jar in this HTTP client.
+# See docs/guides/authentication.md for login and cookie/CSRF requirements.
+# Never save passwords, cookies, or tokens in this file.
+
+### Get a fresh token after signing in using the same client cookie jar.
+# @name csrf
+GET {{ICFAccounting.Api_HostAddress}}/auth/csrf
+Accept: application/json
+
+###
 
 GET {{ICFAccounting.Api_HostAddress}}/pledgers/
 Accept: application/json
@@ -9,6 +20,7 @@ Accept: application/json
 
 POST {{ICFAccounting.Api_HostAddress}}/pledges
 Content-Type: application/json
+X-CSRF-TOKEN: {{csrf.response.body.$.requestToken}}
 
 {
 	"year": 2026,
@@ -41,6 +53,7 @@ Accept: application/json
 
 PUT {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
 Content-Type: application/json
+X-CSRF-TOKEN: {{csrf.response.body.$.requestToken}}
 
 {
 	"year": 2026,
@@ -54,6 +67,7 @@ Content-Type: application/json
 
 DELETE {{ICFAccounting.Api_HostAddress}}/pledges/{{pledgeId}}
 Accept: application/json
+X-CSRF-TOKEN: {{csrf.response.body.$.requestToken}}
 
 ###
 
@@ -61,6 +75,7 @@ Accept: application/json
 
 POST {{ICFAccounting.Api_HostAddress}}/pledge-payments
 Content-Type: application/json
+X-CSRF-TOKEN: {{csrf.response.body.$.requestToken}}
 
 {
 	"pledgeId": "{{pledgeId}}",
@@ -83,6 +98,7 @@ Accept: application/json
 
 PUT {{ICFAccounting.Api_HostAddress}}/pledge-payments/{{pledgePaymentId}}
 Content-Type: application/json
+X-CSRF-TOKEN: {{csrf.response.body.$.requestToken}}
 
 {
 	"pledgeId": "{{pledgeId}}",
@@ -96,5 +112,6 @@ Content-Type: application/json
 
 DELETE {{ICFAccounting.Api_HostAddress}}/pledge-payments/{{pledgePaymentId}}
 Accept: application/json
+X-CSRF-TOKEN: {{csrf.response.body.$.requestToken}}
 
 ###

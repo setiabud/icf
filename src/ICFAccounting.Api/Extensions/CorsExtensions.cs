@@ -15,7 +15,7 @@ public static class CorsExtensions
     /// </summary>
     public const string DEVELOPMENT_ORIGINS_KEY = "Cors:DevelopmentOrigins";
 
-    private static readonly string[] DefaultDevelopmentOrigins = ["http://localhost:5173"];
+    private static readonly string[] DefaultDevelopmentOrigins = ["https://localhost:5173"];
 
     /// <summary>
     /// Registers a CORS policy for the local frontend origins, only in the Development environment.
@@ -36,7 +36,8 @@ public static class CorsExtensions
         services.AddCors(options => options.AddPolicy(DEVELOPMENT_POLICY_NAME, policy => policy
             .WithOrigins(origins)
             .WithMethods("GET", "POST", "PUT", "DELETE")
-            .WithHeaders("Content-Type", "Accept")
+            .WithHeaders("Content-Type", "Accept", "X-CSRF-TOKEN")
+            .AllowCredentials()
             .WithExposedHeaders("Location")));
 
         return services;

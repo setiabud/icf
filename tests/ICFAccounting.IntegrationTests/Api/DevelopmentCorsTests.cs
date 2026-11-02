@@ -5,7 +5,7 @@ namespace ICFAccounting.IntegrationTests.Api;
 public sealed class DevelopmentCorsTests
 {
     private const string CONNECTION_STRING = "Server=localhost;Database=ICFAccounting;Integrated Security=True";
-    private const string FRONTEND_ORIGIN = "http://localhost:5173";
+    private const string FRONTEND_ORIGIN = "https://localhost:5173";
 
     [Fact]
     public async Task Preflight_from_frontend_origin_is_allowed_in_development()
@@ -17,6 +17,9 @@ public sealed class DevelopmentCorsTests
 
         Assert.True(response.Headers.TryGetValues("Access-Control-Allow-Origin", out var origins));
         Assert.Equal(FRONTEND_ORIGIN, Assert.Single(origins));
+        Assert.Equal("true", Assert.Single(response.Headers.GetValues("Access-Control-Allow-Credentials")));
+        Assert.Contains("x-csrf-token", string.Join(",", response.Headers.GetValues("Access-Control-Allow-Headers")),
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -46,7 +49,7 @@ public sealed class DevelopmentCorsTests
         var request = new HttpRequestMessage(HttpMethod.Options, "/pledgers");
         request.Headers.Add("Origin", origin);
         request.Headers.Add("Access-Control-Request-Method", "POST");
-        request.Headers.Add("Access-Control-Request-Headers", "content-type");
+        request.Headers.Add("Access-Control-Request-Headers", "content-type,x-csrf-token");
         return request;
     }
 }

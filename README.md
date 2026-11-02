@@ -20,6 +20,10 @@ Credentials are supplied through environment variables or local user-secrets,
 never committed configuration. Database migrations are explicit; startup does
 not create or update the schema. No sample data is inserted.
 
+The React app and API require administrator-provisioned email/password login.
+Apply both migration sets and provision an account before signing in; see the
+[authentication setup guide](docs/guides/authentication.md).
+
 ## Verification
 
 ```zsh
@@ -37,6 +41,7 @@ dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
 ## Documentation
 
 - [Local SQL Server, credentials, migrations, tests, and troubleshooting](docs/guides/local-sql-server.md)
+- [Authentication, account provisioning, HTTPS, and production sessions](docs/guides/authentication.md)
 - [Pledgers API](docs/api/pledgers.md)
 - [Pledge Categories API](docs/api/pledge-categories.md)
 - [Pledges API](docs/api/pledges.md)

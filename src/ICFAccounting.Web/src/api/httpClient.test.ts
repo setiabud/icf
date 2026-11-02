@@ -18,17 +18,20 @@ describe('buildUrl', () => {
 
 describe('createHttpClient', () => {
   it('serializes request bodies as JSON and parses JSON responses', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ id: 'a' }, 201))
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ requestToken: 'test-token' }))
+      .mockResolvedValue(jsonResponse({ id: 'a' }, 201))
     const client = createHttpClient(BASE_URL, fetchMock)
 
     const result = await client.post<{ id: string }>('/pledgers', { body: { pledgerName: 'Ada' } })
 
     expect(result).toEqual({ id: 'a' })
-    const [url, init] = fetchMock.mock.calls[0]!
+    const [url, init] = fetchMock.mock.calls[1]!
     expect(url).toBe('https://api.test/pledgers')
     expect(init?.method).toBe('POST')
     expect(init?.body).toBe('{"pledgerName":"Ada"}')
-    expect(init?.headers).toMatchObject({ 'Content-Type': 'application/json' })
+    expect(init?.headers).toMatchObject({ 'Content-Type': 'application/json', 'X-CSRF-TOKEN': 'test-token' })
+    expect(init?.credentials).toBe('include')
   })
 
   it('omits the content type when there is no body', async () => {
@@ -43,7 +46,9 @@ describe('createHttpClient', () => {
   })
 
   it('resolves 204 No Content without reading a body', async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(null, { status: 204 }))
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ requestToken: 'test-token' }))
+      .mockResolvedValue(new Response(null, { status: 204 }))
     const client = createHttpClient(BASE_URL, fetchMock)
 
     await expect(client.delete('/pledgers/1')).resolves.toBeUndefined()
@@ -55,7 +60,9 @@ describe('createHttpClient', () => {
       status: 409,
       detail: 'The operation conflicts with related accounting records.',
     }
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse(problem, 409, 'application/problem+json'))
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ requestToken: 'test-token' }))
+      .mockResolvedValue(jsonResponse(problem, 409, 'application/problem+json'))
     const client = createHttpClient(BASE_URL, fetchMock)
 
     const error = await client.delete('/pledgers/1').catch((caught: unknown) => caught)
@@ -113,5 +120,37 @@ describe('createHttpClient', () => {
     const client = createHttpClient(BASE_URL, fetchMock)
 
     await expect(client.get('/pledgers', { signal: controller.signal })).rejects.toBe(abortError)
+  })
+
+  it('does not send a mutation when the security token is missing', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({}))
+    const client = createHttpClient(BASE_URL, fetchMock)
+    await expect(client.post('/pledgers', { body: {} })).rejects.toThrow('security token')
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it.each(['post', 'put', 'delete'] as const)('protects %s requests and uses a fresh token each time', async (method) => {
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(jsonResponse({ requestToken: 'first' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(jsonResponse({ requestToken: 'second' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const client = createHttpClient(BASE_URL, fetchMock)
+    await client[method]('/pledgers/1')
+    await client[method]('/pledgers/1')
+    expect(fetchMock.mock.calls[1]![1]?.headers).toHaveProperty('X-CSRF-TOKEN', 'first')
+    expect(fetchMock.mock.calls[3]![1]?.headers).toHaveProperty('X-CSRF-TOKEN', 'second')
+  })
+
+  it('notifies the app of expired accounting requests but not failed login', async () => {
+    const listener = vi.fn()
+    window.addEventListener('accounting:session-expired', listener)
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(jsonResponse({ title: 'Sign-in required' }, 401))
+    const client = createHttpClient(BASE_URL, fetchMock)
+    await expect(client.get('/auth/session')).rejects.toBeInstanceOf(ApiError)
+    expect(listener).not.toHaveBeenCalled()
+    await expect(client.get('/pledgers')).rejects.toBeInstanceOf(ApiError)
+    expect(listener).toHaveBeenCalledTimes(1)
+    window.removeEventListener('accounting:session-expired', listener)
   })
 })

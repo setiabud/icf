@@ -5,10 +5,12 @@ import { createHttpClient } from './httpClient'
 const PLEDGE_ID = '6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a00'
 
 function setup(...responses: Response[]) {
-  const fetchMock = vi.fn<typeof fetch>()
-  for (const response of responses) {
-    fetchMock.mockResolvedValueOnce(response)
-  }
+  const fetchMock = vi.fn<typeof fetch>().mockImplementation(async (input) => {
+    if (String(input).endsWith('/auth/csrf')) return json({ requestToken: 'test-token' })
+    const response = responses.shift()
+    if (!response) throw new Error('Unexpected request')
+    return response
+  })
   return { fetchMock, api: createAccountingApi(createHttpClient('https://api.test', fetchMock)) }
 }
 
@@ -26,7 +28,7 @@ describe('accountingApi', () => {
       comment: null,
     })
 
-    const [url, init] = fetchMock.mock.calls[0]!
+    const [url, init] = fetchMock.mock.calls[1]!
     expect(url).toBe('https://api.test/pledge-payments')
     expect(JSON.parse(init!.body as string)).toEqual({
       pledgeId: PLEDGE_ID,
@@ -46,7 +48,7 @@ describe('accountingApi', () => {
       enableNotification: true,
     })
 
-    const [url, init] = fetchMock.mock.calls[0]!
+    const [url, init] = fetchMock.mock.calls[1]!
     expect(url).toBe(`https://api.test/pledgers/${PLEDGE_ID}`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init!.body as string)).toEqual({

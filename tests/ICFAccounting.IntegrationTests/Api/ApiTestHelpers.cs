@@ -11,11 +11,15 @@ internal static class ApiTestHelpers
     public static HttpClient CreateClient(
         WebApplicationFactory<Program> factory, bool allowAutoRedirect = true)
     {
-        return factory.CreateClient(new WebApplicationFactoryClientOptions
+        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://localhost"),
             AllowAutoRedirect = allowAutoRedirect
         });
+        client.DefaultRequestHeaders.Add("X-Test-Authenticated", "true");
+        var token = client.GetFromJsonAsync<AntiforgeryToken>("/auth/csrf").GetAwaiter().GetResult();
+        client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", token!.RequestToken);
+        return client;
     }
 
     public static async Task<ProblemDetails> AssertProblemAsync(
@@ -28,4 +32,6 @@ internal static class ApiTestHelpers
         Assert.Equal((int)expectedStatus, problem.Status);
         return problem;
     }
+
+    private sealed record AntiforgeryToken(string RequestToken);
 }

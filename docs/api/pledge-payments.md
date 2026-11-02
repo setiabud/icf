@@ -4,6 +4,8 @@
 
 These apply to every endpoint below.
 
+- All endpoints require a signed-in cookie session (`401` otherwise); writes
+  also require CSRF verification. See [authentication](../guides/authentication.md).
 - Data is persisted in SQL Server and survives application restarts.
 - Error responses use a ProblemDetails body (`application/problem+json`).
 - Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; SQL internals are not exposed.
