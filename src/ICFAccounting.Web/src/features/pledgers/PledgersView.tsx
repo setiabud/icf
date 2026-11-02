@@ -86,6 +86,8 @@ export function PledgersView({ onViewPledges }: PledgersViewProps) {
               <thead>
                 <tr>
                   <th scope="col">Name</th>
+                  <th scope="col">Email</th>
+                  <th scope="col">Notifications</th>
                   <th scope="col">Status</th>
                   <th scope="col">
                     <span className="visually-hidden">Actions</span>
@@ -96,6 +98,8 @@ export function PledgersView({ onViewPledges }: PledgersViewProps) {
                 {result.items.map((pledger) => (
                   <tr key={pledger.id}>
                     <td data-label="Name">{pledger.pledgerName}</td>
+                    <td data-label="Email">{pledger.email ?? 'Not provided'}</td>
+                    <td data-label="Notifications">{pledger.enableNotification ? 'Enabled' : 'Disabled'}</td>
                     <td data-label="Status">
                       <StatusBadge active={pledger.active} />
                     </td>
@@ -147,7 +151,11 @@ export function PledgersView({ onViewPledges }: PledgersViewProps) {
             onSubmit={(values) =>
               editing.mode === 'edit'
                 ? api.pledgers.update(editing.pledger.id, values)
-                : api.pledgers.create({ pledgerName: values.pledgerName })
+                : api.pledgers.create({
+                    pledgerName: values.pledgerName,
+                    email: values.email,
+                    enableNotification: values.enableNotification,
+                  })
             }
             onSaved={handleSaved}
             onCancel={() => setEditing(undefined)}

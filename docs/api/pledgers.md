@@ -21,12 +21,15 @@ Request:
 
 ```json
 {
-  "pledgerName": "Community Fund"
+  "pledgerName": "Community Fund",
+  "email": "community@example.org",
+  "enableNotification": true
 }
 ```
 
 `pledgerName` is required and must not be null, empty, or whitespace.
-There are no optional creation fields.
+`email` is optional and may be `null`; when provided, it must be a valid email
+address. `enableNotification` is optional and defaults to `false`.
 
 Success returns `201 Created` with a `Location: /pledgers/{id}` header and
 the fields documented under `GET /pledgers/{id}`, with `active` set to `true`
@@ -99,6 +102,8 @@ Returns `200 OK` with a single pledger:
 | `id` | UUID | Pledger identity |
 | `pledgerName` | string | Pledger name |
 | `active` | boolean | Whether the pledger is active |
+| `email` | string or null | Pledger email address |
+| `enableNotification` | boolean | Whether notifications are enabled |
 | `createdAt` | UTC timestamp | Creation time |
 | `updatedAt` | UTC timestamp | Last update time |
 
@@ -112,20 +117,25 @@ Returns `200 OK` with a single pledger:
 
 ## PUT /pledgers/{id}
 
-Updates an existing pledger's name and active flag. `updatedAt` is set to the
-current UTC time; `id` and `createdAt` are unchanged.
+Updates an existing pledger's name, active flag, email, and notification
+preference. `updatedAt` is set to the current UTC time; `id` and `createdAt`
+are unchanged.
 
 Request:
 
 ```json
 {
   "pledgerName": "Mission Fund",
-  "active": false
+  "active": false,
+  "email": "mission@example.org",
+  "enableNotification": true
 }
 ```
 
-Both fields are required. `pledgerName` must not be null, empty, or whitespace,
-and `active` must be `true` or `false`.
+`pledgerName`, `active`, `email`, and `enableNotification` are required.
+`email` may be `null`, or a valid email address when provided.
+`pledgerName` must not be null, empty, or whitespace. `active` and
+`enableNotification` must be `true` or `false`.
 
 | Condition | Response |
 | --- | --- |
@@ -133,7 +143,8 @@ and `active` must be `true` or `false`.
 | No pledger with that ID | `404 Not Found` |
 | `id` is not a GUID | `404 Not Found` (route does not match) |
 | `id` is the empty GUID | `400 Bad Request` with title `Invalid pledger ID` |
-| The body is invalid, or the service rejects the update | `400 Bad Request` with title `Invalid pledger update` |
+| The request body is malformed, or `email` or `enableNotification` is missing | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs) |
+| Another body value is invalid, or the service rejects the update | `400 Bad Request` with title `Invalid pledger update` |
 | Unexpected update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## DELETE /pledgers/{id}

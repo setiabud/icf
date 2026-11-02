@@ -16,6 +16,11 @@ internal sealed class PledgerConfiguration : IEntityTypeConfiguration<Pledger>
         builder.Property(pledger => pledger.PledgerName)
             .HasColumnType("nvarchar(max)")
             .IsRequired();
+        builder.Property(pledger => pledger.Email)
+            .HasColumnType("nvarchar(max)");
+        builder.Property(pledger => pledger.EnableNotification)
+            .HasColumnType("bit")
+            .HasDefaultValue(false);
         builder.Property(pledger => pledger.CreatedAt)
             .HasColumnType("datetime2(7)")
             .HasConversion<UtcDateTimeConverter>();

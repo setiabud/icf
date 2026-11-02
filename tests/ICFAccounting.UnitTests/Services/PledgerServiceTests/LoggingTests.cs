@@ -71,7 +71,7 @@ public sealed class LoggingTests
         var pledger = Pledger.Create("Community Fund");
         A.CallTo(() => _repository.GetByIdAsync(pledger.Id, A<CancellationToken>._)).Returns(pledger);
 
-        await _service.UpdateAsync(pledger.Id, "Mission Fund", true);
+        await _service.UpdateAsync(pledger.Id, "Mission Fund", true, null, false);
 
         AssertSingleLog(1005, $"Updated pledger {pledger.Id}.");
     }
@@ -82,7 +82,7 @@ public sealed class LoggingTests
         var id = PledgerId.New();
         A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._)).Returns((Pledger?)null);
 
-        await _service.UpdateAsync(id, "Mission Fund", true);
+        await _service.UpdateAsync(id, "Mission Fund", true, null, false);
 
         AssertSingleLog(1006, $"Pledger {id} was not found for update.");
     }

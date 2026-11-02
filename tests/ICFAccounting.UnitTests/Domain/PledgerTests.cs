@@ -17,6 +17,8 @@ public sealed class PledgerTests
         Assert.NotEqual(Guid.Empty, pledger.Id.Value);
         Assert.Equal("Community Fund", pledger.PledgerName);
         Assert.True(pledger.Active);
+        Assert.Null(pledger.Email);
+        Assert.False(pledger.EnableNotification);
         Assert.Equal(StartTime.UtcDateTime, pledger.CreatedAt);
         Assert.Equal(DateTimeKind.Utc, pledger.CreatedAt.Kind);
         Assert.Equal(pledger.CreatedAt, pledger.UpdatedAt);
@@ -51,13 +53,58 @@ public sealed class PledgerTests
         var pledger = Pledger.Create("Community Fund", clock);
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        pledger.Update("Education Fund", active, clock);
+        pledger.Update("Education Fund", active, null, false, clock);
 
         Assert.Equal("Education Fund", pledger.PledgerName);
         Assert.Equal(active, pledger.Active);
+        Assert.Null(pledger.Email);
+        Assert.False(pledger.EnableNotification);
         Assert.Equal(StartTime.UtcDateTime, pledger.CreatedAt);
         Assert.Equal(StartTime.AddMinutes(5).UtcDateTime, pledger.UpdatedAt);
         Assert.Equal(DateTimeKind.Utc, pledger.UpdatedAt.Kind);
+    }
+
+    [Fact]
+    public void Create_and_update_store_email_and_notification_preference()
+    {
+        var clock = new FakeTimeProvider(StartTime);
+        var pledger = Pledger.Create(
+            "Community Fund", clock, "community@example.org", enableNotification: true);
+
+        clock.Advance(TimeSpan.FromMinutes(5));
+        pledger.Update(
+            "Education Fund", false, "education@example.org", enableNotification: false, timeProvider: clock);
+
+        Assert.Equal("education@example.org", pledger.Email);
+        Assert.False(pledger.EnableNotification);
+        Assert.Equal(StartTime.AddMinutes(5).UtcDateTime, pledger.UpdatedAt);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-an-email")]
+    [InlineData("name@example.org extra")]
+    public void Create_with_invalid_email_throws(string email)
+    {
+        Assert.Throws<ArgumentException>(() => Pledger.Create("Community Fund", email: email));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("not-an-email")]
+    public void Update_with_invalid_email_throws_and_preserves_state(string email)
+    {
+        var pledger = Pledger.Create("Community Fund", email: "community@example.org");
+        var originalUpdatedAt = pledger.UpdatedAt;
+
+        Assert.Throws<ArgumentException>(
+            () => pledger.Update("Education Fund", false, email: email, enableNotification: true));
+
+        Assert.Equal("Community Fund", pledger.PledgerName);
+        Assert.True(pledger.Active);
+        Assert.Equal("community@example.org", pledger.Email);
+        Assert.False(pledger.EnableNotification);
+        Assert.Equal(originalUpdatedAt, pledger.UpdatedAt);
     }
 
     [Theory]
@@ -71,7 +118,7 @@ public sealed class PledgerTests
         var originalUpdatedAt = pledger.UpdatedAt;
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        Assert.ThrowsAny<ArgumentException>(() => pledger.Update(name!, false, clock));
+        Assert.ThrowsAny<ArgumentException>(() => pledger.Update(name!, false, null, false, clock));
 
         Assert.Equal("Community Fund", pledger.PledgerName);
         Assert.True(pledger.Active);

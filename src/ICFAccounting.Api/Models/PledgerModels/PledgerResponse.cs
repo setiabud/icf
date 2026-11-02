@@ -11,6 +11,10 @@ public sealed record PledgerResponse
 
     public bool Active { get; init; }
 
+    public string? Email { get; init; }
+
+    public bool EnableNotification { get; init; }
+
     public DateTime CreatedAt { get; init; }
 
     public DateTime UpdatedAt { get; init; }

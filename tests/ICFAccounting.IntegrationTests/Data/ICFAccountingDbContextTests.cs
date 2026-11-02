@@ -18,15 +18,17 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
     public async Task Database_migration_is_applied_once_and_matches_the_model()
     {
         await using var context = fixture.CreateContext();
-        var migration = Assert.Single(context.Database.GetMigrations());
-        Assert.EndsWith("_InitialCreate", migration);
-        Assert.Equal(migration, Assert.Single(await context.Database.GetAppliedMigrationsAsync()));
+        var migrations = context.Database.GetMigrations().ToArray();
+        Assert.Equal(2, migrations.Length);
+        Assert.EndsWith("_InitialCreate", migrations[0]);
+        Assert.EndsWith("_AddPledgerContactPreferences", migrations[1]);
+        Assert.Equal(migrations, await context.Database.GetAppliedMigrationsAsync());
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());
 
         await context.Database.MigrateAsync();
 
-        Assert.Equal(migration, Assert.Single(await context.Database.GetAppliedMigrationsAsync()));
+        Assert.Equal(migrations, await context.Database.GetAppliedMigrationsAsync());
     }
 
     [Fact]
@@ -86,7 +88,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
 
             await context.Database.MigrateAsync();
 
-            Assert.Single(await context.Database.GetAppliedMigrationsAsync());
+            Assert.Equal(2, (await context.Database.GetAppliedMigrationsAsync()).Count());
             Assert.Empty(await context.Pledgers.ToListAsync());
             Assert.Empty(await context.PledgeCategories.ToListAsync());
             Assert.Empty(await context.Pledges.ToListAsync());
@@ -99,7 +101,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
     }
 
     [Theory]
-    [InlineData(typeof(Pledger), "Pledgers", 5)]
+    [InlineData(typeof(Pledger), "Pledgers", 7)]
     [InlineData(typeof(PledgeCategory), "PledgeCategories", 5)]
     [InlineData(typeof(Pledge), "Pledges", 8)]
     [InlineData(typeof(PledgePayment), "PledgePayments", 8)]
@@ -147,12 +149,12 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
         Assert.Equal("Latin1_General_100_CI_AS_SC", model.GetCollation());
         var strings = model.GetEntityTypes().SelectMany(entity => entity.GetProperties())
             .Where(property => property.ClrType == typeof(string)).ToList();
-        Assert.Equal(4, strings.Count);
+        Assert.Equal(5, strings.Count);
         Assert.All(strings, property =>
         {
             Assert.Equal("nvarchar(max)", property.GetColumnType());
             Assert.Null(property.GetMaxLength());
-            Assert.Equal(property.Name == "Comment", property.IsNullable);
+            Assert.Equal(property.Name is "Comment" or "Email", property.IsNullable);
         });
     }
 
@@ -233,7 +235,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
             var storedCategory = await context.PledgeCategories.SingleAsync(entity => entity.Id == category.Id);
             var storedPledge = await context.Pledges.SingleAsync(entity => entity.Id == pledge.Id);
             var storedPayment = await context.PledgePayments.SingleAsync(entity => entity.Id == payment.Id);
-            storedPledger.Update("After", false);
+            storedPledger.Update("After", false, null, false);
             storedCategory.Update("After", false);
             storedPledge.Update(2026, 100m, pledger.Id, category.Id, "Updated pledge");
             storedPayment.Update(pledge.Id, 20m, new DateTime(2026, 10, 27), "Updated payment", false);

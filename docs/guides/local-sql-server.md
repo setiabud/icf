@@ -216,8 +216,9 @@ export ConnectionStrings__ICFAccounting
 dotnet ef database update --project src/ICFAccounting.Data --startup-project src/ICFAccounting.Data --context ICFAccountingDbContext
 ```
 
-This command creates `ICFAccounting` if it does not exist, applies the
-`InitialCreate` migration, and records it in `dbo.__EFMigrationsHistory`.
+This command creates `ICFAccounting` if it does not exist, applies all pending
+migrations (including `AddPledgerContactPreferences`), and records them in
+`dbo.__EFMigrationsHistory`.
 The login must have permission to create the database and modify its schema;
 `sa` is used here for local development only. No sample data is inserted.
 Repeated updates apply only pending migrations. No application-startup

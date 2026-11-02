@@ -9,7 +9,15 @@ import { NotificationProvider } from '../components/Notifications'
 const TIMESTAMP = '2026-01-01T00:00:00Z'
 
 export function pledger(id: string, pledgerName: string, active = true): Pledger {
-  return { id, pledgerName, active, createdAt: TIMESTAMP, updatedAt: TIMESTAMP }
+  return {
+    id,
+    pledgerName,
+    active,
+    email: null,
+    enableNotification: false,
+    createdAt: TIMESTAMP,
+    updatedAt: TIMESTAMP,
+  }
 }
 
 export function category(id: string, categoryName: string, active = true): PledgeCategory {

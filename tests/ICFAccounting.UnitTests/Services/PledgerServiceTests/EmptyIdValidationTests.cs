@@ -14,7 +14,7 @@ public sealed class EmptyIdValidationTests
         Func<Task> act = operation switch
         {
             "GetById" => () => fixture.Service.GetByIdAsync(default),
-            "Update" => () => fixture.Service.UpdateAsync(default, "Mission Fund", true),
+            "Update" => () => fixture.Service.UpdateAsync(default, "Mission Fund", true, null, false),
             "Remove" => () => fixture.Service.RemoveAsync(default),
             _ => throw new ArgumentOutOfRangeException(nameof(operation))
         };

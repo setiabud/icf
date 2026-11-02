@@ -110,18 +110,20 @@ public static class PledgerEndpointExtensions
                 detail: "Pledger ID cannot be empty.");
         }
 
-        if (string.IsNullOrWhiteSpace(request.PledgerName) || request.Active is not { } active)
+        if (string.IsNullOrWhiteSpace(request.PledgerName)
+            || request.Active is not { } active
+            || request.EnableNotification is not { } enableNotification)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger update",
-                detail: "PledgerName is required and cannot be empty or whitespace, and Active is required.");
+                detail: "PledgerName is required and cannot be empty or whitespace, and Active and EnableNotification are required.");
         }
 
         try
         {
             var pledger = await pledgerService.UpdateAsync(
-                new PledgerId(id), request.PledgerName, active, cancellationToken);
+                new PledgerId(id), request.PledgerName, active, request.Email, enableNotification, cancellationToken);
             return pledger is null
                 ? Results.NotFound()
                 : Results.Ok(ToPledgerResponse(pledger));
@@ -261,7 +263,10 @@ public static class PledgerEndpointExtensions
 
         try
         {
-            var pledger = Pledger.Create(request.PledgerName);
+            var pledger = Pledger.Create(
+                request.PledgerName,
+                email: request.Email,
+                enableNotification: request.EnableNotification);
             await pledgerService.AddAsync(pledger, cancellationToken);
 
             return Results.Created($"/pledgers/{pledger.Id.Value}", ToPledgerResponse(pledger));
@@ -290,6 +295,8 @@ public static class PledgerEndpointExtensions
             Id = pledger.Id.Value,
             PledgerName = pledger.PledgerName,
             Active = pledger.Active,
+            Email = pledger.Email,
+            EnableNotification = pledger.EnableNotification,
             CreatedAt = pledger.CreatedAt,
             UpdatedAt = pledger.UpdatedAt
         };

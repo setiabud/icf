@@ -17,7 +17,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
     [InlineData(true)]
     public async Task Pledger_mutations_persist_across_contexts(bool insertWithUpdate)
     {
-        var pledger = Pledger.Create("Before");
+        var pledger = Pledger.Create("Before", email: "before@example.org", enableNotification: true);
         await using (var context = CreateContext())
         {
             var repository = new SqlServerPledgerRepository(context);
@@ -37,9 +37,9 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
             var stored = await repository.GetByIdAsync(pledger.Id);
             Assert.NotNull(stored);
             Assert.Equal(pledger.CreatedAt, stored.CreatedAt);
-            stored.Update("After", false);
+            stored.Update("After", false, email: "after@example.org", enableNotification: true);
             await repository.AddAsync(stored);
-            stored.Update("Final", false);
+            stored.Update("Final", false, email: "final@example.org", enableNotification: false);
             await repository.UpdateAsync(stored);
         }
 
@@ -50,6 +50,8 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
             Assert.NotNull(stored);
             Assert.Equal("Final", stored.PledgerName);
             Assert.False(stored.Active);
+            Assert.Equal("final@example.org", stored.Email);
+            Assert.False(stored.EnableNotification);
             Assert.Equal(pledger.CreatedAt, stored.CreatedAt);
             Assert.Equal(DateTimeKind.Utc, stored.CreatedAt.Kind);
             await repository.RemoveAsync(pledger.Id);
@@ -65,7 +67,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
     public async Task Pledger_queries_preserve_null_query_and_paging_contracts()
     {
         var pledgers = Enumerable.Range(1, 21).Select(index => Pledger.Create($"Pledger {index:D2}")).ToList();
-        pledgers[0].Update(pledgers[0].PledgerName, false);
+        pledgers[0].Update(pledgers[0].PledgerName, false, null, false);
         await using (var context = CreateContext())
         {
             context.Pledgers.AddRange(pledgers);
@@ -181,7 +183,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         {
             context.Pledgers.Add(pledger);
             await context.SaveChangesAsync();
-            pledger.Update("Updated tracked pledger", false);
+            pledger.Update("Updated tracked pledger", false, null, false);
             await new SqlServerPledgerRepository(context).UpdateAsync(pledger);
         }
 
@@ -232,7 +234,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
             var repository = new SqlServerPledgerRepository(context);
             var pledger = await repository.GetByIdAsync(pledge.PledgerId);
             Assert.NotNull(pledger);
-            pledger.Update("Canceled name", false);
+            pledger.Update("Canceled name", false, null, false);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.UpdateAsync(pledger, cancellation.Token));

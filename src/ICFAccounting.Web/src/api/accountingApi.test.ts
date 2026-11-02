@@ -39,12 +39,22 @@ describe('accountingApi', () => {
   it('sends pledger updates with PUT to the pledger resource', async () => {
     const { fetchMock, api } = setup(json({ id: PLEDGE_ID }))
 
-    await api.pledgers.update(PLEDGE_ID, { pledgerName: 'Ada', active: false })
+    await api.pledgers.update(PLEDGE_ID, {
+      pledgerName: 'Ada',
+      active: false,
+      email: 'ada@example.org',
+      enableNotification: true,
+    })
 
     const [url, init] = fetchMock.mock.calls[0]!
     expect(url).toBe(`https://api.test/pledgers/${PLEDGE_ID}`)
     expect(init?.method).toBe('PUT')
-    expect(JSON.parse(init!.body as string)).toEqual({ pledgerName: 'Ada', active: false })
+    expect(JSON.parse(init!.body as string)).toEqual({
+      pledgerName: 'Ada',
+      active: false,
+      email: 'ada@example.org',
+      enableNotification: true,
+    })
   })
 
   it('lists pledges by category with paging and sorting parameters', async () => {

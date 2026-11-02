@@ -25,17 +25,23 @@ export interface Pledger {
   id: Guid
   pledgerName: string
   active: boolean
+  email: string | null
+  enableNotification: boolean
   createdAt: IsoDateTime
   updatedAt: IsoDateTime
 }
 
 export interface CreatePledgerRequest {
   pledgerName: string
+  email?: string | null
+  enableNotification?: boolean
 }
 
 export interface UpdatePledgerRequest {
   pledgerName: string
   active: boolean
+  email: string | null
+  enableNotification: boolean
 }
 
 export type PledgerSortBy = 'PledgerName'

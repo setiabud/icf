@@ -23,7 +23,12 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
     public async Task Post_with_required_fields_returns_created_details_and_location()
     {
         using var client = CreateClient(_factory, allowAutoRedirect: false);
-        var request = new CreatePledgerRequest { PledgerName = "Community Fund" };
+        var request = new CreatePledgerRequest
+        {
+            PledgerName = "Community Fund",
+            Email = "community@example.org",
+            EnableNotification = true
+        };
         var beforeRequest = DateTime.UtcNow;
 
         using var response = await client.PostAsJsonAsync("/pledgers", request);
@@ -34,6 +39,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         Assert.NotEqual(Guid.Empty, pledger.Id);
         Assert.Equal(request.PledgerName, pledger.PledgerName);
         Assert.True(pledger.Active);
+        Assert.Equal(request.Email, pledger.Email);
+        Assert.True(pledger.EnableNotification);
         Assert.Equal(DateTimeKind.Utc, pledger.CreatedAt.Kind);
         Assert.InRange(pledger.CreatedAt, beforeRequest, DateTime.UtcNow);
         Assert.Equal(pledger.CreatedAt, pledger.UpdatedAt);
@@ -45,6 +52,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         Assert.NotNull(storedPledger);
         Assert.Equal(pledger.PledgerName, storedPledger.PledgerName);
         Assert.Equal(pledger.Active, storedPledger.Active);
+        Assert.Equal(pledger.Email, storedPledger.Email);
+        Assert.Equal(pledger.EnableNotification, storedPledger.EnableNotification);
         Assert.Equal(pledger.CreatedAt, storedPledger.CreatedAt);
         Assert.Equal(pledger.UpdatedAt, storedPledger.UpdatedAt);
     }
@@ -55,7 +64,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
     [InlineData("""{"pledgerName":""}""")]
     [InlineData("""{"pledgerName":"   "}""")]
     [InlineData("""{"pledgerName":"\t\r\n"}""")]
-    public async Task Post_with_invalid_name_returns_bad_request_problem_details(string json)
+    [InlineData("""{"pledgerName":"Community Fund","email":"invalid"}""")]
+    public async Task Post_with_invalid_name_or_email_returns_bad_request_problem_details(string json)
     {
         using var client = CreateClient(_factory, allowAutoRedirect: false);
         using var scope = _factory.Services.CreateScope();
@@ -73,6 +83,22 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         Assert.False(string.IsNullOrWhiteSpace(problem.Title));
         Assert.Null(response.Headers.Location);
         Assert.Equal(originalCount, (await repository.GetAllAsync()).TotalCount);
+    }
+
+    [Fact]
+    public async Task Post_without_optional_contact_fields_uses_notification_default()
+    {
+        using var factory = CreateIsolatedFactory();
+        using var client = CreateClient(factory);
+
+        using var response = await client.PostAsJsonAsync(
+            "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<PledgerResponse>();
+        Assert.NotNull(result);
+        Assert.Null(result.Email);
+        Assert.False(result.EnableNotification);
     }
 
     [Fact]
@@ -272,6 +298,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         Assert.Equal(pledger.Id.Value, result.Id);
         Assert.Equal(pledger.PledgerName, result.PledgerName);
         Assert.Equal(pledger.Active, result.Active);
+        Assert.Equal(pledger.Email, result.Email);
+        Assert.Equal(pledger.EnableNotification, result.EnableNotification);
         Assert.Equal(pledger.CreatedAt, result.CreatedAt);
         Assert.Equal(pledger.UpdatedAt, result.UpdatedAt);
     }
@@ -358,7 +386,13 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         var pledger = Pledger.Create("Community Fund");
         var createdAt = pledger.CreatedAt;
         await repository.AddAsync(pledger, CancellationToken.None);
-        var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = false };
+        var request = new UpdatePledgerRequest
+        {
+            PledgerName = "Mission Fund",
+            Active = false,
+            Email = "mission@example.org",
+            EnableNotification = true
+        };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{pledger.Id.Value}", request);
 
@@ -368,6 +402,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         Assert.Equal(pledger.Id.Value, result.Id);
         Assert.Equal("Mission Fund", result.PledgerName);
         Assert.False(result.Active);
+        Assert.Equal("mission@example.org", result.Email);
+        Assert.True(result.EnableNotification);
         Assert.Equal(createdAt, result.CreatedAt);
         Assert.True(result.UpdatedAt >= createdAt);
 
@@ -375,6 +411,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         Assert.NotNull(storedPledger);
         Assert.Equal("Mission Fund", storedPledger.PledgerName);
         Assert.False(storedPledger.Active);
+        Assert.Equal("mission@example.org", storedPledger.Email);
+        Assert.True(storedPledger.EnableNotification);
         Assert.Equal(result.UpdatedAt, storedPledger.UpdatedAt);
     }
 
@@ -383,7 +421,10 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
-        var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
+        var request = new UpdatePledgerRequest
+        {
+            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+        };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.NewGuid()}", request);
 
@@ -394,7 +435,10 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
     public async Task Put_with_non_guid_id_returns_not_found()
     {
         using var client = CreateClient(_factory);
-        var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
+        var request = new UpdatePledgerRequest
+        {
+            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+        };
 
         using var response = await client.PutAsJsonAsync("/pledgers/abc", request);
 
@@ -405,7 +449,10 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
     public async Task Put_with_empty_guid_returns_bad_request_problem_details()
     {
         using var client = CreateClient(_factory);
-        var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
+        var request = new UpdatePledgerRequest
+        {
+            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+        };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.Empty}", request);
 
@@ -420,6 +467,9 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
     [InlineData("""{"pledgerName":"   ","active":true}""")]
     [InlineData("""{"pledgerName":"Mission Fund"}""")]
     [InlineData("""{"pledgerName":"Mission Fund","active":null}""")]
+    [InlineData("""{"pledgerName":"Mission Fund","active":true,"email":null}""")]
+    [InlineData("""{"pledgerName":"Mission Fund","active":true,"enableNotification":false}""")]
+    [InlineData("""{"pledgerName":"Mission Fund","active":true,"email":"invalid","enableNotification":false}""")]
     public async Task Put_with_invalid_body_returns_bad_request_without_updating(string json)
     {
         using var factory = CreateIsolatedFactory();
@@ -447,7 +497,10 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
         using var client = CreateClient(factory);
-        var request = new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true };
+        var request = new UpdatePledgerRequest
+        {
+            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+        };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.NewGuid()}", request);
 
@@ -584,7 +637,10 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         if (method == "PUT")
         {
             request.Content = JsonContent.Create(
-                new UpdatePledgerRequest { PledgerName = "Mission Fund", Active = true });
+                new UpdatePledgerRequest
+                {
+                    PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+                });
         }
 
         using var response = await client.SendAsync(request);
@@ -638,7 +694,12 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
             => throw new ArgumentException(RejectionMessage, nameof(query));
 
         public Task<Pledger?> UpdateAsync(
-            PledgerId id, string pledgerName, bool active, CancellationToken cancellationToken)
+            PledgerId id,
+            string pledgerName,
+            bool active,
+            string? email,
+            bool enableNotification,
+            CancellationToken cancellationToken)
             => throw new ArgumentException(RejectionMessage, nameof(pledgerName));
 
         public Task RemoveAsync(PledgerId id, CancellationToken cancellationToken)

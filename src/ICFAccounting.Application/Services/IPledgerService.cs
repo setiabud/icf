@@ -30,15 +30,22 @@ public interface IPledgerService
     Task<PagedPledgersResult> GetAllAsync(PledgerQuery? query = null, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Updates a pledger's name and active status.
+    /// Updates a pledger's details and notification preference.
     /// </summary>
     /// <param name="id">The identifier of the pledger to update.</param>
     /// <param name="pledgerName">The updated pledger name.</param>
     /// <param name="active">Whether the pledger is active.</param>
+    /// <param name="email">The updated email address, or <see langword="null"/>.</param>
+    /// <param name="enableNotification">Whether notifications are enabled.</param>
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>The updated pledger, or <see langword="null"/> if no pledger has the identifier.</returns>
     Task<Pledger?> UpdateAsync(
-        PledgerId id, string pledgerName, bool active, CancellationToken cancellationToken = default);
+        PledgerId id,
+        string pledgerName,
+        bool active,
+        string? email,
+        bool enableNotification,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Removes a pledger by its identifier.

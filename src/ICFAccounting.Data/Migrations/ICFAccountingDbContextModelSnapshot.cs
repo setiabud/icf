@@ -93,6 +93,14 @@ namespace ICFAccounting.Data.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2(7)");
 
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("EnableNotification")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("PledgerName")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");

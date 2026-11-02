@@ -74,6 +74,8 @@ public sealed class PledgerService : IPledgerService
         PledgerId id,
         string pledgerName,
         bool active,
+        string? email,
+        bool enableNotification,
         CancellationToken cancellationToken = default)
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledger");
@@ -87,7 +89,7 @@ public sealed class PledgerService : IPledgerService
             return null;
         }
 
-        pledger.Update(pledgerName, active, _timeProvider);
+        pledger.Update(pledgerName, active, email, enableNotification, _timeProvider);
         await _pledgerRepository.UpdateAsync(pledger, cancellationToken);
         _logger.PledgerUpdated(id);
         return pledger;

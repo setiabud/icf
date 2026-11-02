@@ -60,17 +60,58 @@ describe('PledgersView', () => {
     expect(api.pledgers.create).not.toHaveBeenCalled()
 
     await user.type(screen.getByLabelText('Pledger name'), '  Ada Lovelace ')
+    await user.type(screen.getByLabelText('Email'), 'invalid')
+    await user.click(screen.getByRole('button', { name: 'Create pledger' }))
+    expect(screen.getByText('Enter a valid email address.')).toBeInTheDocument()
+    expect(api.pledgers.create).not.toHaveBeenCalled()
+
+    await user.clear(screen.getByLabelText('Email'))
+    await user.type(screen.getByLabelText('Email'), 'ada@example.org')
+    await user.click(screen.getByLabelText('Enable notifications'))
     await user.click(screen.getByRole('button', { name: 'Create pledger' }))
     const savingButton = screen.getByRole('button', { name: 'Saving…' })
     expect(savingButton).toBeDisabled()
     await user.click(savingButton)
 
     expect(api.pledgers.create).toHaveBeenCalledTimes(1)
-    expect(api.pledgers.create).toHaveBeenCalledWith({ pledgerName: 'Ada Lovelace' })
+    expect(api.pledgers.create).toHaveBeenCalledWith({
+      pledgerName: 'Ada Lovelace',
+      email: 'ada@example.org',
+      enableNotification: true,
+    })
 
     creation.resolve(pledger('p1', 'Ada Lovelace'))
     await waitFor(() => expect(dialog).not.toBeInTheDocument())
     expect(await screen.findByText('Created Ada Lovelace.')).toBeInTheDocument()
+  })
+
+  it('loads and saves email and notification preferences when editing a pledger', async () => {
+    const api = createFakeApi()
+    const existing = { ...pledger('p1', 'Ada Lovelace'), email: 'ada@example.org', enableNotification: true }
+    api.pledgers.list.mockResolvedValue(page([existing]))
+    api.pledgers.update.mockResolvedValue({
+      ...existing,
+      email: 'ada.new@example.org',
+      enableNotification: false,
+    })
+    const user = userEvent.setup()
+
+    renderWithApi(<PledgersView onViewPledges={vi.fn()} />, api)
+    await user.click(await screen.findByRole('button', { name: 'Edit Ada Lovelace' }))
+
+    expect(screen.getByLabelText('Email')).toHaveValue('ada@example.org')
+    expect(screen.getByLabelText('Enable notifications')).toBeChecked()
+    await user.clear(screen.getByLabelText('Email'))
+    await user.type(screen.getByLabelText('Email'), 'ada.new@example.org')
+    await user.click(screen.getByLabelText('Enable notifications'))
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(api.pledgers.update).toHaveBeenCalledWith('p1', {
+      pledgerName: 'Ada Lovelace',
+      active: true,
+      email: 'ada.new@example.org',
+      enableNotification: false,
+    })
   })
 
   it('keeps the pledger and explains the conflict when deletion is rejected', async () => {

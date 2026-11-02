@@ -191,6 +191,7 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
         var request = new
         {
             PledgerName = "Missing", CategoryName = "Missing", Active = true,
+            Email = (string?)null, EnableNotification = false,
             Year = 2026, Amount = 100m, PledgerId = Guid.NewGuid(),
             PledgeCategoryId = Guid.NewGuid(), PledgeId = Guid.NewGuid(),
             PaymentDate = new DateTime(2026, 10, 27)

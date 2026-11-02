@@ -3,11 +3,17 @@ export const MAX_PLEDGE_YEAR = 2099
 
 const AMOUNT_PATTERN = /^\d+(\.\d{1,2})?$/
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export type FieldErrors<TField extends string> = Partial<Record<TField, string>>
 
 export function validateRequiredName(value: string, label: string): string | undefined {
   return value.trim() ? undefined : `${label} is required.`
+}
+
+export function validateOptionalEmail(value: string): string | undefined {
+  const email = value.trim()
+  return email && !EMAIL_PATTERN.test(email) ? 'Enter a valid email address.' : undefined
 }
 
 export function validatePledgeYear(value: string): string | undefined {
