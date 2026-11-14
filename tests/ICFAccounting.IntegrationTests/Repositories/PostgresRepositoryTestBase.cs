@@ -11,9 +11,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace ICFAccounting.IntegrationTests.Repositories;
 
 /// <summary>
-/// Provides isolated database lifecycle and related-record setup for SQL repository tests.
+/// Provides isolated database lifecycle and related-record setup for repository tests.
 /// </summary>
-public abstract class SqlServerRepositoryTestBase(SqlServerModelFixture fixture) : IAsyncLifetime
+public abstract class PostgresRepositoryTestBase(PostgresModelFixture fixture) : IAsyncLifetime
 {
     private readonly string _databaseName = $"ICFAccountingRepositoryTests_{Guid.NewGuid():N}";
 
@@ -65,17 +65,17 @@ public abstract class SqlServerRepositoryTestBase(SqlServerModelFixture fixture)
         return (pledge, payment);
     }
 
-    protected static SqlServerPledgePaymentRepository CreatePaymentRepository(ICFAccountingDbContext context)
+    protected static PostgresPledgePaymentRepository CreatePaymentRepository(ICFAccountingDbContext context)
     {
-        return new SqlServerPledgePaymentRepository(context, NullLogger<SqlServerPledgePaymentRepository>.Instance);
+        return new PostgresPledgePaymentRepository(context, NullLogger<PostgresPledgePaymentRepository>.Instance);
     }
 
     protected async Task AssertRelatedRecordsExistAsync(Pledge pledge, PledgePayment payment)
     {
         await using var context = CreateContext();
-        Assert.NotNull(await new SqlServerPledgerRepository(context).GetByIdAsync(pledge.PledgerId));
-        Assert.NotNull(await new SqlServerPledgeCategoryRepository(context).GetByIdAsync(pledge.PledgeCategoryId));
-        Assert.NotNull(await new SqlServerPledgeRepository(context).GetByIdAsync(pledge.Id));
+        Assert.NotNull(await new PostgresPledgerRepository(context).GetByIdAsync(pledge.PledgerId));
+        Assert.NotNull(await new PostgresPledgeCategoryRepository(context).GetByIdAsync(pledge.PledgeCategoryId));
+        Assert.NotNull(await new PostgresPledgeRepository(context).GetByIdAsync(pledge.Id));
         Assert.NotNull(await CreatePaymentRepository(context).GetByIdAsync(payment.Id));
     }
 
@@ -83,8 +83,8 @@ public abstract class SqlServerRepositoryTestBase(SqlServerModelFixture fixture)
     {
         await using var context = CreateContext();
         await CreatePaymentRepository(context).RemoveAsync(payment.Id);
-        await new SqlServerPledgeRepository(context).RemoveAsync(pledge.Id);
-        await new SqlServerPledgerRepository(context).RemoveAsync(pledge.PledgerId);
-        await new SqlServerPledgeCategoryRepository(context).RemoveAsync(pledge.PledgeCategoryId);
+        await new PostgresPledgeRepository(context).RemoveAsync(pledge.Id);
+        await new PostgresPledgerRepository(context).RemoveAsync(pledge.PledgerId);
+        await new PostgresPledgeCategoryRepository(context).RemoveAsync(pledge.PledgeCategoryId);
     }
 }

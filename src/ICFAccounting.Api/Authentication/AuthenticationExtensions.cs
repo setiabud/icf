@@ -14,9 +14,9 @@ public static class AuthenticationExtensions
 {
     public static IServiceCollection AddAccountAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<AuthenticationDbContext>(options => options.UseSqlServer(
+        services.AddDbContext<AuthenticationDbContext>(options => options.UseNpgsql(
             configuration.GetConnectionString("ICFAccounting"),
-            sql => sql.MigrationsHistoryTable("__IdentityMigrationsHistory", "auth")));
+            postgres => postgres.MigrationsHistoryTable("__IdentityMigrationsHistory", "auth")));
         services.AddScoped<UserProfileStore>();
         services.AddIdentityCore<UserAccount>(options =>
         {

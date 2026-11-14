@@ -1,4 +1,3 @@
-using System.Data.SqlTypes;
 using ICFAccounting.Data.Repositories;
 using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.PledgePayments;
@@ -6,12 +5,12 @@ using ICFAccounting.Domain.Pledges;
 using ICFAccounting.Domain.Repositories;
 using ICFAccounting.IntegrationTests.Data;
 using Microsoft.EntityFrameworkCore;
-using SqlException = Microsoft.Data.SqlClient.SqlException;
+using Npgsql;
 
 namespace ICFAccounting.IntegrationTests.Repositories;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class SqlServerPledgePaymentRepositoryTests(SqlServerModelFixture fixture) : SqlServerRepositoryTestBase(fixture)
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -90,7 +89,7 @@ public sealed class SqlServerPledgePaymentRepositoryTests(SqlServerModelFixture 
                 ? payments.OrderByDescending(payment => payment.Amount) : payments.OrderBy(payment => payment.Amount)
             : sortOrder == SortOrder.Descending
                 ? payments.OrderByDescending(payment => payment.PaymentDate) : payments.OrderBy(payment => payment.PaymentDate);
-        var expectedIds = expected.ThenByDescending(payment => new SqlGuid(payment.Id.Value))
+        var expectedIds = expected.ThenByDescending(payment => payment.Id.Value)
             .Skip(2).Take(2).Select(payment => payment.Id);
         await using var readContext = CreateContext();
         var repository = CreatePaymentRepository(readContext);
@@ -179,12 +178,12 @@ public sealed class SqlServerPledgePaymentRepositoryTests(SqlServerModelFixture 
             var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
                 () => update ? repository.UpdateAsync(invalid) : repository.AddAsync(invalid));
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
         }
 
         await using var readContext = CreateContext();
         var stored = await CreatePaymentRepository(readContext).GetByIdAsync(payment.Id);
-        var storedPledge = await new SqlServerPledgeRepository(readContext).GetByIdAsync(pledge.Id);
+        var storedPledge = await new PostgresPledgeRepository(readContext).GetByIdAsync(pledge.Id);
         Assert.NotNull(stored);
         Assert.NotNull(storedPledge);
         Assert.Equal(pledge.Id, stored.PledgeId);

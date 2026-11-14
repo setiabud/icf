@@ -1,16 +1,15 @@
-using System.Data.SqlTypes;
 using ICFAccounting.Data.Repositories;
 using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Repositories;
 using ICFAccounting.IntegrationTests.Data;
 using Microsoft.EntityFrameworkCore;
-using SqlException = Microsoft.Data.SqlClient.SqlException;
+using Npgsql;
 
 namespace ICFAccounting.IntegrationTests.Repositories;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixture) : SqlServerRepositoryTestBase(fixture)
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PostgresPledgerRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -20,7 +19,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         var pledger = Pledger.Create("Before", email: "before@example.org", enableNotification: true);
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgerRepository(context);
+            var repository = new PostgresPledgerRepository(context);
             if (insertWithUpdate)
             {
                 await repository.UpdateAsync(pledger);
@@ -33,7 +32,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
 
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgerRepository(context);
+            var repository = new PostgresPledgerRepository(context);
             var stored = await repository.GetByIdAsync(pledger.Id);
             Assert.NotNull(stored);
             Assert.Equal(pledger.CreatedAt, stored.CreatedAt);
@@ -45,7 +44,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
 
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgerRepository(context);
+            var repository = new PostgresPledgerRepository(context);
             var stored = await repository.GetByIdAsync(pledger.Id);
             Assert.NotNull(stored);
             Assert.Equal("Final", stored.PledgerName);
@@ -58,7 +57,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         }
 
         await using var readContext = CreateContext();
-        var readRepository = new SqlServerPledgerRepository(readContext);
+        var readRepository = new PostgresPledgerRepository(readContext);
         Assert.Null(await readRepository.GetByIdAsync(pledger.Id));
         await Assert.ThrowsAsync<KeyNotFoundException>(() => readRepository.RemoveAsync(pledger.Id));
     }
@@ -75,7 +74,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         }
 
         await using var readContext = CreateContext();
-        var repository = new SqlServerPledgerRepository(readContext);
+        var repository = new PostgresPledgerRepository(readContext);
         var unpaged = await repository.GetAllAsync();
         Assert.Equal(21, unpaged.Items.Count);
         Assert.Equal(21, unpaged.TotalCount);
@@ -97,7 +96,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
     [Theory]
     [InlineData(SortOrder.Ascending)]
     [InlineData(SortOrder.Descending)]
-    public async Task Pledger_queries_use_case_insensitive_names_and_sql_guid_ties(SortOrder sortOrder)
+    public async Task Pledger_queries_use_case_insensitive_names_and_postgres_uuid_ties(SortOrder sortOrder)
     {
         var pledgers = new[] { "alpha", "ALPHA", "beta", "Beta" }
             .Select(name => Pledger.Create(name)).ToList();
@@ -110,19 +109,40 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         var expected = sortOrder == SortOrder.Descending
             ? pledgers.OrderByDescending(pledger => pledger.PledgerName, StringComparer.OrdinalIgnoreCase)
             : pledgers.OrderBy(pledger => pledger.PledgerName, StringComparer.OrdinalIgnoreCase);
-        var expectedIds = expected.ThenBy(pledger => new SqlGuid(pledger.Id.Value)).Select(pledger => pledger.Id);
+        var expectedIds = expected.ThenBy(pledger => pledger.Id.Value).Select(pledger => pledger.Id);
         await using var readContext = CreateContext();
-        var repository = new SqlServerPledgerRepository(readContext);
+        var repository = new PostgresPledgerRepository(readContext);
         var result = await repository.GetAllAsync(new PledgerQuery(sortOrder: sortOrder));
         Assert.Equal(expectedIds, result.Items.Select(pledger => pledger.Id));
         Assert.Empty(readContext.ChangeTracker.Entries());
     }
 
     [Fact]
+    public async Task Pledger_name_collation_ignores_case_but_preserves_accents()
+    {
+        await using (var context = CreateContext())
+        {
+            context.Pledgers.AddRange(
+                Pledger.Create("cafe"),
+                Pledger.Create("CAFE"),
+                Pledger.Create("café"));
+            await context.SaveChangesAsync();
+        }
+
+        await using var readContext = CreateContext();
+        var matches = await readContext.Pledgers
+            .Where(pledger => pledger.PledgerName == "cafe")
+            .Select(pledger => pledger.PledgerName)
+            .ToListAsync();
+
+        Assert.Equal(["CAFE", "cafe"], matches.OrderBy(name => name, StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task Empty_queries_and_unknown_id_reads_preserve_existing_outcomes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgerRepository(context);
+        var repository = new PostgresPledgerRepository(context);
         Assert.Null(await repository.GetByIdAsync(PledgerId.New()));
         var unpaged = await repository.GetAllAsync();
         Assert.Empty(unpaged.Items);
@@ -136,7 +156,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
     public async Task Canceled_calls_do_not_read_or_mutate_the_context()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgerRepository(context);
+        var repository = new PostgresPledgerRepository(context);
         var pledger = Pledger.Create("Canceled");
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -164,11 +184,11 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgerRepository(context);
+            var repository = new PostgresPledgerRepository(context);
             var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
                 () => repository.RemoveAsync(pledge.PledgerId));
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
         }
 
         await AssertRelatedRecordsExistAsync(pledge, payment);
@@ -184,11 +204,11 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
             context.Pledgers.Add(pledger);
             await context.SaveChangesAsync();
             pledger.Update("Updated tracked pledger", false, null, false);
-            await new SqlServerPledgerRepository(context).UpdateAsync(pledger);
+            await new PostgresPledgerRepository(context).UpdateAsync(pledger);
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgerRepository(readContext).GetByIdAsync(pledger.Id);
+        var stored = await new PostgresPledgerRepository(readContext).GetByIdAsync(pledger.Id);
         Assert.NotNull(stored);
         Assert.Equal("Updated tracked pledger", stored.PledgerName);
         Assert.False(stored.Active);
@@ -199,7 +219,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
     public async Task Null_aggregate_mutations_fail_before_tracking_changes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgerRepository(context);
+        var repository = new PostgresPledgerRepository(context);
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.AddAsync(null!));
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         Assert.Empty(context.ChangeTracker.Entries());
@@ -211,7 +231,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
     public async Task Materialized_lists_remain_unchanged_after_later_writes(bool paginated)
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgerRepository(context);
+        var repository = new PostgresPledgerRepository(context);
         var original = Pledger.Create("Original pledger");
         await repository.AddAsync(original);
         var snapshot = await repository.GetAllAsync(paginated ? new PledgerQuery() : null);
@@ -231,7 +251,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgerRepository(context);
+            var repository = new PostgresPledgerRepository(context);
             var pledger = await repository.GetByIdAsync(pledge.PledgerId);
             Assert.NotNull(pledger);
             pledger.Update("Canceled name", false, null, false);
@@ -243,7 +263,7 @@ public sealed class SqlServerPledgerRepositoryTests(SqlServerModelFixture fixtur
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgerRepository(readContext).GetByIdAsync(pledge.PledgerId);
+        var stored = await new PostgresPledgerRepository(readContext).GetByIdAsync(pledge.PledgerId);
         Assert.NotNull(stored);
         Assert.Equal("Test pledger", stored.PledgerName);
         Assert.True(stored.Active);

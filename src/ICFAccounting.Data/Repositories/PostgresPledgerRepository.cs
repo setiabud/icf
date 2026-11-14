@@ -6,14 +6,14 @@ using Microsoft.EntityFrameworkCore;
 namespace ICFAccounting.Data.Repositories;
 
 /// <summary>
-/// Persists pledgers in SQL Server and saves each mutation before returning.
+/// Persists pledgers in PostgreSQL and saves each mutation before returning.
 /// </summary>
-public sealed class SqlServerPledgerRepository : IPledgerRepository
+public sealed class PostgresPledgerRepository : IPledgerRepository
 {
     private readonly ICFAccountingDbContext _context;
 
     /// <summary>Creates a repository using the scoped accounting context.</summary>
-    public SqlServerPledgerRepository(ICFAccountingDbContext context)
+    public PostgresPledgerRepository(ICFAccountingDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;

@@ -9,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ICFAccounting.IntegrationTests.Api;
 
 /// <summary>
-/// Supplies isolated configuration without replacing the API's SQL repository registrations.
+/// Supplies isolated configuration without replacing the API's repository registrations.
 /// </summary>
-public sealed class SqlServerApiFactory(string? connectionString) : WebApplicationFactory<Program>
+public sealed class PostgresApiFactory(string? connectionString) : WebApplicationFactory<Program>
 {
     /// <inheritdoc />
     protected override void ConfigureWebHost(IWebHostBuilder builder)

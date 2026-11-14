@@ -16,15 +16,16 @@ internal sealed class PledgePaymentConfiguration : IEntityTypeConfiguration<Pled
             .ValueGeneratedNever();
         builder.Property(payment => payment.PledgeId)
             .HasConversion(identity => identity.Value, value => new PledgeId(value));
-        builder.Property(payment => payment.Amount).HasPrecision(38, 2)
-            .Metadata.SetTypeMapping(new AccountingAmountTypeMapping());
-        builder.Property(payment => payment.PaymentDate).HasColumnType("datetime2(7)");
-        builder.Property(payment => payment.Comment).HasColumnType("nvarchar(max)");
+        builder.Property(payment => payment.Amount).HasColumnType("numeric");
+        builder.Property(payment => payment.PaymentDate)
+            .HasColumnType("timestamp without time zone")
+            .HasConversion<PaymentDateConverter>();
+        builder.Property(payment => payment.Comment).HasColumnType("text");
         builder.Property(payment => payment.CreatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
         builder.Property(payment => payment.UpdatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
 
         builder.HasOne<Pledge>().WithMany()

@@ -21,7 +21,7 @@ public sealed class ServiceRegistrationTests
     [Fact]
     public void Api_startup_rejects_missing_connection_string_without_a_fallback()
     {
-        using var factory = new SqlServerApiFactory(null);
+        using var factory = new PostgresApiFactory(null);
         var exception = Assert.Throws<InvalidOperationException>(() => factory.CreateClient());
         Assert.Contains("ConnectionStrings__ICFAccounting", exception.Message);
     }
@@ -45,12 +45,12 @@ public sealed class ServiceRegistrationTests
     public void AddDataServices_registers_only_scoped_sql_repositories_and_context()
     {
         var services = new ServiceCollection();
-        services.AddDataServices(CreateConfiguration("Server=localhost;Database=ICFAccounting;Integrated Security=True"));
+        services.AddDataServices(CreateConfiguration("Host=localhost;Database=icfaccounting;Username=postgres"));
 
-        AssertScopedRegistration<IPledgerRepository, SqlServerPledgerRepository>(services);
-        AssertScopedRegistration<IPledgeCategoryRepository, SqlServerPledgeCategoryRepository>(services);
-        AssertScopedRegistration<IPledgeRepository, SqlServerPledgeRepository>(services);
-        AssertScopedRegistration<IPledgePaymentRepository, SqlServerPledgePaymentRepository>(services);
+        AssertScopedRegistration<IPledgerRepository, PostgresPledgerRepository>(services);
+        AssertScopedRegistration<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>(services);
+        AssertScopedRegistration<IPledgeRepository, PostgresPledgeRepository>(services);
+        AssertScopedRegistration<IPledgePaymentRepository, PostgresPledgePaymentRepository>(services);
         Assert.Equal(ServiceLifetime.Scoped,
             Assert.Single(services, service => service.ServiceType == typeof(ICFAccountingDbContext)).Lifetime);
         Assert.DoesNotContain(services, service => service.ImplementationType?.Name.StartsWith("InMemory") == true);
@@ -61,7 +61,7 @@ public sealed class ServiceRegistrationTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddDataServices(CreateConfiguration("Server=localhost;Database=ICFAccounting;Integrated Security=True"));
+        services.AddDataServices(CreateConfiguration("Host=localhost;Database=icfaccounting;Username=postgres"));
         services.AddApplicationServices();
         using var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -76,12 +76,12 @@ public sealed class ServiceRegistrationTests
         var context = first.GetRequiredService<ICFAccountingDbContext>();
         Assert.Same(context, first.GetRequiredService<ICFAccountingDbContext>());
         Assert.NotSame(context, second.GetRequiredService<ICFAccountingDbContext>());
-        Assert.Equal("Microsoft.EntityFrameworkCore.SqlServer", context.Database.ProviderName);
-        Assert.Equal("ICFAccounting", context.Database.GetDbConnection().Database);
-        AssertScopeIsolation<IPledgerRepository, SqlServerPledgerRepository>(first, second);
-        AssertScopeIsolation<IPledgeCategoryRepository, SqlServerPledgeCategoryRepository>(first, second);
-        AssertScopeIsolation<IPledgeRepository, SqlServerPledgeRepository>(first, second);
-        AssertScopeIsolation<IPledgePaymentRepository, SqlServerPledgePaymentRepository>(first, second);
+        Assert.Equal("Npgsql.EntityFrameworkCore.PostgreSQL", context.Database.ProviderName);
+        Assert.Equal("icfaccounting", context.Database.GetDbConnection().Database);
+        AssertScopeIsolation<IPledgerRepository, PostgresPledgerRepository>(first, second);
+        AssertScopeIsolation<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>(first, second);
+        AssertScopeIsolation<IPledgeRepository, PostgresPledgeRepository>(first, second);
+        AssertScopeIsolation<IPledgePaymentRepository, PostgresPledgePaymentRepository>(first, second);
         Assert.Same(TimeProvider.System, first.GetRequiredService<TimeProvider>());
         Assert.Same(first.GetRequiredService<TimeProvider>(), second.GetRequiredService<TimeProvider>());
         Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IPledgerRepository>());

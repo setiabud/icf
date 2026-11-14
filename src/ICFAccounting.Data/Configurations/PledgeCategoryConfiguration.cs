@@ -14,13 +14,13 @@ internal sealed class PledgeCategoryConfiguration : IEntityTypeConfiguration<Ple
             .HasConversion(identity => identity.Value, value => new PledgeCategoryId(value))
             .ValueGeneratedNever();
         builder.Property(category => category.CategoryName)
-            .HasColumnType("nvarchar(max)")
+            .HasColumnType("text")
             .IsRequired();
         builder.Property(category => category.CreatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
         builder.Property(category => category.UpdatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
     }
 }

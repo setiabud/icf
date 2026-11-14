@@ -3,12 +3,12 @@ using ICFAccounting.Domain.PledgeCategories;
 using ICFAccounting.Domain.Repositories;
 using ICFAccounting.IntegrationTests.Data;
 using Microsoft.EntityFrameworkCore;
-using SqlException = Microsoft.Data.SqlClient.SqlException;
+using Npgsql;
 
 namespace ICFAccounting.IntegrationTests.Repositories;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture fixture) : SqlServerRepositoryTestBase(fixture)
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -18,7 +18,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
         var category = PledgeCategory.Create("Before");
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeCategoryRepository(context);
+            var repository = new PostgresPledgeCategoryRepository(context);
             if (insertWithUpdate)
             {
                 await repository.UpdateAsync(category);
@@ -31,7 +31,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
 
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeCategoryRepository(context);
+            var repository = new PostgresPledgeCategoryRepository(context);
             var stored = await repository.GetByIdAsync(category.Id);
             Assert.NotNull(stored);
             stored.Update("After", false);
@@ -42,7 +42,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
 
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeCategoryRepository(context);
+            var repository = new PostgresPledgeCategoryRepository(context);
             var stored = Assert.Single(await repository.GetAllAsync());
             Assert.Equal(category.Id, stored.Id);
             Assert.Equal("Final", stored.CategoryName);
@@ -52,7 +52,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
         }
 
         await using var readContext = CreateContext();
-        var readRepository = new SqlServerPledgeCategoryRepository(readContext);
+        var readRepository = new PostgresPledgeCategoryRepository(readContext);
         Assert.Null(await readRepository.GetByIdAsync(category.Id));
         Assert.Empty(await readRepository.GetAllAsync());
         await Assert.ThrowsAsync<KeyNotFoundException>(() => readRepository.RemoveAsync(category.Id));
@@ -62,7 +62,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
     public async Task Empty_queries_and_unknown_id_reads_preserve_existing_outcomes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeCategoryRepository(context);
+        var repository = new PostgresPledgeCategoryRepository(context);
         Assert.Null(await repository.GetByIdAsync(PledgeCategoryId.New()));
         Assert.Empty(await repository.GetAllAsync());
     }
@@ -71,7 +71,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
     public async Task Canceled_calls_do_not_read_or_mutate_the_context()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeCategoryRepository(context);
+        var repository = new PostgresPledgeCategoryRepository(context);
         var category = PledgeCategory.Create("Canceled");
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -98,11 +98,11 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeCategoryRepository(context);
+            var repository = new PostgresPledgeCategoryRepository(context);
             var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
                 () => repository.RemoveAsync(pledge.PledgeCategoryId));
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
         }
 
         await AssertRelatedRecordsExistAsync(pledge, payment);
@@ -118,11 +118,11 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
             context.PledgeCategories.Add(category);
             await context.SaveChangesAsync();
             category.Update("Updated tracked category", false);
-            await new SqlServerPledgeCategoryRepository(context).AddAsync(category);
+            await new PostgresPledgeCategoryRepository(context).AddAsync(category);
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgeCategoryRepository(readContext).GetByIdAsync(category.Id);
+        var stored = await new PostgresPledgeCategoryRepository(readContext).GetByIdAsync(category.Id);
         Assert.NotNull(stored);
         Assert.Equal("Updated tracked category", stored.CategoryName);
         Assert.False(stored.Active);
@@ -133,7 +133,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
     public async Task Null_aggregate_mutations_fail_before_tracking_changes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeCategoryRepository(context);
+        var repository = new PostgresPledgeCategoryRepository(context);
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.AddAsync(null!));
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         Assert.Empty(context.ChangeTracker.Entries());
@@ -143,7 +143,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
     public async Task Materialized_lists_remain_unchanged_after_later_writes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeCategoryRepository(context);
+        var repository = new PostgresPledgeCategoryRepository(context);
         var original = PledgeCategory.Create("Original category");
         await repository.AddAsync(original);
         var snapshot = await repository.GetAllAsync();
@@ -162,7 +162,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeCategoryRepository(context);
+            var repository = new PostgresPledgeCategoryRepository(context);
             var category = await repository.GetByIdAsync(pledge.PledgeCategoryId);
             Assert.NotNull(category);
             category.Update("Canceled category", false);
@@ -174,7 +174,7 @@ public sealed class SqlServerPledgeCategoryRepositoryTests(SqlServerModelFixture
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgeCategoryRepository(readContext).GetByIdAsync(pledge.PledgeCategoryId);
+        var stored = await new PostgresPledgeCategoryRepository(readContext).GetByIdAsync(pledge.PledgeCategoryId);
         Assert.NotNull(stored);
         Assert.Equal("Test category", stored.CategoryName);
         Assert.True(stored.Active);

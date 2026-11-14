@@ -14,8 +14,8 @@ using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class PledgeEndpointsTests : SqlServerApiTestBase
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PledgeEndpointsTests : PostgresApiTestBase
 {
     private const string ValidPledgerId = "6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01";
     private const string ValidCategoryId = "6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02";
@@ -26,7 +26,7 @@ public sealed class PledgeEndpointsTests : SqlServerApiTestBase
     private readonly PledgeCategory _category = PledgeCategory.Create("Test category");
     private readonly PledgeCategory _otherCategory = PledgeCategory.Create("Other category");
 
-    public PledgeEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
+    public PledgeEndpointsTests(PostgresModelFixture fixture) : base(fixture)
     {
     }
 

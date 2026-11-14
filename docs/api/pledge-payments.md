@@ -6,9 +6,9 @@ These apply to every endpoint below.
 
 - All endpoints require a signed-in cookie session (`401` otherwise); writes
   also require CSRF verification. See [authentication](../guides/authentication.md).
-- Data is persisted in SQL Server and survives application restarts.
+- Data is persisted in PostgreSQL and survives application restarts.
 - Error responses use a ProblemDetails body (`application/problem+json`).
-- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; SQL internals are not exposed.
+- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; database internals are not exposed.
 - A route ID that is not a GUID returns `404 Not Found` because the route does not match.
 - Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
 - Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
@@ -17,7 +17,7 @@ These apply to every endpoint below.
 
 ## POST /pledge-payments
 
-Creates an active pledge payment. The referenced pledge must exist; a SQL
+Creates an active pledge payment. The referenced pledge must exist; a PostgreSQL
 foreign key enforces the relationship.
 
 Request:
@@ -34,9 +34,9 @@ Request:
 `pledgeId`, `amount`, and `paymentDate` are required; `comment` is optional
 and a blank comment is stored as `null`. `pledgeId` must not be the empty
 GUID, `amount` must be greater than zero with at most two decimal places, and
-`paymentDate` must not be the default date. `paymentDate` is stored and
-returned as sent, with no time-zone conversion; `createdAt` and `updatedAt`
-are always generated in UTC.
+`paymentDate` must not be the default date. `paymentDate` is stored and returned without time-zone conversion at
+PostgreSQL's microsecond precision; `createdAt` and `updatedAt` are always
+generated in UTC.
 
 Success returns `201 Created` with a `Location: /pledge-payments/{id}` header
 and the same fields as `GET /pledge-payments/{id}`, with `active` set to
@@ -74,9 +74,9 @@ the requested page and the collection's totals.
 | `sortBy` | `PaymentDate` | `PaymentDate`, `Amount` (case-insensitive) |
 | `sortOrder` | `Descending` | `Ascending`, `Descending` (case-insensitive) |
 
-Payments with equal sort values are ordered by native SQL Server GUID order descending, regardless of
-`sortOrder`, to keep page boundaries
-stable. Numeric enum values and abbreviations such as `asc` are rejected. For
+Payments with equal sort values are ordered by PostgreSQL's native UUID order
+descending, regardless of `sortOrder`, to keep page boundaries stable. Numeric
+enum values and abbreviations such as `asc` are rejected. For
 example: `GET /pledge-payments/pledge/{pledgeId}?page=2&pageSize=10&sortBy=Amount&sortOrder=Ascending`.
 
 | Condition | Response |

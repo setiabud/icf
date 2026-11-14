@@ -3,25 +3,24 @@ using ICFAccounting.Domain.PledgePayments;
 using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Pledges;
 using ICFAccounting.Domain.Repositories;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql;
 
 namespace ICFAccounting.IntegrationTests.Data;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
+[Collection(nameof(PostgresTestCollection))]
+public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
 {
     [Fact]
     public async Task Database_migration_is_applied_once_and_matches_the_model()
     {
         await using var context = fixture.CreateContext();
         var migrations = context.Database.GetMigrations().ToArray();
-        Assert.True(migrations.Length >= 2);
+        Assert.Single(migrations);
         Assert.EndsWith("_InitialCreate", migrations[0]);
-        Assert.EndsWith("_AddPledgerContactPreferences", migrations[1]);
         Assert.Equal(migrations, await context.Database.GetAppliedMigrationsAsync());
         Assert.Empty(await context.Database.GetPendingMigrationsAsync());
         Assert.False(context.Database.HasPendingModelChanges());
@@ -32,33 +31,45 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
     }
 
     [Fact]
-    public async Task Database_migration_creates_the_expected_sql_schema()
+    public async Task Database_migration_creates_the_expected_postgres_schema()
     {
         await using var context = fixture.CreateContext();
         var tables = await context.Database.SqlQueryRaw<string>(
-            "SELECT [name] AS [Value] FROM sys.tables WHERE [schema_id] = SCHEMA_ID(N'dbo') AND [name] <> N'__EFMigrationsHistory'")
+            """
+            SELECT table_name AS "Value" FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                AND table_name <> '__EFMigrationsHistory'
+            """)
             .OrderBy(tableName => tableName).ToListAsync();
         Assert.Equal(["PledgeCategories", "PledgePayments", "Pledgers", "Pledges"], tables);
 
         var collation = await context.Database.SqlQueryRaw<string>(
-            "SELECT CAST(DATABASEPROPERTYEX(DB_NAME(), 'Collation') AS nvarchar(128)) AS [Value]")
+            """
+            SELECT collname AS "Value" FROM pg_collation
+            WHERE collname = 'icf_case_insensitive_accent_sensitive'
+            """)
             .SingleAsync();
-        Assert.Equal("Latin1_General_100_CI_AS_SC", collation);
+        Assert.Equal("icf_case_insensitive_accent_sensitive", collation);
 
         var amountColumns = await context.Database.SqlQueryRaw<int>(
             """
-            SELECT COUNT(*) AS [Value] FROM sys.columns AS columns
-            INNER JOIN sys.tables AS tables ON columns.object_id = tables.object_id
-            WHERE tables.schema_id = SCHEMA_ID(N'dbo')
-                AND tables.name IN (N'Pledges', N'PledgePayments')
-                AND columns.name = N'Amount' AND columns.precision = 38 AND columns.scale = 2
+            SELECT COUNT(*)::int AS "Value" FROM information_schema.columns
+            WHERE table_schema = 'public'
+                AND table_name IN ('Pledges', 'PledgePayments')
+                AND column_name = 'Amount' AND data_type = 'numeric'
+                AND numeric_precision IS NULL AND numeric_scale IS NULL
             """).SingleAsync();
         Assert.Equal(2, amountColumns);
 
         var restrictedRelationships = await context.Database.SqlQueryRaw<int>(
             """
-            SELECT COUNT(*) AS [Value] FROM sys.foreign_keys
-            WHERE schema_id = SCHEMA_ID(N'dbo') AND delete_referential_action = 0
+            SELECT COUNT(*)::int AS "Value"
+            FROM information_schema.table_constraints AS constraints
+            INNER JOIN information_schema.referential_constraints AS relationships
+                USING (constraint_catalog, constraint_schema, constraint_name)
+            WHERE constraints.constraint_schema = 'public'
+                AND constraints.constraint_type = 'FOREIGN KEY'
+                AND relationships.delete_rule = 'NO ACTION'
             """).SingleAsync();
         Assert.Equal(3, restrictedRelationships);
     }
@@ -82,7 +93,11 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
 
             Assert.Empty(await context.Database.GetAppliedMigrationsAsync());
             var remainingTables = await context.Database.SqlQueryRaw<string>(
-                "SELECT [name] AS [Value] FROM sys.tables WHERE [schema_id] = SCHEMA_ID(N'dbo') AND [name] <> N'__EFMigrationsHistory'")
+                """
+                SELECT table_name AS "Value" FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                    AND table_name <> '__EFMigrationsHistory'
+                """)
                 .ToListAsync();
             Assert.Empty(remainingTables);
 
@@ -118,9 +133,9 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
         Assert.Equal("Id", identity.Name);
         Assert.Equal(ValueGenerated.Never, identity.ValueGenerated);
         Assert.Equal(typeof(Guid), identity.GetTypeMapping().Converter!.ProviderClrType);
-        Assert.Equal("uniqueidentifier", identity.GetColumnType());
-        Assert.Equal("datetime2(7)", entity.FindProperty("CreatedAt")!.GetColumnType());
-        Assert.Equal("datetime2(7)", entity.FindProperty("UpdatedAt")!.GetColumnType());
+        Assert.Equal("uuid", identity.GetColumnType());
+        Assert.Equal("timestamp without time zone", entity.FindProperty("CreatedAt")!.GetColumnType());
+        Assert.Equal("timestamp without time zone", entity.FindProperty("UpdatedAt")!.GetColumnType());
     }
 
     [Fact]
@@ -142,18 +157,18 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
     }
 
     [Fact]
-    public void Model_preserves_unbounded_strings_and_explicit_sql_collation()
+    public void Model_preserves_unbounded_strings_and_explicit_postgres_collation()
     {
         using var context = fixture.CreateContext();
         var model = context.GetService<IDesignTimeModel>().Model;
-        Assert.Equal("Latin1_General_100_CI_AS_SC", model.GetCollation());
         var strings = model.GetEntityTypes().SelectMany(entity => entity.GetProperties())
             .Where(property => property.ClrType == typeof(string)).ToList();
         Assert.Equal(5, strings.Count);
         Assert.All(strings, property =>
         {
-            Assert.Equal("nvarchar(max)", property.GetColumnType());
+            Assert.Equal("text", property.GetColumnType());
             Assert.Null(property.GetMaxLength());
+            Assert.Equal("icf_case_insensitive_accent_sensitive", property.GetCollation());
             Assert.Equal(property.Name is "Comment" or "Email", property.IsNullable);
         });
     }
@@ -165,9 +180,9 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
     {
         using var context = fixture.CreateContext();
         var amount = context.Model.FindEntityType(entityType)!.FindProperty("Amount")!;
-        Assert.Equal(38, amount.GetPrecision());
-        Assert.Equal(2, amount.GetScale());
-        Assert.Equal("decimal(38,2)", amount.GetColumnType());
+        Assert.Null(amount.GetPrecision());
+        Assert.Null(amount.GetScale());
+        Assert.Equal("numeric", amount.GetColumnType());
     }
 
     [Fact]
@@ -176,7 +191,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
         var pledger = Pledger.Create(new string('P', 500));
         var category = PledgeCategory.Create(new string('C', 500));
         var pledge = Pledge.Create(2026, decimal.MaxValue, pledger.Id, category.Id, new string('A', 5000));
-        var paymentDate = new DateTime(2026, 10, 27, 12, 30, 0, DateTimeKind.Unspecified).AddTicks(1234);
+        var paymentDate = new DateTime(2026, 10, 27, 12, 30, 0, DateTimeKind.Unspecified).AddTicks(1230);
         var payment = PledgePayment.Create(pledge.Id, 12345678901234567890123456.78m, paymentDate);
 
         await using (var context = fixture.CreateContext())
@@ -289,7 +304,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
         deleteContext.Remove(referenced);
         var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() => deleteContext.SaveChangesAsync());
         var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-        Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
 
         await using var readContext = fixture.CreateContext();
         Assert.True(await readContext.Pledgers.AnyAsync(entity => entity.Id == pledger.Id));
@@ -328,7 +343,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
             ? Assert.Throws<RelationshipConflictException>(() => context.SaveChanges())
             : await Assert.ThrowsAsync<RelationshipConflictException>(() => context.SaveChangesAsync());
         var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-        Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
     }
 
     [Fact]
@@ -381,7 +396,7 @@ public sealed class ICFAccountingDbContextTests(SqlServerModelFixture fixture)
             context.AddRange(pledger, category, pledge);
             await context.SaveChangesAsync();
             await context.Database.ExecuteSqlInterpolatedAsync(
-                $"UPDATE [dbo].[Pledges] SET [Amount] = CAST('7922816251426433759354395033.51' AS decimal(38,2)) WHERE [Id] = {pledge.Id.Value}");
+                $"""UPDATE "public"."Pledges" SET "Amount" = 7922816251426433759354395033.51::numeric(38,2) WHERE "Id" = {pledge.Id.Value}""");
         }
 
         await using var readContext = fixture.CreateContext();

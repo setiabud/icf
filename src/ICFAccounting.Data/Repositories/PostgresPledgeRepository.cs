@@ -8,14 +8,14 @@ using Microsoft.EntityFrameworkCore;
 namespace ICFAccounting.Data.Repositories;
 
 /// <summary>
-/// Persists pledges in SQL Server with server-side filtering, ordering, and paging.
+/// Persists pledges in PostgreSQL with server-side filtering, ordering, and paging.
 /// </summary>
-public sealed class SqlServerPledgeRepository : IPledgeRepository
+public sealed class PostgresPledgeRepository : IPledgeRepository
 {
     private readonly ICFAccountingDbContext _context;
 
     /// <summary>Creates a repository using the scoped accounting context.</summary>
-    public SqlServerPledgeRepository(ICFAccountingDbContext context)
+    public PostgresPledgeRepository(ICFAccountingDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;

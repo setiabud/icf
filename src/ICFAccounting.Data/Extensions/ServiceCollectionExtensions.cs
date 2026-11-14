@@ -7,12 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace ICFAccounting.Data.Extensions;
 
 /// <summary>
-/// Registers SQL Server persistence behind the domain repository interfaces.
+/// Registers PostgreSQL persistence behind the domain repository interfaces.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds a scoped accounting context and SQL repositories using the ICFAccounting connection string.
+    /// Adds a scoped accounting context and PostgreSQL repositories using the ICFAccounting connection string.
     /// </summary>
     public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
     {
@@ -26,11 +26,11 @@ public static class ServiceCollectionExtensions
                 "or configure ConnectionStrings:ICFAccounting with .NET user-secrets for local development.");
         }
 
-        services.AddDbContext<ICFAccountingDbContext>(options => options.UseSqlServer(connectionString));
-        services.AddScoped<IPledgerRepository, SqlServerPledgerRepository>();
-        services.AddScoped<IPledgeCategoryRepository, SqlServerPledgeCategoryRepository>();
-        services.AddScoped<IPledgeRepository, SqlServerPledgeRepository>();
-        services.AddScoped<IPledgePaymentRepository, SqlServerPledgePaymentRepository>();
+        services.AddDbContext<ICFAccountingDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddScoped<IPledgerRepository, PostgresPledgerRepository>();
+        services.AddScoped<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>();
+        services.AddScoped<IPledgeRepository, PostgresPledgeRepository>();
+        services.AddScoped<IPledgePaymentRepository, PostgresPledgePaymentRepository>();
         return services;
     }
 }

@@ -1,4 +1,3 @@
-using System.Data.SqlTypes;
 using ICFAccounting.Data.Repositories;
 using ICFAccounting.Domain.Common;
 using ICFAccounting.Domain.PledgeCategories;
@@ -7,12 +6,12 @@ using ICFAccounting.Domain.Pledges;
 using ICFAccounting.Domain.Repositories;
 using ICFAccounting.IntegrationTests.Data;
 using Microsoft.EntityFrameworkCore;
-using SqlException = Microsoft.Data.SqlClient.SqlException;
+using Npgsql;
 
 namespace ICFAccounting.IntegrationTests.Repositories;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture) : SqlServerRepositoryTestBase(fixture)
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -23,7 +22,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
         var pledge = Pledge.Create(2025, 50m, pledger.Id, category.Id);
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeRepository(context);
+            var repository = new PostgresPledgeRepository(context);
             if (insertWithUpdate)
             {
                 await repository.UpdateAsync(pledge);
@@ -36,7 +35,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
 
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeRepository(context);
+            var repository = new PostgresPledgeRepository(context);
             var stored = await repository.GetByIdAsync(pledge.Id);
             Assert.NotNull(stored);
             stored.Update(2026, 100m, pledger.Id, category.Id, "After");
@@ -47,7 +46,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
 
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeRepository(context);
+            var repository = new PostgresPledgeRepository(context);
             var stored = await repository.GetByIdAsync(pledge.Id);
             Assert.NotNull(stored);
             Assert.Equal(2027, stored.Year);
@@ -58,7 +57,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
         }
 
         await using var readContext = CreateContext();
-        var readRepository = new SqlServerPledgeRepository(readContext);
+        var readRepository = new PostgresPledgeRepository(readContext);
         Assert.Null(await readRepository.GetByIdAsync(pledge.Id));
         await Assert.ThrowsAsync<KeyNotFoundException>(() => readRepository.RemoveAsync(pledge.Id));
     }
@@ -96,10 +95,10 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
                 ? matches.OrderByDescending(pledge => pledge.Amount) : matches.OrderBy(pledge => pledge.Amount)
             : sortOrder == SortOrder.Descending
                 ? matches.OrderByDescending(pledge => pledge.Year) : matches.OrderBy(pledge => pledge.Year);
-        var expectedIds = expected.ThenByDescending(pledge => new SqlGuid(pledge.Id.Value))
+        var expectedIds = expected.ThenByDescending(pledge => pledge.Id.Value)
             .Skip(2).Take(2).Select(pledge => pledge.Id);
         await using var readContext = CreateContext();
-        var repository = new SqlServerPledgeRepository(readContext);
+        var repository = new PostgresPledgeRepository(readContext);
         var query = new PledgeQuery(2, 2, sortBy, sortOrder);
         var result = byCategory
             ? await repository.GetByCategoryAsync(category.Id, query)
@@ -125,7 +124,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
         }
 
         await using var readContext = CreateContext();
-        var repository = new SqlServerPledgeRepository(readContext);
+        var repository = new PostgresPledgeRepository(readContext);
         var byPledger = await repository.GetByPledgerAsync(pledger.Id);
         var byCategory = await repository.GetByCategoryAsync(category.Id);
         Assert.Equal(20, byPledger.Items.Count);
@@ -145,7 +144,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
     public async Task Empty_queries_and_unknown_id_reads_preserve_existing_outcomes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeRepository(context);
+        var repository = new PostgresPledgeRepository(context);
         Assert.Null(await repository.GetByIdAsync(PledgeId.New()));
         var byPledger = await repository.GetByPledgerAsync(PledgerId.New());
         var byCategory = await repository.GetByCategoryAsync(PledgeCategoryId.New());
@@ -159,7 +158,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
     public async Task Canceled_calls_do_not_read_or_mutate_the_context()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeRepository(context);
+        var repository = new PostgresPledgeRepository(context);
         var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New());
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -187,11 +186,11 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeRepository(context);
+            var repository = new PostgresPledgeRepository(context);
             var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
                 () => repository.RemoveAsync(pledge.Id));
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
         }
 
         await AssertRelatedRecordsExistAsync(pledge, payment);
@@ -215,15 +214,15 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
             invalid.Update(2026, 50m,
                 missingReference == "Pledger" ? PledgerId.New() : originalPledgerId,
                 missingReference == "Category" ? PledgeCategoryId.New() : originalCategoryId);
-            var repository = new SqlServerPledgeRepository(context);
+            var repository = new PostgresPledgeRepository(context);
             var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
                 () => update ? repository.UpdateAsync(invalid) : repository.AddAsync(invalid));
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(547, Assert.IsType<SqlException>(persistenceFailure.InnerException).Number);
+            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgeRepository(readContext).GetByIdAsync(pledge.Id);
+        var stored = await new PostgresPledgeRepository(readContext).GetByIdAsync(pledge.Id);
         var storedPayment = await CreatePaymentRepository(readContext).GetByIdAsync(payment.Id);
         Assert.NotNull(stored);
         Assert.NotNull(storedPayment);
@@ -247,11 +246,11 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
             context.Pledges.Add(pledge);
             await context.SaveChangesAsync();
             pledge.Update(2026, 100m, otherPledger.Id, otherCategory.Id);
-            await new SqlServerPledgeRepository(context).UpdateAsync(pledge);
+            await new PostgresPledgeRepository(context).UpdateAsync(pledge);
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgeRepository(readContext).GetByIdAsync(pledge.Id);
+        var stored = await new PostgresPledgeRepository(readContext).GetByIdAsync(pledge.Id);
         Assert.NotNull(stored);
         Assert.Equal(otherPledger.Id, stored.PledgerId);
         Assert.Equal(otherCategory.Id, stored.PledgeCategoryId);
@@ -262,7 +261,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
     public async Task Null_aggregate_mutations_fail_before_tracking_changes()
     {
         await using var context = CreateContext();
-        var repository = new SqlServerPledgeRepository(context);
+        var repository = new PostgresPledgeRepository(context);
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.AddAsync(null!));
         await Assert.ThrowsAsync<ArgumentNullException>(() => repository.UpdateAsync(null!));
         Assert.Empty(context.ChangeTracker.Entries());
@@ -274,7 +273,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var repository = new SqlServerPledgeRepository(context);
+            var repository = new PostgresPledgeRepository(context);
             pledge.Update(2027, 200m, pledge.PledgerId, pledge.PledgeCategoryId);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
@@ -284,7 +283,7 @@ public sealed class SqlServerPledgeRepositoryTests(SqlServerModelFixture fixture
         }
 
         await using var readContext = CreateContext();
-        var stored = await new SqlServerPledgeRepository(readContext).GetByIdAsync(pledge.Id);
+        var stored = await new PostgresPledgeRepository(readContext).GetByIdAsync(pledge.Id);
         Assert.NotNull(stored);
         Assert.Equal(2026, stored.Year);
         Assert.Equal(100m, stored.Amount);

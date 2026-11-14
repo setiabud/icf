@@ -19,14 +19,13 @@ internal sealed class PledgeConfiguration : IEntityTypeConfiguration<Pledge>
             .HasConversion(identity => identity.Value, value => new PledgerId(value));
         builder.Property(pledge => pledge.PledgeCategoryId)
             .HasConversion(identity => identity.Value, value => new PledgeCategoryId(value));
-        builder.Property(pledge => pledge.Amount).HasPrecision(38, 2)
-            .Metadata.SetTypeMapping(new AccountingAmountTypeMapping());
-        builder.Property(pledge => pledge.Comment).HasColumnType("nvarchar(max)");
+        builder.Property(pledge => pledge.Amount).HasColumnType("numeric");
+        builder.Property(pledge => pledge.Comment).HasColumnType("text");
         builder.Property(pledge => pledge.CreatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
         builder.Property(pledge => pledge.UpdatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
 
         builder.HasOne<Pledger>().WithMany()

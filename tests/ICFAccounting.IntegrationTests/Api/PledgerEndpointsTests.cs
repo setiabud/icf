@@ -12,10 +12,10 @@ using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class PledgerEndpointsTests : SqlServerApiTestBase
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PledgerEndpointsTests : PostgresApiTestBase
 {
-    public PledgerEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
+    public PledgerEndpointsTests(PostgresModelFixture fixture) : base(fixture)
     {
     }
 

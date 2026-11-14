@@ -12,13 +12,13 @@ using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using SqlException = Microsoft.Data.SqlClient.SqlException;
+using Npgsql;
 using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture) : IAsyncLifetime
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) : IAsyncLifetime
 {
     private readonly string _databaseName = $"ICFAccountingApiTests_{Guid.NewGuid():N}";
 
@@ -45,10 +45,10 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
         {
             using var client = CreateClient(factory, allowAutoRedirect: false);
             using var scope = factory.Services.CreateScope();
-            Assert.IsType<SqlServerPledgerRepository>(scope.ServiceProvider.GetRequiredService<IPledgerRepository>());
-            Assert.IsType<SqlServerPledgeCategoryRepository>(scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>());
-            Assert.IsType<SqlServerPledgeRepository>(scope.ServiceProvider.GetRequiredService<IPledgeRepository>());
-            Assert.IsType<SqlServerPledgePaymentRepository>(scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>());
+            Assert.IsType<PostgresPledgerRepository>(scope.ServiceProvider.GetRequiredService<IPledgerRepository>());
+            Assert.IsType<PostgresPledgeCategoryRepository>(scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>());
+            Assert.IsType<PostgresPledgeRepository>(scope.ServiceProvider.GetRequiredService<IPledgeRepository>());
+            Assert.IsType<PostgresPledgePaymentRepository>(scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>());
             Assert.Equal(_databaseName,
                 scope.ServiceProvider.GetRequiredService<ICFAccountingDbContext>().Database.GetDbConnection().Database);
 
@@ -88,7 +88,7 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
     }
 
     [Fact]
-    public async Task Startup_does_not_create_or_migrate_a_database()
+    public async Task Startup_does_not_apply_database_migrations()
     {
         var uninitializedDatabase = $"ICFAccountingUninitialized_{Guid.NewGuid():N}";
         using var factory = CreateFactory(uninitializedDatabase);
@@ -96,7 +96,8 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<ICFAccountingDbContext>();
         Assert.Equal(uninitializedDatabase, context.Database.GetDbConnection().Database);
-        Assert.False(await context.Database.CanConnectAsync());
+        Assert.True(await context.Database.CanConnectAsync());
+        Assert.Empty(await context.Database.GetAppliedMigrationsAsync());
     }
 
     [Theory]
@@ -211,12 +212,16 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
         await using (var context = fixture.CreateContext(_databaseName))
         {
             await context.Database.ExecuteSqlRawAsync(
-                "ALTER TABLE [dbo].[Pledgers] ADD CONSTRAINT [CK_Pledgers_RejectTestName] CHECK ([PledgerName] <> N'RejectedByCheck')");
+                """
+                ALTER TABLE "public"."Pledgers"
+                ADD CONSTRAINT "CK_Pledgers_RejectTestName" CHECK ("PledgerName" <> 'RejectedByCheck')
+                """);
             context.Pledgers.Add(ICFAccounting.Domain.Pledgers.Pledger.Create("RejectedByCheck"));
             var exception = synchronous
                 ? Assert.Throws<DbUpdateException>(() => context.SaveChanges())
                 : await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
-            Assert.Equal(547, Assert.IsType<SqlException>(exception.InnerException).Number);
+            Assert.Equal(PostgresErrorCodes.CheckViolation,
+                Assert.IsType<PostgresException>(exception.InnerException).SqlState);
         }
 
         using var factory = CreateFactory(_databaseName);
@@ -227,7 +232,7 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
         Assert.Equal("An unexpected error occurred", problem.Title);
         var body = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain("CK_Pledgers_RejectTestName", body);
-        Assert.DoesNotContain("SqlException", body);
+        Assert.DoesNotContain("PostgresException", body);
         Assert.DoesNotContain(_databaseName, body);
     }
 
@@ -277,14 +282,14 @@ public sealed class SqlServerApiRegistrationTests(SqlServerModelFixture fixture)
         Assert.Equal("The operation conflicts with related accounting records.", problem.Detail);
         var body = await response.Content.ReadAsStringAsync();
         Assert.DoesNotContain("FK_", body);
-        Assert.DoesNotContain("SqlException", body);
+        Assert.DoesNotContain("PostgresException", body);
         Assert.DoesNotContain(_databaseName, body);
     }
 
-    private SqlServerApiFactory CreateFactory(string databaseName)
+    private PostgresApiFactory CreateFactory(string databaseName)
     {
         using var context = fixture.CreateContext(databaseName);
-        return new SqlServerApiFactory(context.Database.GetDbConnection().ConnectionString);
+        return new PostgresApiFactory(context.Database.GetDbConnection().ConnectionString);
     }
 
     private static async Task<TResponse> PostCreatedAsync<TResponse>(HttpClient client, string path, object request)

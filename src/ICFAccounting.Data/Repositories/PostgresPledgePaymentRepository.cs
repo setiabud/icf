@@ -8,16 +8,16 @@ using Microsoft.Extensions.Logging;
 namespace ICFAccounting.Data.Repositories;
 
 /// <summary>
-/// Persists pledge payments in SQL Server with server-side ordering and paging.
+/// Persists pledge payments in PostgreSQL with server-side ordering and paging.
 /// </summary>
-public sealed class SqlServerPledgePaymentRepository : IPledgePaymentRepository
+public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
 {
     private readonly ICFAccountingDbContext _context;
-    private readonly ILogger<SqlServerPledgePaymentRepository> _logger;
+    private readonly ILogger<PostgresPledgePaymentRepository> _logger;
 
     /// <summary>Creates a repository using the scoped accounting context and logger.</summary>
-    public SqlServerPledgePaymentRepository(
-        ICFAccountingDbContext context, ILogger<SqlServerPledgePaymentRepository> logger)
+    public PostgresPledgePaymentRepository(
+        ICFAccountingDbContext context, ILogger<PostgresPledgePaymentRepository> logger)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(logger);

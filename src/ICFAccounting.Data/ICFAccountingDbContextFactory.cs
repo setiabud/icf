@@ -13,7 +13,7 @@ public sealed class ICFAccountingDbContextFactory : IDesignTimeDbContextFactory<
     {
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__ICFAccounting");
         var options = new DbContextOptionsBuilder<ICFAccountingDbContext>()
-            .UseSqlServer(connectionString)
+            .UseNpgsql(connectionString)
             .Options;
         return new ICFAccountingDbContext(options);
     }

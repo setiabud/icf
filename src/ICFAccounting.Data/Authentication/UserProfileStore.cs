@@ -1,5 +1,5 @@
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace ICFAccounting.Data.Authentication;
 
@@ -30,7 +30,8 @@ public sealed class UserProfileStore(AuthenticationDbContext database)
             await database.SaveChangesAsync(cancellationToken);
             return profile;
         }
-        catch (DbUpdateException exception) when (exception.InnerException is SqlException { Number: 2601 or 2627 })
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException
+            { SqlState: PostgresErrorCodes.UniqueViolation })
         {
             database.Entry(profile).State = EntityState.Detached;
             return await database.UserProfiles.SingleAsync(user => user.Id == account.Id, cancellationToken);
