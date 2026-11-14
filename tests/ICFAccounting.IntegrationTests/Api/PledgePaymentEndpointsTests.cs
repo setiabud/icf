@@ -366,8 +366,8 @@ public sealed class PledgePaymentEndpointsTests : PostgresApiTestBase
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
         var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
         var updatedPledgeId = _otherPledge.Id;
-        var createdAt = payment.CreatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
+        var createdAt = payment.CreatedAt;
         var request = new UpdatePledgePaymentRequest
         {
             PledgeId = updatedPledgeId.Value,
@@ -450,8 +450,8 @@ public sealed class PledgePaymentEndpointsTests : PostgresApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
         var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
-        var originalUpdatedAt = payment.UpdatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
+        var originalUpdatedAt = payment.UpdatedAt;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PutAsync($"/pledge-payments/{payment.Id.Value}", content);

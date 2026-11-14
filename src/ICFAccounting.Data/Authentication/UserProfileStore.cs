@@ -17,12 +17,13 @@ public sealed class UserProfileStore(AuthenticationDbContext database)
             return existing;
         }
 
+        var createdAt = DateTimeOffset.UtcNow;
         var profile = new UserProfile
         {
             Id = account.Id,
             Name = account.DisplayName ?? account.Email ?? "Member",
             ProfileImageUrl = account.ProfileImageUrl,
-            CreatedAt = DateTimeOffset.UtcNow
+            CreatedAt = createdAt.AddTicks(-(createdAt.Ticks % TimeSpan.TicksPerMicrosecond))
         };
         database.UserProfiles.Add(profile);
         try

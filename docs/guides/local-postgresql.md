@@ -1,5 +1,9 @@
 # Local PostgreSQL
 
+For development entirely inside VS Code containers, use the
+[Dev Container guide](devcontainer.md) instead. This guide describes running
+the API and frontend on the host.
+
 PostgreSQL 17 runs in Docker Compose; the .NET API and React frontend run
 locally. PostgreSQL's native ARM64 image supports Apple Silicon. The first
 startup creates an empty `icfaccounting` database; EF migrations create its
@@ -99,7 +103,8 @@ administrator account. To run the frontend, install its dependencies in
 - Audit timestamps are stored as `timestamp without time zone` and restored as
   UTC `DateTime` values. Payment dates preserve their wall-clock value and are
   also stored without a time zone. PostgreSQL timestamps have microsecond
-  precision.
+  precision. The persistence layer truncates sub-microsecond ticks before
+  saving, so immediate write responses match subsequent reads on every OS.
 - Foreign keys reject deletion of referenced records; the API translates
   recognized relationship conflicts into sanitized `409 Conflict` responses.
 - Equal sort values use PostgreSQL's native UUID ordering as the stable

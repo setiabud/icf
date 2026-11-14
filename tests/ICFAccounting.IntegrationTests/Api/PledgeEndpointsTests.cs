@@ -442,8 +442,8 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
         var pledge = Pledge.Create(2025, 100m, _pledger.Id, _category.Id, "Original");
-        var createdAt = pledge.CreatedAt;
         await repository.AddAsync(pledge, CancellationToken.None);
+        var createdAt = pledge.CreatedAt;
         var updatedPledgerId = _otherPledger.Id;
         var updatedCategoryId = _otherCategory.Id;
         var request = new UpdatePledgeRequest
@@ -533,8 +533,8 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
         var pledge = Pledge.Create(2025, 100m, _pledger.Id, _category.Id, "Original");
-        var originalUpdatedAt = pledge.UpdatedAt;
         await repository.AddAsync(pledge, CancellationToken.None);
+        var originalUpdatedAt = pledge.UpdatedAt;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PutAsync($"/pledges/{pledge.Id.Value}", content);
@@ -557,8 +557,8 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
         var pledge = Pledge.Create(2025, 100m, _pledger.Id, _category.Id, "Original");
-        var originalUpdatedAt = pledge.UpdatedAt;
         await repository.AddAsync(pledge, CancellationToken.None);
+        var originalUpdatedAt = pledge.UpdatedAt;
         var request = CreateValidUpdateRequest() with { Year = 2019 };
 
         using var response = await client.PutAsJsonAsync($"/pledges/{pledge.Id.Value}", request);

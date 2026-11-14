@@ -231,6 +231,38 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
         AssertUtcTimestamp(payment.UpdatedAt, storedPayment.UpdatedAt);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SaveChanges_keeps_tracked_timestamps_equal_to_persisted_values(bool useAsync)
+    {
+        var pledger = Pledger.Create("Timestamp precision");
+        var timestamp = new DateTime(2026, 11, 14, 12, 30, 0, DateTimeKind.Utc).AddTicks(1237);
+        var expectedTimestamp = new DateTime(2026, 11, 14, 12, 30, 0, DateTimeKind.Utc).AddTicks(1230);
+        await using var context = fixture.CreateContext();
+        context.Pledgers.Add(pledger);
+        context.Entry(pledger).Property(entity => entity.CreatedAt).CurrentValue = timestamp;
+        context.Entry(pledger).Property(entity => entity.UpdatedAt).CurrentValue = timestamp;
+
+        if (useAsync)
+        {
+            await context.SaveChangesAsync();
+        }
+        else
+        {
+            context.SaveChanges();
+        }
+
+        await using var readContext = fixture.CreateContext();
+        var storedPledger = await readContext.Pledgers.SingleAsync(entity => entity.Id == pledger.Id);
+        Assert.Equal(expectedTimestamp, pledger.CreatedAt);
+        Assert.Equal(expectedTimestamp, pledger.UpdatedAt);
+        Assert.Equal(pledger.CreatedAt, storedPledger.CreatedAt);
+        Assert.Equal(pledger.UpdatedAt, storedPledger.UpdatedAt);
+        Assert.Equal(DateTimeKind.Utc, pledger.CreatedAt.Kind);
+        Assert.Equal(DateTimeKind.Utc, pledger.UpdatedAt.Kind);
+    }
+
     [Fact]
     public async Task SaveChanges_persists_updates_and_keeps_inactive_entities_visible()
     {

@@ -6,6 +6,9 @@ using the API in `../ICFAccounting.Api`.
 
 ## Requirements
 
+Alternatively, use the [VS Code Dev Container](../../docs/guides/devcontainer.md)
+for the API, frontend, PostgreSQL, and test tools without host Node.js setup.
+
 - Node.js and npm
 - The .NET 10 SDK
 - PostgreSQL for the API, configured as described in

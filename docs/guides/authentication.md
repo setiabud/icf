@@ -28,6 +28,11 @@ IP, per process. Generic failed-login messages do not disclose registered emails
 
 ## Database setup
 
+For the VS Code container environment, follow the
+[Dev Container guide](devcontainer.md); it supplies the connection string
+and shares the host-trusted HTTPS certificate. Migrations and administrator
+provisioning remain explicit there too.
+
 Follow [local PostgreSQL setup](local-postgresql.md) and supply the connection
 string securely. Both contexts use `ConnectionStrings__ICFAccounting`.
 Apply both migration sets explicitly from the repository root:

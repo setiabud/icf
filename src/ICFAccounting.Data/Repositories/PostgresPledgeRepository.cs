@@ -88,6 +88,10 @@ public sealed class PostgresPledgeRepository : IPledgeRepository
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (existing is not null)
+        {
+            _context.Entry(pledge).CurrentValues.SetValues(existing);
+        }
     }
 
     private static async Task<PagedPledgesResult> CreatePageAsync(

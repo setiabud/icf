@@ -5,6 +5,10 @@ Built with .NET 10, ASP.NET Core Minimal APIs, EF Core, and PostgreSQL.
 
 ## Local Setup
 
+For a containerized .NET, Node.js, and PostgreSQL environment in VS Code,
+follow the [Dev Container guide](docs/guides/devcontainer.md). Host-based
+development remains available below.
+
 PostgreSQL runs in Docker Compose; the API runs on the local .NET SDK.
 The PostgreSQL container supports Apple Silicon.
 
@@ -40,6 +44,7 @@ dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
 
 ## Documentation
 
+- [VS Code Dev Container, HTTPS, PostgreSQL, and tests](docs/guides/devcontainer.md)
 - [Local PostgreSQL, credentials, migrations, tests, and troubleshooting](docs/guides/local-postgresql.md)
 - [Authentication, account provisioning, HTTPS, and production sessions](docs/guides/authentication.md)
 - [Pledgers API](docs/api/pledgers.md)

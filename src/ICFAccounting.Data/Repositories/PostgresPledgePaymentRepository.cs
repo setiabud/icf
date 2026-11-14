@@ -107,5 +107,9 @@ public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (existing is not null)
+        {
+            _context.Entry(pledgePayment).CurrentValues.SetValues(existing);
+        }
     }
 }

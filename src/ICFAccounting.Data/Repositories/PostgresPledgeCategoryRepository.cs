@@ -71,5 +71,9 @@ public sealed class PostgresPledgeCategoryRepository : IPledgeCategoryRepository
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (existing is not null)
+        {
+            _context.Entry(pledgeCategory).CurrentValues.SetValues(existing);
+        }
     }
 }

@@ -36,6 +36,7 @@ public sealed class ICFAccountingDbContext : DbContext
     /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
+        NormalizeTimestampPrecision();
         try
         {
             return base.SaveChanges(acceptAllChangesOnSuccess);
@@ -50,6 +51,7 @@ public sealed class ICFAccountingDbContext : DbContext
     public override async Task<int> SaveChangesAsync(
         bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        NormalizeTimestampPrecision();
         try
         {
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -57,6 +59,27 @@ public sealed class ICFAccountingDbContext : DbContext
         catch (DbUpdateException exception) when (IsRelationshipConflict(exception))
         {
             throw new RelationshipConflictException(exception);
+        }
+    }
+
+    // Keep immediate write responses equal to reads of PostgreSQL's microsecond timestamps.
+    private void NormalizeTimestampPrecision()
+    {
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified))
+        {
+            foreach (var property in entry.Properties)
+            {
+                if (property.CurrentValue is not DateTime timestamp
+                    || timestamp.Ticks % TimeSpan.TicksPerMicrosecond == 0)
+                {
+                    continue;
+                }
+
+                property.CurrentValue = new DateTime(
+                    timestamp.Ticks - timestamp.Ticks % TimeSpan.TicksPerMicrosecond,
+                    timestamp.Kind);
+            }
         }
     }
 
