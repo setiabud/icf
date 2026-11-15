@@ -1,8 +1,7 @@
 {
   "name": "ICF Accounting",
   "dockerComposeFile": [
-    "../compose.json",
-    "compose.json"
+    "../compose.json"
   ],
   "service": "dev",
   "runServices": [

@@ -13,4 +13,4 @@ for certificate_file in icfaccounting-web.pem icfaccounting-web.key; do
   fi
 done
 
-docker compose --env-file .env -f compose.json -f .devcontainer/compose.json config --quiet
+docker compose --env-file .env -f compose.json config --quiet
