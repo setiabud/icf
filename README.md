@@ -44,6 +44,8 @@ dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
 
 ## Documentation
 
+- [Architecture Decision Records](docs/adr/README.md)
+- [Project glossary](GLOSSARY.md)
 - [VS Code Dev Container, HTTPS, PostgreSQL, and tests](docs/guides/devcontainer.md)
 - [Local PostgreSQL, credentials, migrations, tests, and troubleshooting](docs/guides/local-postgresql.md)
 - [Authentication, account provisioning, HTTPS, and production sessions](docs/guides/authentication.md)
