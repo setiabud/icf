@@ -6,9 +6,9 @@ These apply to every endpoint below.
 
 - All endpoints require a signed-in cookie session (`401` otherwise); writes
   also require CSRF verification. See [authentication](../guides/authentication.md).
-- Data is persisted in SQL Server and survives application restarts.
+- Data is persisted in PostgreSQL and survives application restarts.
 - Error responses use a ProblemDetails body (`application/problem+json`).
-- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; SQL internals are not exposed.
+- Relationship conflicts return `409 Conflict` with title `Relationship conflict` and detail `The operation conflicts with related accounting records.`; database internals are not exposed.
 - A route ID that is not a GUID returns `404 Not Found` because the route does not match.
 - Domain and service argument errors return `400 Bad Request` with the exception message, without its parameter-name suffix, as `detail`.
 - Unexpected failures are logged and return `500 Internal Server Error` with title `An unexpected error occurred` and a generic `detail`; internal exception details are not exposed.
@@ -69,9 +69,9 @@ empty `items` while retaining the requested page and the collection's totals.
 | `sortBy` | `PledgerName` | `PledgerName` (case-insensitive) |
 | `sortOrder` | `Ascending` | `Ascending`, `Descending` (case-insensitive) |
 
-Names are sorted case-insensitively before pagination. Equal names are
-ordered by native SQL Server GUID order ascending, regardless of `sortOrder`, to keep page boundaries
-stable. For example:
+Names are sorted case-insensitively and accent-sensitively before pagination.
+Equal names are ordered by PostgreSQL's native UUID order ascending, regardless
+of `sortOrder`, to keep page boundaries stable. For example:
 `GET /pledgers?page=2&pageSize=5&sortBy=PledgerName&sortOrder=Descending`.
 
 Sorting uses the `PledgerSortBy` and `SortOrder` enums internally. This is a

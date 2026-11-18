@@ -14,18 +14,18 @@ internal sealed class PledgerConfiguration : IEntityTypeConfiguration<Pledger>
             .HasConversion(identity => identity.Value, value => new PledgerId(value))
             .ValueGeneratedNever();
         builder.Property(pledger => pledger.PledgerName)
-            .HasColumnType("nvarchar(max)")
+            .HasColumnType("text")
             .IsRequired();
         builder.Property(pledger => pledger.Email)
-            .HasColumnType("nvarchar(max)");
+            .HasColumnType("text");
         builder.Property(pledger => pledger.EnableNotification)
-            .HasColumnType("bit")
+            .HasColumnType("boolean")
             .HasDefaultValue(false);
         builder.Property(pledger => pledger.CreatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
         builder.Property(pledger => pledger.UpdatedAt)
-            .HasColumnType("datetime2(7)")
+            .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
     }
 }

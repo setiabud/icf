@@ -1,0 +1,53 @@
+{
+  "name": "ICF Accounting",
+  "dockerComposeFile": [
+    "../compose.json"
+  ],
+  "service": "dev",
+  "runServices": [
+    "dev",
+    "postgres"
+  ],
+  "workspaceFolder": "/workspaces/icf",
+  "remoteUser": "vscode",
+  "shutdownAction": "stopCompose",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24"
+    },
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+  "mounts": [
+    "source=${localEnv:HOME}/.aspnet/https,target=/home/vscode/.aspnet/https,type=bind,readonly"
+  ],
+  "forwardPorts": [
+    5173,
+    7206
+  ],
+  "portsAttributes": {
+    "5173": {
+      "label": "React HTTPS",
+      "protocol": "https",
+      "requireLocalPort": true,
+      "onAutoForward": "notify"
+    },
+    "7206": {
+      "label": "API HTTPS",
+      "protocol": "https",
+      "requireLocalPort": true,
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csdevkit"
+      ]
+    }
+  },
+  "initializeCommand": [
+    "bash",
+    ".devcontainer/initialize.sh"
+  ],
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}

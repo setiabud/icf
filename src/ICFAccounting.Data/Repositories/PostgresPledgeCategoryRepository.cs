@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore;
 namespace ICFAccounting.Data.Repositories;
 
 /// <summary>
-/// Persists pledge categories in SQL Server and saves each mutation before returning.
+/// Persists pledge categories in PostgreSQL and saves each mutation before returning.
 /// </summary>
-public sealed class SqlServerPledgeCategoryRepository : IPledgeCategoryRepository
+public sealed class PostgresPledgeCategoryRepository : IPledgeCategoryRepository
 {
     private readonly ICFAccountingDbContext _context;
 
     /// <summary>Creates a repository using the scoped accounting context.</summary>
-    public SqlServerPledgeCategoryRepository(ICFAccountingDbContext context)
+    public PostgresPledgeCategoryRepository(ICFAccountingDbContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
         _context = context;
@@ -71,5 +71,9 @@ public sealed class SqlServerPledgeCategoryRepository : IPledgeCategoryRepositor
         }
 
         await _context.SaveChangesAsync(cancellationToken);
+        if (existing is not null)
+        {
+            _context.Entry(pledgeCategory).CurrentValues.SetValues(existing);
+        }
     }
 }

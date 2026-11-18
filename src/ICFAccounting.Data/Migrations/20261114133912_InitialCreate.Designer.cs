@@ -3,16 +3,16 @@ using System;
 using ICFAccounting.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace ICFAccounting.Data.Migrations
 {
     [DbContext(typeof(ICFAccountingDbContext))]
-    [Migration("20261027110542_InitialCreate")]
+    [Migration("20261114133912_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -20,120 +20,131 @@ namespace ICFAccounting.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasDefaultSchema("dbo")
-                .UseCollation("Latin1_General_100_CI_AS_SC")
+                .HasDefaultSchema("public")
+                .HasAnnotation("Npgsql:CollationDefinition:icf_case_insensitive_accent_sensitive", "und-u-ks-level2,und-u-ks-level2,icu,False")
                 .HasAnnotation("ProductVersion", "10.0.12")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("ICFAccounting.Domain.PledgeCategories.PledgeCategory", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Active")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("CategoryName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text")
+                        .UseCollation("icf_case_insensitive_accent_sensitive");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
-                    b.ToTable("PledgeCategories", "dbo");
+                    b.ToTable("PledgeCategories", "public");
                 });
 
             modelBuilder.Entity("ICFAccounting.Domain.PledgePayments.PledgePayment", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Active")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("Amount")
-                        .HasPrecision(38, 2)
-                        .HasColumnType("decimal(38,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text")
+                        .UseCollation("icf_case_insensitive_accent_sensitive");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<DateTime>("PaymentDate")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("PledgeId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("PledgeId", "PaymentDate", "Id")
                         .IsDescending(false, true, true);
 
-                    b.ToTable("PledgePayments", "dbo");
+                    b.ToTable("PledgePayments", "public");
                 });
 
             modelBuilder.Entity("ICFAccounting.Domain.Pledgers.Pledger", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("Active")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("text")
+                        .UseCollation("icf_case_insensitive_accent_sensitive");
+
+                    b.Property<bool>("EnableNotification")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("PledgerName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text")
+                        .UseCollation("icf_case_insensitive_accent_sensitive");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
-                    b.ToTable("Pledgers", "dbo");
+                    b.ToTable("Pledgers", "public");
                 });
 
             modelBuilder.Entity("ICFAccounting.Domain.Pledges.Pledge", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("Amount")
-                        .HasPrecision(38, 2)
-                        .HasColumnType("decimal(38,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Comment")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text")
+                        .UseCollation("icf_case_insensitive_accent_sensitive");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<Guid>("PledgeCategoryId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("PledgerId")
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2(7)");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("Year")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -143,7 +154,7 @@ namespace ICFAccounting.Data.Migrations
                     b.HasIndex("PledgerId", "Year", "Id")
                         .IsDescending(false, true, true);
 
-                    b.ToTable("Pledges", "dbo");
+                    b.ToTable("Pledges", "public");
                 });
 
             modelBuilder.Entity("ICFAccounting.Domain.PledgePayments.PledgePayment", b =>

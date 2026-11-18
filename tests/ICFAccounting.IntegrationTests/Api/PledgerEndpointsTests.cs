@@ -12,10 +12,10 @@ using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class PledgerEndpointsTests : SqlServerApiTestBase
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PledgerEndpointsTests : PostgresApiTestBase
 {
-    public PledgerEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
+    public PledgerEndpointsTests(PostgresModelFixture fixture) : base(fixture)
     {
     }
 
@@ -384,8 +384,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
-        var createdAt = pledger.CreatedAt;
         await repository.AddAsync(pledger, CancellationToken.None);
+        var createdAt = pledger.CreatedAt;
         var request = new UpdatePledgerRequest
         {
             PledgerName = "Mission Fund",
@@ -477,8 +477,8 @@ public sealed class PledgerEndpointsTests : SqlServerApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
         var pledger = Pledger.Create("Community Fund");
-        var originalUpdatedAt = pledger.UpdatedAt;
         await repository.AddAsync(pledger, CancellationToken.None);
+        var originalUpdatedAt = pledger.UpdatedAt;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PutAsync($"/pledgers/{pledger.Id.Value}", content);

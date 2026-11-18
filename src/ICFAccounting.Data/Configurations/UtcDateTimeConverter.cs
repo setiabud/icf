@@ -5,7 +5,9 @@ namespace ICFAccounting.Data.Configurations;
 internal sealed class UtcDateTimeConverter : ValueConverter<DateTime, DateTime>
 {
     public UtcDateTimeConverter()
-        : base(timestamp => timestamp, timestamp => DateTime.SpecifyKind(timestamp, DateTimeKind.Utc))
+        : base(
+            timestamp => DateTime.SpecifyKind(timestamp, DateTimeKind.Unspecified),
+            timestamp => DateTime.SpecifyKind(timestamp, DateTimeKind.Utc))
     {
     }
 }

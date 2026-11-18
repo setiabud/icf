@@ -10,7 +10,7 @@ public sealed class AuthenticationDbContextFactory : IDesignTimeDbContextFactory
     {
         var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__ICFAccounting");
         var options = new DbContextOptionsBuilder<AuthenticationDbContext>()
-            .UseSqlServer(connectionString, sql => sql.MigrationsHistoryTable("__IdentityMigrationsHistory", "auth"))
+            .UseNpgsql(connectionString, postgres => postgres.MigrationsHistoryTable("__IdentityMigrationsHistory", "auth"))
             .Options;
         return new AuthenticationDbContext(options);
     }

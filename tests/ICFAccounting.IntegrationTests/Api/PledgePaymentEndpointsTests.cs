@@ -17,15 +17,15 @@ using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class PledgePaymentEndpointsTests : SqlServerApiTestBase
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PledgePaymentEndpointsTests : PostgresApiTestBase
 {
     private readonly Pledger _pledger = Pledger.Create("Payment test pledger");
     private readonly PledgeCategory _category = PledgeCategory.Create("Payment test category");
     private readonly Pledge _pledge;
     private readonly Pledge _otherPledge;
 
-    public PledgePaymentEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
+    public PledgePaymentEndpointsTests(PostgresModelFixture fixture) : base(fixture)
     {
         _pledge = Pledge.Create(2026, 1000m, _pledger.Id, _category.Id);
         _otherPledge = Pledge.Create(2025, 1000m, _pledger.Id, _category.Id);
@@ -366,8 +366,8 @@ public sealed class PledgePaymentEndpointsTests : SqlServerApiTestBase
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
         var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
         var updatedPledgeId = _otherPledge.Id;
-        var createdAt = payment.CreatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
+        var createdAt = payment.CreatedAt;
         var request = new UpdatePledgePaymentRequest
         {
             PledgeId = updatedPledgeId.Value,
@@ -450,8 +450,8 @@ public sealed class PledgePaymentEndpointsTests : SqlServerApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>();
         var payment = PledgePayment.Create(_pledge.Id, 100m, new DateTime(2026, 1, 10), "Original");
-        var originalUpdatedAt = payment.UpdatedAt;
         await repository.AddAsync(payment, CancellationToken.None);
+        var originalUpdatedAt = payment.UpdatedAt;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PutAsync($"/pledge-payments/{payment.Id.Value}", content);

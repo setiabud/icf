@@ -11,10 +11,10 @@ using static ICFAccounting.IntegrationTests.Api.ApiTestHelpers;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class PledgeCategoryEndpointsTests : SqlServerApiTestBase
+[Collection(nameof(PostgresTestCollection))]
+public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
 {
-    public PledgeCategoryEndpointsTests(SqlServerModelFixture fixture) : base(fixture)
+    public PledgeCategoryEndpointsTests(PostgresModelFixture fixture) : base(fixture)
     {
     }
 
@@ -282,9 +282,9 @@ public sealed class PledgeCategoryEndpointsTests : SqlServerApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>();
         var category = PledgeCategory.Create("Building Fund");
+        await repository.AddAsync(category, CancellationToken.None);
         var createdAt = category.CreatedAt;
         var originalUpdatedAt = category.UpdatedAt;
-        await repository.AddAsync(category, CancellationToken.None);
         var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = active };
 
         using var response = await client.PutAsJsonAsync($"/pledge-categories/{category.Id.Value}", request);
@@ -357,8 +357,8 @@ public sealed class PledgeCategoryEndpointsTests : SqlServerApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>();
         var category = PledgeCategory.Create("Building Fund");
-        var originalUpdatedAt = category.UpdatedAt;
         await repository.AddAsync(category, CancellationToken.None);
+        var originalUpdatedAt = category.UpdatedAt;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PutAsync($"/pledge-categories/{category.Id.Value}", content);

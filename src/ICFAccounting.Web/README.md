@@ -6,14 +6,17 @@ using the API in `../ICFAccounting.Api`.
 
 ## Requirements
 
+Alternatively, use the [VS Code Dev Container](../../docs/guides/devcontainer.md)
+for the API, frontend, PostgreSQL, and test tools without host Node.js setup.
+
 - Node.js and npm
 - The .NET 10 SDK
-- SQL Server for the API, configured as described in
-  [Local SQL Server](../../docs/guides/local-sql-server.md)
+- PostgreSQL for the API, configured as described in
+  [Local PostgreSQL](../../docs/guides/local-postgresql.md)
 
 ## Configure and run
 
-1. Start SQL Server, apply the API database migrations, trust the local HTTPS
+1. Start PostgreSQL, apply the API database migrations, trust the local HTTPS
    development certificate, and run `ICFAccounting.Api` with its `https`
    launch profile. The API listens on `https://localhost:7206` and
    `http://localhost:5101`. Follow the

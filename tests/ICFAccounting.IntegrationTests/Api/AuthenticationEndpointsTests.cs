@@ -14,8 +14,8 @@ using Microsoft.Extensions.Options;
 
 namespace ICFAccounting.IntegrationTests.Api;
 
-[Collection(nameof(SqlServerTestCollection))]
-public sealed class AuthenticationEndpointsTests(SqlServerModelFixture fixture) : SqlServerApiTestBase(fixture)
+[Collection(nameof(PostgresTestCollection))]
+public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) : PostgresApiTestBase(fixture)
 {
     private const string PASSWORD = "Test-only-Password-83!";
 

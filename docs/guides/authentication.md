@@ -2,7 +2,7 @@
 
 ## Approved scope and account lifecycle
 
-The React app uses ASP.NET Core Identity with SQL Server and HttpOnly cookie
+The React app uses ASP.NET Core Identity with PostgreSQL and HttpOnly cookie
 sessions, not mock login. Email/password is the only login method. Google,
 Microsoft, consent screens, provider-console setup, client secrets, OAuth callback
 URLs, and provider logout URLs do not apply. There is no public registration or
@@ -13,9 +13,9 @@ Database, hosting, backups, key protection, account administration, and secure
 credential delivery remain the operator's responsibility. Email delivery and
 self-service recovery are not included.
 
-An administrator first provisions credentials in `auth.AspNetUsers`. After the
+An administrator first provisions credentials in `auth."AspNetUsers"`. After the
 first successful password verification, a single application user is created in
-`auth.UserProfiles`, including its name, optional image, and creation time.
+`auth."UserProfiles"`, including its name, optional image, and creation time.
 Subsequent sign-ins reuse that profile. Email is the login identifier; the
 display name falls back to email. All signed-in users can perform every existing
 accounting operation; there are no roles or per-record restrictions.
@@ -28,7 +28,12 @@ IP, per process. Generic failed-login messages do not disclose registered emails
 
 ## Database setup
 
-Follow [local SQL Server setup](local-sql-server.md) and supply the connection
+For the VS Code container environment, follow the
+[Dev Container guide](devcontainer.md); it supplies the connection string
+and shares the host-trusted HTTPS certificate. Migrations and administrator
+provisioning remain explicit there too.
+
+Follow [local PostgreSQL setup](local-postgresql.md) and supply the connection
 string securely. Both contexts use `ConnectionStrings__ICFAccounting`.
 Apply both migration sets explicitly from the repository root:
 
@@ -37,11 +42,13 @@ dotnet ef database update --project src/ICFAccounting.Data --startup-project src
 dotnet ef database update --project src/ICFAccounting.Data --startup-project src/ICFAccounting.Data --context AuthenticationDbContext
 ```
 
-Identity has a separate schema and migration history,
-`auth.__IdentityMigrationsHistory`; accounting keeps `dbo.__EFMigrationsHistory`.
+Identity has a separate `auth` schema and migration history,
+`auth.__IdentityMigrationsHistory`; accounting uses the `public` schema and
+`public.__EFMigrationsHistory`.
 Startup never creates databases, applies migrations, or seeds users.
 The deployment identity needs schema-change permissions; the runtime identity
-needs only the data permissions used by the app. Do not use SQL `sa` in production.
+needs only the data permissions used by the app. Do not use the PostgreSQL
+superuser in production.
 
 ## Administrator provisioning and recovery
 
@@ -152,7 +159,7 @@ redirect to HTTPS at the edge before accepting credentials.
 
 | Setting | Purpose |
 | --- | --- |
-| `ConnectionStrings__ICFAccounting` | Required server-side SQL connection string; use a deployment secret store |
+| `ConnectionStrings__ICFAccounting` | Required server-side PostgreSQL connection string; use a deployment secret store |
 | `VITE_API_BASE_URL` | Build-time public API prefix; normally `/api` |
 | `ASPNETCORE_ENVIRONMENT` | `Production` outside local development |
 | `DataProtection__KeyRingPath` | Optional persistent/shared server-side key-ring directory |
@@ -184,7 +191,7 @@ npm run lint
 npm run build
 ```
 
-SQL Testcontainers tests use real Identity password verification, profile
+PostgreSQL Testcontainers tests use real Identity password verification, profile
 creation/reuse, cookies, CSRF, logout, expiry, and password-reset invalidation.
 Existing accounting endpoint tests use an explicit test-only identity, not a
 production bypass. React tests use test doubles to exercise UI lifecycle and

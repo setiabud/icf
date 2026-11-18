@@ -1,18 +1,22 @@
 # ICFAccounting
 
 An accounting API for pledgers, pledge categories, pledges, and payments.
-Built with .NET 10, ASP.NET Core Minimal APIs, EF Core, and SQL Server.
+Built with .NET 10, ASP.NET Core Minimal APIs, EF Core, and PostgreSQL.
 
 ## Local Setup
 
-SQL Server runs in Docker Compose; the API runs on the local .NET SDK.
-The current container setup targets an Intel Mac with Docker Desktop.
+For a containerized .NET, Node.js, and PostgreSQL environment in VS Code,
+follow the [Dev Container guide](docs/guides/devcontainer.md). Host-based
+development remains available below.
+
+PostgreSQL runs in Docker Compose; the API runs on the local .NET SDK.
+The PostgreSQL container supports Apple Silicon.
 
 1. Install the .NET 10 SDK and start Docker Desktop.
 2. From the repository root, run `dotnet restore ICFAccounting.slnx` and
    `dotnet tool restore`.
-3. Follow the [local SQL Server guide](docs/guides/local-sql-server.md) to start
-   SQL Server, supply credentials, apply migrations to `ICFAccounting`, and
+3. Follow the [local PostgreSQL guide](docs/guides/local-postgresql.md) to start
+   PostgreSQL, supply credentials, apply migrations to `icfaccounting`, and
    run the API.
 
 The HTTPS launch profile serves the API at `https://localhost:7206`.
@@ -31,8 +35,8 @@ dotnet build ICFAccounting.slnx
 dotnet test ICFAccounting.slnx
 ```
 
-The full suite requires Docker for SQL Server integration tests. Unit tests
-can run without Docker:
+The full suite requires Docker for PostgreSQL integration tests. Unit tests can
+run without Docker:
 
 ```zsh
 dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
@@ -40,7 +44,10 @@ dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
 
 ## Documentation
 
-- [Local SQL Server, credentials, migrations, tests, and troubleshooting](docs/guides/local-sql-server.md)
+- [Architecture Decision Records](docs/adr/README.md)
+- [Project glossary](GLOSSARY.md)
+- [VS Code Dev Container, HTTPS, PostgreSQL, and tests](docs/guides/devcontainer.md)
+- [Local PostgreSQL, credentials, migrations, tests, and troubleshooting](docs/guides/local-postgresql.md)
 - [Authentication, account provisioning, HTTPS, and production sessions](docs/guides/authentication.md)
 - [Pledgers API](docs/api/pledgers.md)
 - [Pledge Categories API](docs/api/pledge-categories.md)
@@ -51,9 +58,9 @@ dotnet test tests/ICFAccounting.UnitTests/ICFAccounting.UnitTests.csproj
 
 - `src/ICFAccounting.Domain`: aggregates, invariants, and repository interfaces.
 - `src/ICFAccounting.Application`: application services and orchestration.
-- `src/ICFAccounting.Data`: SQL repositories, EF mappings, and migrations.
+- `src/ICFAccounting.Data`: PostgreSQL repositories, EF mappings, and migrations.
 - `src/ICFAccounting.Api`: HTTP endpoints and response contracts.
 - `src/ICFAccounting.Web`: React and TypeScript accounting administration
   frontend. See its [setup instructions](src/ICFAccounting.Web/README.md).
 - `tests/ICFAccounting.UnitTests`: Domain and Application tests.
-- `tests/ICFAccounting.IntegrationTests`: SQL persistence and API tests.
+- `tests/ICFAccounting.IntegrationTests`: PostgreSQL persistence and API tests.

@@ -4,13 +4,13 @@ using ICFAccounting.Domain.PledgePayments;
 using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.Pledges;
 using ICFAccounting.Domain.Repositories;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace ICFAccounting.Data;
 
 /// <summary>
-/// Maps accounting aggregates to SQL Server without exposing persistence concerns to the domain.
+/// Maps accounting aggregates to PostgreSQL without exposing persistence concerns to the domain.
 /// </summary>
 public sealed class ICFAccountingDbContext : DbContext
 {
@@ -36,6 +36,7 @@ public sealed class ICFAccountingDbContext : DbContext
     /// <inheritdoc />
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
+        NormalizeTimestampPrecision();
         try
         {
             return base.SaveChanges(acceptAllChangesOnSuccess);
@@ -50,6 +51,7 @@ public sealed class ICFAccountingDbContext : DbContext
     public override async Task<int> SaveChangesAsync(
         bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
+        NormalizeTimestampPrecision();
         try
         {
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
@@ -60,27 +62,58 @@ public sealed class ICFAccountingDbContext : DbContext
         }
     }
 
+    // Keep immediate write responses equal to reads of PostgreSQL's microsecond timestamps.
+    private void NormalizeTimestampPrecision()
+    {
+        foreach (var entry in ChangeTracker.Entries()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified))
+        {
+            foreach (var property in entry.Properties)
+            {
+                if (property.CurrentValue is not DateTime timestamp
+                    || timestamp.Ticks % TimeSpan.TicksPerMicrosecond == 0)
+                {
+                    continue;
+                }
+
+                property.CurrentValue = new DateTime(
+                    timestamp.Ticks - timestamp.Ticks % TimeSpan.TicksPerMicrosecond,
+                    timestamp.Kind);
+            }
+        }
+    }
+
     private bool IsRelationshipConflict(DbUpdateException exception)
     {
-        if (exception.InnerException is not SqlException sqlException)
+        if (exception.InnerException is not PostgresException postgresException
+            || postgresException.SqlState != PostgresErrorCodes.ForeignKeyViolation
+            || postgresException.ConstraintName is not { } constraintName)
         {
             return false;
         }
 
         var foreignKeyNames = Model.GetEntityTypes().SelectMany(entity => entity.GetForeignKeys())
             .Select(foreignKey => foreignKey.GetConstraintName()).OfType<string>().ToArray();
-        return sqlException.Errors.Cast<SqlError>().Any(error => error.Number == 547
-            && foreignKeyNames.Any(name => error.Message.Contains($"\"{name}\"", StringComparison.Ordinal)));
+        return foreignKeyNames.Contains(constraintName, StringComparer.Ordinal);
     }
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.HasDefaultSchema("dbo");
-        modelBuilder.UseCollation("Latin1_General_100_CI_AS_SC");
+        modelBuilder.HasDefaultSchema("public");
+        modelBuilder.HasCollation(
+            "icf_case_insensitive_accent_sensitive",
+            locale: "und-u-ks-level2",
+            provider: "icu",
+            deterministic: false);
         modelBuilder.ApplyConfiguration(new PledgerConfiguration());
         modelBuilder.ApplyConfiguration(new PledgeCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new PledgeConfiguration());
         modelBuilder.ApplyConfiguration(new PledgePaymentConfiguration());
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<string>().UseCollation("icf_case_insensitive_accent_sensitive");
     }
 }

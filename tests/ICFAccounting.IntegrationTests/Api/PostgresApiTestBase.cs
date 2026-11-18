@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ICFAccounting.IntegrationTests.Api;
 
 /// <summary>
-/// Gives each endpoint test its own migrated database while sharing the SQL container fixture.
+/// Gives each endpoint test its own migrated database while sharing the PostgreSQL container fixture.
 /// </summary>
-public abstract class SqlServerApiTestBase(SqlServerModelFixture fixture) : IAsyncLifetime
+public abstract class PostgresApiTestBase(PostgresModelFixture fixture) : IAsyncLifetime
 {
     private readonly string _databaseName = $"ICFAccountingEndpointTests_{Guid.NewGuid():N}";
     protected WebApplicationFactory<Program> _factory = null!;
@@ -21,7 +21,7 @@ public abstract class SqlServerApiTestBase(SqlServerModelFixture fixture) : IAsy
         await context.Database.MigrateAsync();
         await SeedAsync(context);
         using var factoryContext = CreateContext();
-        _factory = new SqlServerApiFactory(factoryContext.Database.GetDbConnection().ConnectionString);
+        _factory = new PostgresApiFactory(factoryContext.Database.GetDbConnection().ConnectionString);
     }
 
     /// <inheritdoc />

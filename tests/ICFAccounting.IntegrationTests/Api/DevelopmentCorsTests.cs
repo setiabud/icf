@@ -10,7 +10,7 @@ public sealed class DevelopmentCorsTests
     [Fact]
     public async Task Preflight_from_frontend_origin_is_allowed_in_development()
     {
-        using var factory = new SqlServerApiFactory(CONNECTION_STRING);
+        using var factory = new PostgresApiFactory(CONNECTION_STRING);
         using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
 
         using var response = await client.SendAsync(CreatePreflight(FRONTEND_ORIGIN), CancellationToken.None);
@@ -25,7 +25,7 @@ public sealed class DevelopmentCorsTests
     [Fact]
     public async Task Preflight_from_unknown_origin_is_not_allowed_in_development()
     {
-        using var factory = new SqlServerApiFactory(CONNECTION_STRING);
+        using var factory = new PostgresApiFactory(CONNECTION_STRING);
         using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development")).CreateClient();
 
         using var response = await client.SendAsync(CreatePreflight("https://example.com"), CancellationToken.None);
@@ -36,7 +36,7 @@ public sealed class DevelopmentCorsTests
     [Fact]
     public async Task Preflight_from_frontend_origin_is_not_allowed_in_production()
     {
-        using var factory = new SqlServerApiFactory(CONNECTION_STRING);
+        using var factory = new PostgresApiFactory(CONNECTION_STRING);
         using var client = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Production")).CreateClient();
 
         using var response = await client.SendAsync(CreatePreflight(FRONTEND_ORIGIN), CancellationToken.None);
