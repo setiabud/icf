@@ -1,7 +1,7 @@
 using FakeItEasy;
-using ICFAccounting.Domain.Pledges;
-using ICFAccounting.Domain.Pledgers;
 using ICFAccounting.Domain.PledgeCategories;
+using ICFAccounting.Domain.Pledgers;
+using ICFAccounting.Domain.Pledges;
 
 namespace ICFAccounting.UnitTests.Services.PledgeServiceTests;
 
@@ -40,8 +40,9 @@ public sealed class AddAsyncTests
         A.CallTo(() => fixture.Repository.AddAsync(pledge, A<CancellationToken>._))
             .ThrowsAsync(exception);
 
-        var result = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => fixture.Service.AddAsync(pledge));
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.Service.AddAsync(pledge)
+        );
 
         Assert.Same(exception, result);
     }

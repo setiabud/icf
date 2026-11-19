@@ -22,7 +22,8 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
     public PledgeCategoryService(
         IPledgeCategoryRepository pledgeCategoryRepository,
         ILogger<PledgeCategoryService> logger,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider
+    )
     {
         ArgumentNullException.ThrowIfNull(pledgeCategoryRepository);
         ArgumentNullException.ThrowIfNull(logger);
@@ -34,7 +35,9 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PledgeCategory>> GetAllAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         var pledgeCategories = await _pledgeCategoryRepository.GetAllAsync(cancellationToken);
         _logger.PledgeCategoriesRetrieved(pledgeCategories.Count);
@@ -42,7 +45,10 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
     }
 
     /// <inheritdoc />
-    public async Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken = default)
+    public async Task<PledgeCategory?> GetByIdAsync(
+        PledgeCategoryId id,
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge category");
 
@@ -58,7 +64,10 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
     }
 
     /// <inheritdoc />
-    public async Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
+    public async Task AddAsync(
+        PledgeCategory pledgeCategory,
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(pledgeCategory);
 
@@ -71,7 +80,8 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
         PledgeCategoryId id,
         string categoryName,
         bool active,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge category");
         // Checked before the lookup so a blank name is rejected (400) even when the ID is unknown (404).
@@ -91,7 +101,10 @@ public sealed class PledgeCategoryService : IPledgeCategoryService
     }
 
     /// <inheritdoc />
-    public async Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken = default)
+    public async Task RemoveAsync(
+        PledgeCategoryId id,
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge category");
 

@@ -28,8 +28,9 @@ public sealed class RemoveAsyncTests
         A.CallTo(() => fixture.Repository.RemoveAsync(id, A<CancellationToken>._))
             .ThrowsAsync(exception);
 
-        var result = await Assert.ThrowsAsync<KeyNotFoundException>(
-            () => fixture.Service.RemoveAsync(id));
+        var result = await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            fixture.Service.RemoveAsync(id)
+        );
 
         Assert.Same(exception, result);
     }
@@ -44,8 +45,9 @@ public sealed class RemoveAsyncTests
         A.CallTo(() => fixture.Repository.RemoveAsync(id, cancellationToken))
             .ThrowsAsync(new OperationCanceledException(cancellationToken));
 
-        var exception = await Assert.ThrowsAsync<OperationCanceledException>(
-            () => fixture.Service.RemoveAsync(id, cancellationToken));
+        var exception = await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            fixture.Service.RemoveAsync(id, cancellationToken)
+        );
 
         Assert.Equal(cancellationToken, exception.CancellationToken);
     }
@@ -55,8 +57,7 @@ public sealed class RemoveAsyncTests
     {
         var fixture = new PledgerServiceTestFixture();
 
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => fixture.Service.RemoveAsync(default));
+        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Service.RemoveAsync(default));
 
         A.CallTo(() => fixture.Repository.RemoveAsync(A<PledgerId>._, A<CancellationToken>._))
             .MustNotHaveHappened();

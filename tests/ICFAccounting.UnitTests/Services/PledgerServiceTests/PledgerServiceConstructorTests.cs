@@ -12,7 +12,9 @@ public sealed class PledgerServiceConstructorTests
     {
         var logger = A.Fake<ILogger<PledgerService>>();
 
-        Assert.Throws<ArgumentNullException>(() => new PledgerService(null!, logger, TimeProvider.System));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PledgerService(null!, logger, TimeProvider.System)
+        );
     }
 
     [Fact]
@@ -20,7 +22,9 @@ public sealed class PledgerServiceConstructorTests
     {
         var repository = A.Fake<IPledgerRepository>();
 
-        Assert.Throws<ArgumentNullException>(() => new PledgerService(repository, null!, TimeProvider.System));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PledgerService(repository, null!, TimeProvider.System)
+        );
     }
 
     [Fact]
@@ -29,7 +33,9 @@ public sealed class PledgerServiceConstructorTests
         var repository = A.Fake<IPledgerRepository>();
         var logger = A.Fake<ILogger<PledgerService>>();
 
-        var exception = Assert.Throws<ArgumentNullException>(() => new PledgerService(repository, logger, null!));
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            new PledgerService(repository, logger, null!)
+        );
         Assert.Equal("timeProvider", exception.ParamName);
     }
 }

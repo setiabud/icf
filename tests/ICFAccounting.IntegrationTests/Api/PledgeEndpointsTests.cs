@@ -26,9 +26,8 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     private readonly PledgeCategory _category = PledgeCategory.Create("Test category");
     private readonly PledgeCategory _otherCategory = PledgeCategory.Create("Other category");
 
-    public PledgeEndpointsTests(PostgresModelFixture fixture) : base(fixture)
-    {
-    }
+    public PledgeEndpointsTests(PostgresModelFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Post_with_valid_request_returns_created_details_and_location()
@@ -41,7 +40,7 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
             Amount = 125.50m,
             PledgerId = _pledger.Id.Value,
             PledgeCategoryId = _category.Id.Value,
-            Comment = "  Annual pledge  "
+            Comment = "  Annual pledge  ",
         };
         var beforeRequest = DateTime.UtcNow;
 
@@ -62,7 +61,10 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
 
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
-        var storedPledge = await repository.GetByIdAsync(new PledgeId(result.Id), CancellationToken.None);
+        var storedPledge = await repository.GetByIdAsync(
+            new PledgeId(result.Id),
+            CancellationToken.None
+        );
         Assert.NotNull(storedPledge);
         Assert.Equal(request.Amount, storedPledge.Amount);
         Assert.Equal(result.CreatedAt, storedPledge.CreatedAt);
@@ -74,7 +76,10 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory, allowAutoRedirect: false);
 
-        using var postResponse = await client.PostAsJsonAsync("/pledges", CreateValidCreateRequest());
+        using var postResponse = await client.PostAsJsonAsync(
+            "/pledges",
+            CreateValidCreateRequest()
+        );
         using var getResponse = await client.GetAsync(postResponse.Headers.Location);
 
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
@@ -84,19 +89,43 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     }
 
     [Theory]
-    [InlineData(2019, "100", ValidPledgerId, ValidCategoryId, "Year must be between 2020 and 2099.")]
-    [InlineData(2100, "100", ValidPledgerId, ValidCategoryId, "Year must be between 2020 and 2099.")]
+    [InlineData(
+        2019,
+        "100",
+        ValidPledgerId,
+        ValidCategoryId,
+        "Year must be between 2020 and 2099."
+    )]
+    [InlineData(
+        2100,
+        "100",
+        ValidPledgerId,
+        ValidCategoryId,
+        "Year must be between 2020 and 2099."
+    )]
     [InlineData(2026, "0", ValidPledgerId, ValidCategoryId, "Amount must be greater than zero.")]
     [InlineData(2026, "-5", ValidPledgerId, ValidCategoryId, "Amount must be greater than zero.")]
-    [InlineData(2026, "1.001", ValidPledgerId, ValidCategoryId, "Amount must have at most two decimal places.")]
+    [InlineData(
+        2026,
+        "1.001",
+        ValidPledgerId,
+        ValidCategoryId,
+        "Amount must have at most two decimal places."
+    )]
     [InlineData(2026, "100", EmptyGuid, ValidCategoryId, "Pledger ID cannot be empty.")]
     [InlineData(2026, "100", ValidPledgerId, EmptyGuid, "Pledge category ID cannot be empty.")]
     public async Task Post_with_invalid_values_returns_bad_request_without_creating(
-        int year, string amount, string pledgerId, string pledgeCategoryId, string expectedDetail)
+        int year,
+        string amount,
+        string pledgerId,
+        string pledgeCategoryId,
+        string expectedDetail
+    )
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory, allowAutoRedirect: false);
-        var json = $$"""{"year":{{year}},"amount":{{amount}},"pledgerId":"{{pledgerId}}","pledgeCategoryId":"{{pledgeCategoryId}}"}""";
+        var json =
+            $$"""{"year":{{year}},"amount":{{amount}},"pledgerId":"{{pledgerId}}","pledgeCategoryId":"{{pledgeCategoryId}}"}""";
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
         using var response = await client.PostAsync("/pledges", content);
@@ -108,16 +137,26 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeRepository>();
         var stored = await repository.GetByCategoryAsync(
-            new PledgeCategoryId(Guid.Parse(ValidCategoryId)), cancellationToken: CancellationToken.None);
+            new PledgeCategoryId(Guid.Parse(ValidCategoryId)),
+            cancellationToken: CancellationToken.None
+        );
         Assert.Equal(0, stored.TotalCount);
     }
 
     [Theory]
     [InlineData("{}")]
-    [InlineData("""{"amount":100,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01","pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}""")]
-    [InlineData("""{"year":2026,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01","pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}""")]
-    [InlineData("""{"year":2026,"amount":100,"pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}""")]
-    [InlineData("""{"year":2026,"amount":100,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01"}""")]
+    [InlineData(
+        """{"amount":100,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01","pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}"""
+    )]
+    [InlineData(
+        """{"year":2026,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01","pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}"""
+    )]
+    [InlineData(
+        """{"year":2026,"amount":100,"pledgeCategoryId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a02"}"""
+    )]
+    [InlineData(
+        """{"year":2026,"amount":100,"pledgerId":"6f1c2b9e-0d4a-4b8e-9a51-2f3c7d8e1a01"}"""
+    )]
     [InlineData("not json")]
     public async Task Post_with_missing_fields_or_malformed_body_returns_bad_request(string json)
     {
@@ -133,8 +172,11 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Post_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())
+            )
+        );
         using var client = CreateClient(factory, allowAutoRedirect: false);
 
         using var response = await client.PostAsJsonAsync("/pledges", CreateValidCreateRequest());
@@ -211,8 +253,11 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_by_id_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledges/{Guid.NewGuid()}");
@@ -230,7 +275,10 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [InlineData("Ascending", 2, 2024)]
     [InlineData("Descending", 1, 2025)]
     public async Task Get_by_pledger_returns_paginated_sorted_pledges(
-        string sortOrder, int page, int expectedYear)
+        string sortOrder,
+        int page,
+        int expectedYear
+    )
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
@@ -241,14 +289,19 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         foreach (var year in new[] { 2025, 2023, 2024 })
         {
             await repository.AddAsync(
-                Pledge.Create(year, 100m, pledgerId, categoryId), CancellationToken.None);
+                Pledge.Create(year, 100m, pledgerId, categoryId),
+                CancellationToken.None
+            );
         }
 
         await repository.AddAsync(
-            Pledge.Create(2026, 100m, _otherPledger.Id, categoryId), CancellationToken.None);
+            Pledge.Create(2026, 100m, _otherPledger.Id, categoryId),
+            CancellationToken.None
+        );
 
         using var response = await client.GetAsync(
-            $"/pledges/pledger/{pledgerId.Value}?page={page}&pageSize=1&sortBy=Year&sortOrder={sortOrder}");
+            $"/pledges/pledger/{pledgerId.Value}?page={page}&pageSize=1&sortBy=Year&sortOrder={sortOrder}"
+        );
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
@@ -270,7 +323,9 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     {
         using var client = CreateClient(_factory);
 
-        using var response = await client.GetAsync($"/pledges/pledger/{PledgerId.New().Value}{query}");
+        using var response = await client.GetAsync(
+            $"/pledges/pledger/{PledgerId.New().Value}{query}"
+        );
 
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.Equal("Invalid pledge query", problem.Title);
@@ -290,8 +345,11 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_by_pledger_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledges/pledger/{PledgerId.New().Value}");
@@ -316,17 +374,24 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
         {
             await repository.AddAsync(
-                Pledge.Create(year, amount, pledgerId, categoryId), CancellationToken.None);
+                Pledge.Create(year, amount, pledgerId, categoryId),
+                CancellationToken.None
+            );
         }
 
         using var response = await client.GetAsync(
-            $"/pledges/pledger/{pledgerId.Value}?sortBy=Amount&sortOrder={sortOrder}");
+            $"/pledges/pledger/{pledgerId.Value}?sortBy=Amount&sortOrder={sortOrder}"
+        );
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
         Assert.NotNull(result);
-        Assert.Equal(expectedAmounts.Split(',').Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
-            result.Items.Select(pledge => pledge.Amount));
+        Assert.Equal(
+            expectedAmounts
+                .Split(',')
+                .Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
+            result.Items.Select(pledge => pledge.Amount)
+        );
     }
 
     [Theory]
@@ -334,7 +399,10 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [InlineData("Ascending", 2, 2024)]
     [InlineData("Descending", 1, 2025)]
     public async Task Get_by_category_returns_paginated_sorted_pledges(
-        string sortOrder, int page, int expectedYear)
+        string sortOrder,
+        int page,
+        int expectedYear
+    )
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
@@ -345,14 +413,19 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         foreach (var year in new[] { 2025, 2023, 2024 })
         {
             await repository.AddAsync(
-                Pledge.Create(year, 100m, pledgerId, categoryId), CancellationToken.None);
+                Pledge.Create(year, 100m, pledgerId, categoryId),
+                CancellationToken.None
+            );
         }
 
         await repository.AddAsync(
-            Pledge.Create(2026, 100m, pledgerId, _otherCategory.Id), CancellationToken.None);
+            Pledge.Create(2026, 100m, pledgerId, _otherCategory.Id),
+            CancellationToken.None
+        );
 
         using var response = await client.GetAsync(
-            $"/pledges/pledge-category/{categoryId.Value}?page={page}&pageSize=1&sortBy=Year&sortOrder={sortOrder}");
+            $"/pledges/pledge-category/{categoryId.Value}?page={page}&pageSize=1&sortBy=Year&sortOrder={sortOrder}"
+        );
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
@@ -373,7 +446,8 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(_factory);
 
         using var response = await client.GetAsync(
-            $"/pledges/pledge-category/{PledgeCategoryId.New().Value}{query}");
+            $"/pledges/pledge-category/{PledgeCategoryId.New().Value}{query}"
+        );
 
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.Equal("Invalid pledge query", problem.Title);
@@ -394,12 +468,16 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_by_category_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync(
-            $"/pledges/pledge-category/{PledgeCategoryId.New().Value}");
+            $"/pledges/pledge-category/{PledgeCategoryId.New().Value}"
+        );
 
         var body = await response.Content.ReadAsStringAsync();
         var problem = await AssertProblemAsync(response, HttpStatusCode.InternalServerError);
@@ -421,17 +499,24 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         foreach (var (year, amount) in new[] { (2025, 100m), (2023, 150m), (2024, 50m) })
         {
             await repository.AddAsync(
-                Pledge.Create(year, amount, pledgerId, categoryId), CancellationToken.None);
+                Pledge.Create(year, amount, pledgerId, categoryId),
+                CancellationToken.None
+            );
         }
 
         using var response = await client.GetAsync(
-            $"/pledges/pledge-category/{categoryId.Value}?sortBy=Amount&sortOrder={sortOrder}");
+            $"/pledges/pledge-category/{categoryId.Value}?sortBy=Amount&sortOrder={sortOrder}"
+        );
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgePageResponse>();
         Assert.NotNull(result);
-        Assert.Equal(expectedAmounts.Split(',').Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
-            result.Items.Select(pledge => pledge.Amount));
+        Assert.Equal(
+            expectedAmounts
+                .Split(',')
+                .Select(value => decimal.Parse(value, CultureInfo.InvariantCulture)),
+            result.Items.Select(pledge => pledge.Amount)
+        );
     }
 
     [Fact]
@@ -452,7 +537,7 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
             Amount = 125.50m,
             PledgerId = updatedPledgerId.Value,
             PledgeCategoryId = updatedCategoryId.Value,
-            Comment = "Updated pledge"
+            Comment = "Updated pledge",
         };
 
         using var response = await client.PutAsJsonAsync($"/pledges/{pledge.Id.Value}", request);
@@ -471,17 +556,20 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
 
         var storedPledge = await repository.GetByIdAsync(pledge.Id, CancellationToken.None);
         Assert.NotNull(storedPledge);
-        Assert.Equal(result, new PledgeResponse
-        {
-            Id = storedPledge.Id.Value,
-            Year = storedPledge.Year,
-            Amount = storedPledge.Amount,
-            PledgerId = storedPledge.PledgerId.Value,
-            PledgeCategoryId = storedPledge.PledgeCategoryId.Value,
-            Comment = storedPledge.Comment,
-            CreatedAt = storedPledge.CreatedAt,
-            UpdatedAt = storedPledge.UpdatedAt
-        });
+        Assert.Equal(
+            result,
+            new PledgeResponse
+            {
+                Id = storedPledge.Id.Value,
+                Year = storedPledge.Year,
+                Amount = storedPledge.Amount,
+                PledgerId = storedPledge.PledgerId.Value,
+                PledgeCategoryId = storedPledge.PledgeCategoryId.Value,
+                Comment = storedPledge.Comment,
+                CreatedAt = storedPledge.CreatedAt,
+                UpdatedAt = storedPledge.UpdatedAt,
+            }
+        );
     }
 
     [Fact]
@@ -491,7 +579,9 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(factory);
 
         using var response = await client.PutAsJsonAsync(
-            $"/pledges/{Guid.NewGuid()}", CreateValidUpdateRequest());
+            $"/pledges/{Guid.NewGuid()}",
+            CreateValidUpdateRequest()
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -501,7 +591,10 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     {
         using var client = CreateClient(_factory);
 
-        using var response = await client.PutAsJsonAsync("/pledges/not-a-guid", CreateValidUpdateRequest());
+        using var response = await client.PutAsJsonAsync(
+            "/pledges/not-a-guid",
+            CreateValidUpdateRequest()
+        );
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -512,7 +605,9 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(_factory);
 
         using var response = await client.PutAsJsonAsync(
-            $"/pledges/{Guid.Empty}", CreateValidUpdateRequest());
+            $"/pledges/{Guid.Empty}",
+            CreateValidUpdateRequest()
+        );
 
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.Equal("Invalid pledge ID", problem.Title);
@@ -520,12 +615,22 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     }
 
     [Theory]
-    [InlineData("{}")] 
-    [InlineData("""{"year":2026,"amount":100,"pledgerId":"00000000-0000-0000-0000-000000000001"}""")]
-    [InlineData("""{"year":2026,"pledgerId":"00000000-0000-0000-0000-000000000001","pledgeCategoryId":"00000000-0000-0000-0000-000000000002"}""")]
-    [InlineData("""{"amount":100,"pledgerId":"00000000-0000-0000-0000-000000000001","pledgeCategoryId":"00000000-0000-0000-0000-000000000002"}""")]
-    [InlineData("""{"year":2026,"amount":100,"pledgeCategoryId":"00000000-0000-0000-0000-000000000002"}""")]
-    [InlineData("""{"year":2026,"amount":100,"pledgerId":"00000000-0000-0000-0000-000000000001","pledgeCategoryId":"00000000-0000-0000-0000-000000000000"}""")]
+    [InlineData("{}")]
+    [InlineData(
+        """{"year":2026,"amount":100,"pledgerId":"00000000-0000-0000-0000-000000000001"}"""
+    )]
+    [InlineData(
+        """{"year":2026,"pledgerId":"00000000-0000-0000-0000-000000000001","pledgeCategoryId":"00000000-0000-0000-0000-000000000002"}"""
+    )]
+    [InlineData(
+        """{"amount":100,"pledgerId":"00000000-0000-0000-0000-000000000001","pledgeCategoryId":"00000000-0000-0000-0000-000000000002"}"""
+    )]
+    [InlineData(
+        """{"year":2026,"amount":100,"pledgeCategoryId":"00000000-0000-0000-0000-000000000002"}"""
+    )]
+    [InlineData(
+        """{"year":2026,"amount":100,"pledgerId":"00000000-0000-0000-0000-000000000001","pledgeCategoryId":"00000000-0000-0000-0000-000000000000"}"""
+    )]
     public async Task Put_with_invalid_body_returns_bad_request_without_updating(string json)
     {
         using var factory = CreateIsolatedFactory();
@@ -574,12 +679,17 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Put_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.PutAsJsonAsync(
-            $"/pledges/{Guid.NewGuid()}", CreateValidUpdateRequest());
+            $"/pledges/{Guid.NewGuid()}",
+            CreateValidUpdateRequest()
+        );
 
         var body = await response.Content.ReadAsStringAsync();
         var problem = await AssertProblemAsync(response, HttpStatusCode.InternalServerError);
@@ -642,8 +752,11 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Delete_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeRepository>(new FailingPledgeRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.DeleteAsync($"/pledges/{Guid.NewGuid()}");
@@ -669,7 +782,7 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
             Year = 2026,
             Amount = 100m,
             PledgerId = _pledger.Id.Value,
-            PledgeCategoryId = _category.Id.Value
+            PledgeCategoryId = _category.Id.Value,
         };
     }
 
@@ -680,32 +793,34 @@ public sealed class PledgeEndpointsTests : PostgresApiTestBase
             Year = 2026,
             Amount = 100m,
             PledgerId = _otherPledger.Id.Value,
-            PledgeCategoryId = _otherCategory.Id.Value
+            PledgeCategoryId = _otherCategory.Id.Value,
         };
     }
 
     private sealed class FailingPledgeRepository : IPledgeRepository
     {
-        public Task AddAsync(Pledge pledge, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task AddAsync(Pledge pledge, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
-        public Task<Pledge?> GetByIdAsync(PledgeId id, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task<Pledge?> GetByIdAsync(PledgeId id, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
         public Task<PagedPledgesResult> GetByPledgerAsync(
-            PledgerId pledgerId, PledgeQuery? query = null, CancellationToken cancellationToken = default)
-            => throw new InvalidOperationException("Internal repository failure");
+            PledgerId pledgerId,
+            PledgeQuery? query = null,
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Internal repository failure");
 
         public Task<PagedPledgesResult> GetByCategoryAsync(
             PledgeCategoryId pledgeCategoryId,
             PledgeQuery? query = null,
-            CancellationToken cancellationToken = default)
-            => throw new InvalidOperationException("Internal repository failure");
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Internal repository failure");
 
-        public Task UpdateAsync(Pledge pledge, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task UpdateAsync(Pledge pledge, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
-        public Task RemoveAsync(PledgeId id, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task RemoveAsync(PledgeId id, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
     }
 }

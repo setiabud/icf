@@ -1,5 +1,5 @@
-using ICFAccounting.Data.Authentication;
 using System.Net.Mail;
+using ICFAccounting.Data.Authentication;
 using Microsoft.AspNetCore.Identity;
 
 namespace ICFAccounting.Api.Authentication;
@@ -11,14 +11,20 @@ public static class UserAccountCommand
     {
         if (Console.IsInputRedirected || operation is not ("create" or "set-password"))
         {
-            Console.Error.WriteLine("Use an interactive terminal: users create | users set-password. Passwords must not be passed as arguments.");
+            Console.Error.WriteLine(
+                "Use an interactive terminal: users create | users set-password. Passwords must not be passed as arguments."
+            );
             return 1;
         }
 
         Console.Write("Email: ");
         var email = Console.ReadLine()?.Trim();
-        if (string.IsNullOrWhiteSpace(email) || email.Length > 256 ||
-            !MailAddress.TryCreate(email, out var address) || address.Address != email)
+        if (
+            string.IsNullOrWhiteSpace(email)
+            || email.Length > 256
+            || !MailAddress.TryCreate(email, out var address)
+            || address.Address != email
+        )
         {
             Console.Error.WriteLine("A valid email of at most 256 characters is required.");
             return 1;
@@ -38,17 +44,27 @@ public static class UserAccountCommand
             }
             Console.Write("Profile image HTTPS URL (optional): ");
             var imageUrl = Console.ReadLine()?.Trim();
-            if (!string.IsNullOrEmpty(imageUrl) &&
-                (imageUrl.Length > 2048 || !Uri.TryCreate(imageUrl, UriKind.Absolute, out var image) ||
-                 image.Scheme != Uri.UriSchemeHttps || !string.IsNullOrEmpty(image.UserInfo)))
+            if (
+                !string.IsNullOrEmpty(imageUrl)
+                && (
+                    imageUrl.Length > 2048
+                    || !Uri.TryCreate(imageUrl, UriKind.Absolute, out var image)
+                    || image.Scheme != Uri.UriSchemeHttps
+                    || !string.IsNullOrEmpty(image.UserInfo)
+                )
+            )
             {
-                Console.Error.WriteLine("Profile image must be an HTTPS URL without embedded credentials and at most 2048 characters.");
+                Console.Error.WriteLine(
+                    "Profile image must be an HTTPS URL without embedded credentials and at most 2048 characters."
+                );
                 return 1;
             }
             account = new UserAccount
             {
-                UserName = email, Email = email, DisplayName = string.IsNullOrEmpty(name) ? null : name,
-                ProfileImageUrl = string.IsNullOrEmpty(imageUrl) ? null : imageUrl
+                UserName = email,
+                Email = email,
+                DisplayName = string.IsNullOrEmpty(name) ? null : name,
+                ProfileImageUrl = string.IsNullOrEmpty(imageUrl) ? null : imageUrl,
             };
         }
         else
@@ -75,13 +91,20 @@ public static class UserAccountCommand
             return 1;
         }
 
-        var result = operation == "create"
-            ? await users.CreateAsync(account, password)
-            : await users.ResetPasswordAsync(account, await users.GeneratePasswordResetTokenAsync(account), password);
+        var result =
+            operation == "create"
+                ? await users.CreateAsync(account, password)
+                : await users.ResetPasswordAsync(
+                    account,
+                    await users.GeneratePasswordResetTokenAsync(account),
+                    password
+                );
         if (!result.Succeeded)
         {
             // Identity error codes describe the failure without printing account data.
-            Console.Error.WriteLine($"Account operation failed: {string.Join(", ", result.Errors.Select(error => error.Code))}");
+            Console.Error.WriteLine(
+                $"Account operation failed: {string.Join(", ", result.Errors.Select(error => error.Code))}"
+            );
             return 1;
         }
         Console.WriteLine("Account operation completed.");

@@ -10,7 +10,8 @@ public sealed class GetByIdAsyncTests
     {
         var fixture = new PledgePaymentServiceTestFixture();
         var payment = PledgePaymentServiceTestFixture.CreatePayment();
-        A.CallTo(() => fixture.Repository.GetByIdAsync(payment.Id, A<CancellationToken>._)).Returns(payment);
+        A.CallTo(() => fixture.Repository.GetByIdAsync(payment.Id, A<CancellationToken>._))
+            .Returns(payment);
 
         var result = await fixture.Service.GetByIdAsync(payment.Id);
 

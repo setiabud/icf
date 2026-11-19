@@ -20,10 +20,14 @@ public sealed class PostgresPledgerRepository : IPledgerRepository
     }
 
     /// <inheritdoc />
-    public async Task<Pledger?> GetByIdAsync(PledgerId pledgerId, CancellationToken cancellationToken = default)
+    public async Task<Pledger?> GetByIdAsync(
+        PledgerId pledgerId,
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return await _context.Pledgers.AsNoTracking()
+        return await _context
+            .Pledgers.AsNoTracking()
             .SingleOrDefaultAsync(pledger => pledger.Id == pledgerId, cancellationToken);
     }
 
@@ -40,7 +44,10 @@ public sealed class PostgresPledgerRepository : IPledgerRepository
     }
 
     /// <inheritdoc />
-    public async Task RemoveAsync(PledgerId pledgerId, CancellationToken cancellationToken = default)
+    public async Task RemoveAsync(
+        PledgerId pledgerId,
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
         var pledger = await _context.Pledgers.FindAsync([pledgerId], cancellationToken)
@@ -52,14 +59,20 @@ public sealed class PostgresPledgerRepository : IPledgerRepository
     /// <inheritdoc />
     public async Task<PagedPledgersResult> GetAllAsync(
         PledgerQuery? query = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
         var matches = _context.Pledgers.AsNoTracking();
         if (query is null)
         {
             var allPledgers = await matches.ToListAsync(cancellationToken);
-            return PagedPledgersResult.Create(allPledgers, 1, Math.Max(1, allPledgers.Count), allPledgers.Count);
+            return PagedPledgersResult.Create(
+                allPledgers,
+                1,
+                Math.Max(1, allPledgers.Count),
+                allPledgers.Count
+            );
         }
 
         var totalCount = await matches.CountAsync(cancellationToken);
@@ -69,11 +82,15 @@ public sealed class PostgresPledgerRepository : IPledgerRepository
             return PagedPledgersResult.Create([], query.Page, query.PageSize, totalCount);
         }
 
-        var ordered = query.SortOrder == SortOrder.Descending
-            ? matches.OrderByDescending(pledger => pledger.PledgerName)
-            : matches.OrderBy(pledger => pledger.PledgerName);
-        var pledgers = await ordered.ThenBy(pledger => pledger.Id)
-            .Skip((int)offset).Take(query.PageSize).ToListAsync(cancellationToken);
+        var ordered =
+            query.SortOrder == SortOrder.Descending
+                ? matches.OrderByDescending(pledger => pledger.PledgerName)
+                : matches.OrderBy(pledger => pledger.PledgerName);
+        var pledgers = await ordered
+            .ThenBy(pledger => pledger.Id)
+            .Skip((int)offset)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
         return PagedPledgersResult.Create(pledgers, query.Page, query.PageSize, totalCount);
     }
 

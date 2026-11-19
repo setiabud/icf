@@ -11,7 +11,8 @@ public sealed class Pledger
         string? email,
         bool enableNotification,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt
+    )
     {
         Id = id;
         PledgerName = pledgerName;
@@ -40,13 +41,22 @@ public sealed class Pledger
         string pledgerName,
         TimeProvider? timeProvider = null,
         string? email = null,
-        bool enableNotification = false)
+        bool enableNotification = false
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
         ValidateEmail(email);
 
         var createdAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
-        return new Pledger(PledgerId.New(), pledgerName, true, email, enableNotification, createdAt, createdAt);
+        return new Pledger(
+            PledgerId.New(),
+            pledgerName,
+            true,
+            email,
+            enableNotification,
+            createdAt,
+            createdAt
+        );
     }
 
     public void Update(
@@ -54,7 +64,8 @@ public sealed class Pledger
         bool active,
         string? email,
         bool enableNotification,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null
+    )
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(pledgerName);
         ValidateEmail(email);
@@ -73,8 +84,10 @@ public sealed class Pledger
             return;
         }
 
-        if (!MailAddress.TryCreate(email, out var address)
-            || !string.Equals(address.Address, email, StringComparison.Ordinal))
+        if (
+            !MailAddress.TryCreate(email, out var address)
+            || !string.Equals(address.Address, email, StringComparison.Ordinal)
+        )
         {
             throw new ArgumentException("Email must be a valid email address.", nameof(email));
         }

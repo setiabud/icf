@@ -41,7 +41,10 @@ public interface IPledgerRepository
     /// The snapshot fixes collection membership, not the state of individual entities.
     /// </remarks>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>
-    Task<PagedPledgersResult> GetAllAsync(PledgerQuery? query = null, CancellationToken cancellationToken = default);
+    Task<PagedPledgersResult> GetAllAsync(
+        PledgerQuery? query = null,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Stores a pledger, inserting it if no entry has the identifier.

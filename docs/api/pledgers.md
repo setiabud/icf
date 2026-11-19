@@ -38,36 +38,36 @@ the fields documented under `GET /pledgers/{id}`, with `active` set to `true`
 and `updatedAt` equal to `createdAt`. The Location URL can be used to retrieve
 the created pledger.
 
-| Condition | Response |
-| --- | --- |
-| Pledger created | `201 Created` with pledger details and `Location` header |
+| Condition                                        | Response                                                                                                                                         |
+|--------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| Pledger created                                  | `201 Created` with pledger details and `Location` header                                                                                         |
 | `pledgerName` is absent or the body is malformed | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs, so there is no custom title) |
-| `pledgerName` is null, empty, or whitespace | `400 Bad Request` with title `Invalid pledger name` |
-| The domain or service rejects the pledger | `400 Bad Request` with title `Invalid pledger` |
-| Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| `pledgerName` is null, empty, or whitespace      | `400 Bad Request` with title `Invalid pledger name`                                                                                              |
+| The domain or service rejects the pledger        | `400 Bad Request` with title `Invalid pledger`                                                                                                   |
+| Unexpected creation failure                      | `500 Internal Server Error` with a sanitized ProblemDetails body                                                                                 |
 
 ## GET /pledgers
 
 Returns `200 OK` with a `PledgerPageResponse` JSON object:
 
-| Response field | Description |
-| --- | --- |
-| `items` | Array of pledger details (same fields as `GET /pledgers/{id}`) |
-| `page` | Requested current page |
-| `pageSize` | Requested page size |
-| `totalCount` | Total number of pledgers before pagination |
-| `totalPages` | Total count divided by page size, rounded up |
+| Response field | Description                                                    |
+|----------------|----------------------------------------------------------------|
+| `items`        | Array of pledger details (same fields as `GET /pledgers/{id}`) |
+| `page`         | Requested current page                                         |
+| `pageSize`     | Requested page size                                            |
+| `totalCount`   | Total number of pledgers before pagination                     |
+| `totalPages`   | Total count divided by page size, rounded up                   |
 
 This replaces the previous plain-array response. An empty repository returns
 `items: []`, `totalCount: 0`, and `totalPages: 0`. A page beyond the end returns
 empty `items` while retaining the requested page and the collection's totals.
 
-| Query parameter | Default | Accepted values |
-| --- | --- | --- |
-| `page` | `1` | Positive integer |
-| `pageSize` | `10` | Integer from 1 to 100 |
-| `sortBy` | `PledgerName` | `PledgerName` (case-insensitive) |
-| `sortOrder` | `Ascending` | `Ascending`, `Descending` (case-insensitive) |
+| Query parameter | Default       | Accepted values                              |
+|-----------------|---------------|----------------------------------------------|
+| `page`          | `1`           | Positive integer                             |
+| `pageSize`      | `10`          | Integer from 1 to 100                        |
+| `sortBy`        | `PledgerName` | `PledgerName` (case-insensitive)             |
+| `sortOrder`     | `Ascending`   | `Ascending`, `Descending` (case-insensitive) |
 
 Names are sorted case-insensitively and accent-sensitively before pagination.
 Equal names are ordered by PostgreSQL's native UUID order ascending, regardless
@@ -78,11 +78,11 @@ Sorting uses the `PledgerSortBy` and `SortOrder` enums internally. This is a
 breaking query-contract change: the former `asc` and `desc` abbreviations are
 no longer accepted. Numeric enum values are also rejected.
 
-| Condition | Response |
-| --- | --- |
-| Pledgers retrieved | `200 OK` with a `PledgerPageResponse` |
-| Invalid query parameters, or a query the service rejects | `400 Bad Request` with title `Invalid pledger query` |
-| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                                | Response                                                         |
+|----------------------------------------------------------|------------------------------------------------------------------|
+| Pledgers retrieved                                       | `200 OK` with a `PledgerPageResponse`                            |
+| Invalid query parameters, or a query the service rejects | `400 Bad Request` with title `Invalid pledger query`             |
+| Unexpected retrieval failure                             | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 Service and repository callers may supply a `PledgerQuery` to request the
 same pagination and ordering. The repository's `GetAllAsync` returns a domain
@@ -99,23 +99,23 @@ unpaged, returning all items as page 1 with page size equal to the item count
 
 Returns `200 OK` with a single pledger:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | UUID | Pledger identity |
-| `pledgerName` | string | Pledger name |
-| `active` | boolean | Whether the pledger is active |
-| `email` | string or null | Pledger email address |
-| `enableNotification` | boolean | Whether notifications are enabled |
-| `createdAt` | UTC timestamp | Creation time |
-| `updatedAt` | UTC timestamp | Last update time |
+| Field                | Type           | Description                       |
+|----------------------|----------------|-----------------------------------|
+| `id`                 | UUID           | Pledger identity                  |
+| `pledgerName`        | string         | Pledger name                      |
+| `active`             | boolean        | Whether the pledger is active     |
+| `email`              | string or null | Pledger email address             |
+| `enableNotification` | boolean        | Whether notifications are enabled |
+| `createdAt`          | UTC timestamp  | Creation time                     |
+| `updatedAt`          | UTC timestamp  | Last update time                  |
 
-| Condition | Response |
-| --- | --- |
-| Pledger exists | `200 OK` with pledger details |
-| No pledger with that ID | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledger ID` |
-| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                             | Response                                                         |
+|-------------------------------------------------------|------------------------------------------------------------------|
+| Pledger exists                                        | `200 OK` with pledger details                                    |
+| No pledger with that ID                               | `404 Not Found`                                                  |
+| `id` is not a GUID                                    | `404 Not Found` (route does not match)                           |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledger ID`                |
+| Unexpected retrieval failure                          | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## PUT /pledgers/{id}
 
@@ -139,28 +139,28 @@ Request:
 `pledgerName` must not be null, empty, or whitespace. `active` and
 `enableNotification` must be `true` or `false`.
 
-| Condition | Response |
-| --- | --- |
-| Pledger updated | `200 OK` with the updated pledger details |
-| No pledger with that ID | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID | `400 Bad Request` with title `Invalid pledger ID` |
+| Condition                                                                    | Response                                                                                                            |
+|------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| Pledger updated                                                              | `200 OK` with the updated pledger details                                                                           |
+| No pledger with that ID                                                      | `404 Not Found`                                                                                                     |
+| `id` is not a GUID                                                           | `404 Not Found` (route does not match)                                                                              |
+| `id` is the empty GUID                                                       | `400 Bad Request` with title `Invalid pledger ID`                                                                   |
 | The request body is malformed, or `email` or `enableNotification` is missing | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs) |
-| Another body value is invalid, or the service rejects the update | `400 Bad Request` with title `Invalid pledger update` |
-| Unexpected update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Another body value is invalid, or the service rejects the update             | `400 Bad Request` with title `Invalid pledger update`                                                               |
+| Unexpected update failure                                                    | `500 Internal Server Error` with a sanitized ProblemDetails body                                                    |
 
 ## DELETE /pledgers/{id}
 
 Removes the pledger with the given ID. There is no request body.
 
-| Condition | Response |
-| --- | --- |
-| Pledger removed | `204 No Content` with an empty body |
-| No pledger with that ID, including one already removed | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledger ID` |
-| Pledges reference the pledger | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no related records are removed |
-| Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                              | Response                                                                                           |
+|--------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Pledger removed                                        | `204 No Content` with an empty body                                                                |
+| No pledger with that ID, including one already removed | `404 Not Found`                                                                                    |
+| `id` is not a GUID                                     | `404 Not Found` (route does not match)                                                             |
+| `id` is the empty GUID, or the service rejects the ID  | `400 Bad Request` with title `Invalid pledger ID`                                                  |
+| Pledges reference the pledger                          | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no related records are removed |
+| Unexpected removal failure                             | `500 Internal Server Error` with a sanitized ProblemDetails body                                   |
 
 The repository throws `KeyNotFoundException` for an unknown ID (passed through
 by the service), which the endpoint translates into `404 Not Found`.

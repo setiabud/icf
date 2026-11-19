@@ -14,9 +14,8 @@ namespace ICFAccounting.IntegrationTests.Api;
 [Collection(nameof(PostgresTestCollection))]
 public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
 {
-    public PledgeCategoryEndpointsTests(PostgresModelFixture fixture) : base(fixture)
-    {
-    }
+    public PledgeCategoryEndpointsTests(PostgresModelFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Post_returns_created_category_with_retrievable_location()
@@ -45,7 +44,10 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
         Assert.Equal(result, await getResponse.Content.ReadFromJsonAsync<PledgeCategoryResponse>());
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>();
-        var storedCategory = await repository.GetByIdAsync(new PledgeCategoryId(result.Id), CancellationToken.None);
+        var storedCategory = await repository.GetByIdAsync(
+            new PledgeCategoryId(result.Id),
+            CancellationToken.None
+        );
         Assert.NotNull(storedCategory);
         Assert.Equal(result.CategoryName, storedCategory.CategoryName);
         Assert.Equal(result.Active, storedCategory.Active);
@@ -59,7 +61,9 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [InlineData("""{"categoryName":""}""")]
     [InlineData("""{"categoryName":"   "}""")]
     [InlineData("""{"categoryName":"\t\r\n"}""")]
-    public async Task Post_with_invalid_name_returns_bad_request_without_adding_category(string json)
+    public async Task Post_with_invalid_name_returns_bad_request_without_adding_category(
+        string json
+    )
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
@@ -77,8 +81,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Post_when_service_rejects_argument_returns_bad_request_problem_details()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgeCategoryService>(_ => new RejectingPledgeCategoryService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgeCategoryService>(
+                    _ => new RejectingPledgeCategoryService()
+                )
+            )
+        );
         using var client = CreateClient(factory);
         var request = new CreatePledgeCategoryRequest { CategoryName = "Building Fund" };
 
@@ -93,8 +102,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Post_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeCategoryRepository>(new FailingPledgeCategoryRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeCategoryRepository>(
+                    new FailingPledgeCategoryRepository()
+                )
+            )
+        );
         using var client = CreateClient(factory);
         var request = new CreatePledgeCategoryRequest { CategoryName = "Building Fund" };
 
@@ -157,8 +171,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_when_service_rejects_argument_returns_bad_request_problem_details()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgeCategoryService>(_ => new RejectingPledgeCategoryService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgeCategoryService>(
+                    _ => new RejectingPledgeCategoryService()
+                )
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync("/pledge-categories");
@@ -171,8 +190,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeCategoryRepository>(new FailingPledgeCategoryRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeCategoryRepository>(
+                    new FailingPledgeCategoryRepository()
+                )
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync("/pledge-categories");
@@ -244,8 +268,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_by_id_when_service_rejects_argument_returns_bad_request_problem_details()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgeCategoryService>(_ => new RejectingPledgeCategoryService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgeCategoryService>(
+                    _ => new RejectingPledgeCategoryService()
+                )
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledge-categories/{Guid.NewGuid()}");
@@ -258,8 +287,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_by_id_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeCategoryRepository>(new FailingPledgeCategoryRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeCategoryRepository>(
+                    new FailingPledgeCategoryRepository()
+                )
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledge-categories/{Guid.NewGuid()}");
@@ -285,9 +319,16 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
         await repository.AddAsync(category, CancellationToken.None);
         var createdAt = category.CreatedAt;
         var originalUpdatedAt = category.UpdatedAt;
-        var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = active };
+        var request = new UpdatePledgeCategoryRequest
+        {
+            CategoryName = "Mission Fund",
+            Active = active,
+        };
 
-        using var response = await client.PutAsJsonAsync($"/pledge-categories/{category.Id.Value}", request);
+        using var response = await client.PutAsJsonAsync(
+            $"/pledge-categories/{category.Id.Value}",
+            request
+        );
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgeCategoryResponse>();
@@ -309,21 +350,31 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
         var id = Guid.NewGuid();
-        var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = true };
+        var request = new UpdatePledgeCategoryRequest
+        {
+            CategoryName = "Mission Fund",
+            Active = true,
+        };
 
         using var response = await client.PutAsJsonAsync($"/pledge-categories/{id}", request);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>();
-        Assert.Null(await repository.GetByIdAsync(new PledgeCategoryId(id), CancellationToken.None));
+        Assert.Null(
+            await repository.GetByIdAsync(new PledgeCategoryId(id), CancellationToken.None)
+        );
     }
 
     [Fact]
     public async Task Put_with_non_guid_id_returns_not_found()
     {
         using var client = CreateClient(_factory);
-        var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = true };
+        var request = new UpdatePledgeCategoryRequest
+        {
+            CategoryName = "Mission Fund",
+            Active = true,
+        };
 
         using var response = await client.PutAsJsonAsync("/pledge-categories/abc", request);
 
@@ -334,9 +385,16 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     public async Task Put_with_empty_guid_returns_bad_request_problem_details()
     {
         using var client = CreateClient(_factory);
-        var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = true };
+        var request = new UpdatePledgeCategoryRequest
+        {
+            CategoryName = "Mission Fund",
+            Active = true,
+        };
 
-        using var response = await client.PutAsJsonAsync($"/pledge-categories/{Guid.Empty}", request);
+        using var response = await client.PutAsJsonAsync(
+            $"/pledge-categories/{Guid.Empty}",
+            request
+        );
 
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.Equal("Invalid pledge category ID", problem.Title);
@@ -361,7 +419,10 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
         var originalUpdatedAt = category.UpdatedAt;
         using var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
 
-        using var response = await client.PutAsync($"/pledge-categories/{category.Id.Value}", content);
+        using var response = await client.PutAsync(
+            $"/pledge-categories/{category.Id.Value}",
+            content
+        );
 
         await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         var storedCategory = await repository.GetByIdAsync(category.Id, CancellationToken.None);
@@ -374,12 +435,24 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Put_when_service_rejects_argument_returns_bad_request_problem_details()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgeCategoryService>(_ => new RejectingPledgeCategoryService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgeCategoryService>(
+                    _ => new RejectingPledgeCategoryService()
+                )
+            )
+        );
         using var client = CreateClient(factory);
-        var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = true };
+        var request = new UpdatePledgeCategoryRequest
+        {
+            CategoryName = "Mission Fund",
+            Active = true,
+        };
 
-        using var response = await client.PutAsJsonAsync($"/pledge-categories/{Guid.NewGuid()}", request);
+        using var response = await client.PutAsJsonAsync(
+            $"/pledge-categories/{Guid.NewGuid()}",
+            request
+        );
 
         var problem = await AssertProblemAsync(response, HttpStatusCode.BadRequest);
         Assert.Equal("Invalid pledge category update", problem.Title);
@@ -389,14 +462,25 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Put_when_repository_fails_returns_sanitized_internal_server_error(bool failOnUpdate)
+    public async Task Put_when_repository_fails_returns_sanitized_internal_server_error(
+        bool failOnUpdate
+    )
     {
         var category = failOnUpdate ? PledgeCategory.Create("Building Fund") : null;
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeCategoryRepository>(new FailingPledgeCategoryRepository(category))));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeCategoryRepository>(
+                    new FailingPledgeCategoryRepository(category)
+                )
+            )
+        );
         using var client = CreateClient(factory);
         var id = category?.Id.Value ?? Guid.NewGuid();
-        var request = new UpdatePledgeCategoryRequest { CategoryName = "Mission Fund", Active = false };
+        var request = new UpdatePledgeCategoryRequest
+        {
+            CategoryName = "Mission Fund",
+            Active = false,
+        };
 
         using var response = await client.PutAsJsonAsync($"/pledge-categories/{id}", request);
 
@@ -451,8 +535,12 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
         var category = PledgeCategory.Create("Building Fund");
         await repository.AddAsync(category, CancellationToken.None);
 
-        using var firstResponse = await client.DeleteAsync($"/pledge-categories/{category.Id.Value}");
-        using var secondResponse = await client.DeleteAsync($"/pledge-categories/{category.Id.Value}");
+        using var firstResponse = await client.DeleteAsync(
+            $"/pledge-categories/{category.Id.Value}"
+        );
+        using var secondResponse = await client.DeleteAsync(
+            $"/pledge-categories/{category.Id.Value}"
+        );
 
         Assert.Equal(HttpStatusCode.NoContent, firstResponse.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, secondResponse.StatusCode);
@@ -485,8 +573,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Delete_when_service_rejects_argument_returns_bad_request_problem_details()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgeCategoryService>(_ => new RejectingPledgeCategoryService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgeCategoryService>(
+                    _ => new RejectingPledgeCategoryService()
+                )
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.DeleteAsync($"/pledge-categories/{Guid.NewGuid()}");
@@ -499,8 +592,13 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Delete_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgeCategoryRepository>(new FailingPledgeCategoryRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgeCategoryRepository>(
+                    new FailingPledgeCategoryRepository()
+                )
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.DeleteAsync($"/pledge-categories/{Guid.NewGuid()}");
@@ -522,42 +620,54 @@ public sealed class PledgeCategoryEndpointsTests : PostgresApiTestBase
             _category = category;
         }
 
-        public Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task<IReadOnlyList<PledgeCategory>> GetAllAsync(
+            CancellationToken cancellationToken
+        ) => throw new InvalidOperationException("Internal repository failure");
 
-        public Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken)
-            => _category is null
+        public Task<PledgeCategory?> GetByIdAsync(
+            PledgeCategoryId id,
+            CancellationToken cancellationToken
+        ) =>
+            _category is null
                 ? throw new InvalidOperationException("Internal repository failure")
                 : Task.FromResult<PledgeCategory?>(_category);
 
-        public Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
-        public Task UpdateAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task UpdateAsync(
+            PledgeCategory pledgeCategory,
+            CancellationToken cancellationToken
+        ) => throw new InvalidOperationException("Internal repository failure");
 
-        public Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
     }
 
     private sealed class RejectingPledgeCategoryService : IPledgeCategoryService
     {
         public const string RejectionMessage = "Pledge category ID is not valid.";
 
-        public Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage);
+        public Task<IReadOnlyList<PledgeCategory>> GetAllAsync(
+            CancellationToken cancellationToken
+        ) => throw new ArgumentException(RejectionMessage);
 
-        public Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(id));
+        public Task<PledgeCategory?> GetByIdAsync(
+            PledgeCategoryId id,
+            CancellationToken cancellationToken
+        ) => throw new ArgumentException(RejectionMessage, nameof(id));
 
-        public Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(pledgeCategory));
+        public Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken) =>
+            throw new ArgumentException(RejectionMessage, nameof(pledgeCategory));
 
         public Task<PledgeCategory?> UpdateAsync(
-            PledgeCategoryId id, string categoryName, bool active, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(categoryName));
+            PledgeCategoryId id,
+            string categoryName,
+            bool active,
+            CancellationToken cancellationToken
+        ) => throw new ArgumentException(RejectionMessage, nameof(categoryName));
 
-        public Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(id));
+        public Task RemoveAsync(PledgeCategoryId id, CancellationToken cancellationToken) =>
+            throw new ArgumentException(RejectionMessage, nameof(id));
     }
 }

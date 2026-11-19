@@ -9,21 +9,30 @@ namespace ICFAccounting.IntegrationTests.Api;
 internal static class ApiTestHelpers
 {
     public static HttpClient CreateClient(
-        WebApplicationFactory<Program> factory, bool allowAutoRedirect = true)
+        WebApplicationFactory<Program> factory,
+        bool allowAutoRedirect = true
+    )
     {
-        var client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            BaseAddress = new Uri("https://localhost"),
-            AllowAutoRedirect = allowAutoRedirect
-        });
+        var client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost"),
+                AllowAutoRedirect = allowAutoRedirect,
+            }
+        );
         client.DefaultRequestHeaders.Add("X-Test-Authenticated", "true");
-        var token = client.GetFromJsonAsync<AntiforgeryToken>("/auth/csrf").GetAwaiter().GetResult();
+        var token = client
+            .GetFromJsonAsync<AntiforgeryToken>("/auth/csrf")
+            .GetAwaiter()
+            .GetResult();
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", token!.RequestToken);
         return client;
     }
 
     public static async Task<ProblemDetails> AssertProblemAsync(
-        HttpResponseMessage response, HttpStatusCode expectedStatus)
+        HttpResponseMessage response,
+        HttpStatusCode expectedStatus
+    )
     {
         Assert.Equal(expectedStatus, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);

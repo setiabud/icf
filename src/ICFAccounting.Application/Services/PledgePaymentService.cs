@@ -23,7 +23,8 @@ public sealed class PledgePaymentService : IPledgePaymentService
     public PledgePaymentService(
         IPledgePaymentRepository pledgePaymentRepository,
         ILogger<PledgePaymentService> logger,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider
+    )
     {
         ArgumentNullException.ThrowIfNull(pledgePaymentRepository);
         ArgumentNullException.ThrowIfNull(logger);
@@ -36,7 +37,9 @@ public sealed class PledgePaymentService : IPledgePaymentService
 
     /// <inheritdoc />
     public async Task AddAsync(
-        PledgePayment pledgePayment, CancellationToken cancellationToken = default)
+        PledgePayment pledgePayment,
+        CancellationToken cancellationToken = default
+    )
     {
         ArgumentNullException.ThrowIfNull(pledgePayment);
 
@@ -46,7 +49,9 @@ public sealed class PledgePaymentService : IPledgePaymentService
 
     /// <inheritdoc />
     public async Task<PledgePayment?> GetByIdAsync(
-        PledgePaymentId id, CancellationToken cancellationToken = default)
+        PledgePaymentId id,
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge payment");
 
@@ -65,12 +70,17 @@ public sealed class PledgePaymentService : IPledgePaymentService
     public async Task<PagedPledgePaymentsResult> GetByPledgeAsync(
         PledgeId pledgeId,
         PledgePaymentQuery? query = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(pledgeId, "Pledge");
 
         query ??= new PledgePaymentQuery();
-        var payments = await _pledgePaymentRepository.GetByPledgeAsync(pledgeId, query, cancellationToken);
+        var payments = await _pledgePaymentRepository.GetByPledgeAsync(
+            pledgeId,
+            query,
+            cancellationToken
+        );
         _logger.PledgePaymentsByPledgeRetrieved(pledgeId, payments.Items.Count);
         return payments;
     }
@@ -83,7 +93,8 @@ public sealed class PledgePaymentService : IPledgePaymentService
         DateTime paymentDate,
         string? comment,
         bool active,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge payment");
         ServiceGuard.ThrowIfEmptyId(pledgeId, "Pledge");

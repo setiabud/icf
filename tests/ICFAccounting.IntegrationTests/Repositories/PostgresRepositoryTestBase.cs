@@ -65,16 +65,25 @@ public abstract class PostgresRepositoryTestBase(PostgresModelFixture fixture) :
         return (pledge, payment);
     }
 
-    protected static PostgresPledgePaymentRepository CreatePaymentRepository(ICFAccountingDbContext context)
+    protected static PostgresPledgePaymentRepository CreatePaymentRepository(
+        ICFAccountingDbContext context
+    )
     {
-        return new PostgresPledgePaymentRepository(context, NullLogger<PostgresPledgePaymentRepository>.Instance);
+        return new PostgresPledgePaymentRepository(
+            context,
+            NullLogger<PostgresPledgePaymentRepository>.Instance
+        );
     }
 
     protected async Task AssertRelatedRecordsExistAsync(Pledge pledge, PledgePayment payment)
     {
         await using var context = CreateContext();
         Assert.NotNull(await new PostgresPledgerRepository(context).GetByIdAsync(pledge.PledgerId));
-        Assert.NotNull(await new PostgresPledgeCategoryRepository(context).GetByIdAsync(pledge.PledgeCategoryId));
+        Assert.NotNull(
+            await new PostgresPledgeCategoryRepository(context).GetByIdAsync(
+                pledge.PledgeCategoryId
+            )
+        );
         Assert.NotNull(await new PostgresPledgeRepository(context).GetByIdAsync(pledge.Id));
         Assert.NotNull(await CreatePaymentRepository(context).GetByIdAsync(payment.Id));
     }

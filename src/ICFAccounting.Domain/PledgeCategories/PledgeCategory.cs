@@ -7,7 +7,8 @@ public sealed class PledgeCategory
         string categoryName,
         bool active,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt
+    )
     {
         Id = id;
         CategoryName = categoryName;
@@ -31,12 +32,7 @@ public sealed class PledgeCategory
         ArgumentException.ThrowIfNullOrWhiteSpace(categoryName);
 
         var createdAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
-        return new PledgeCategory(
-            PledgeCategoryId.New(),
-            categoryName,
-            true,
-            createdAt,
-            createdAt);
+        return new PledgeCategory(PledgeCategoryId.New(), categoryName, true, createdAt, createdAt);
     }
 
     public void Update(string categoryName, bool active, TimeProvider? timeProvider = null)

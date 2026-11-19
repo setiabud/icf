@@ -6,7 +6,11 @@ namespace ICFAccounting.Domain.PledgePayments;
 public sealed class PagedPledgePaymentsResult
 {
     private PagedPledgePaymentsResult(
-        IReadOnlyList<PledgePayment> items, int page, int pageSize, int totalCount)
+        IReadOnlyList<PledgePayment> items,
+        int page,
+        int pageSize,
+        int totalCount
+    )
     {
         Items = items;
         Page = page;
@@ -25,13 +29,22 @@ public sealed class PagedPledgePaymentsResult
     public int TotalPages => (int)(((long)TotalCount + PageSize - 1) / PageSize);
 
     public static PagedPledgePaymentsResult Create(
-        IReadOnlyList<PledgePayment> items, int page, int pageSize, int totalCount)
+        IReadOnlyList<PledgePayment> items,
+        int page,
+        int pageSize,
+        int totalCount
+    )
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentOutOfRangeException.ThrowIfLessThan(page, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
         ArgumentOutOfRangeException.ThrowIfNegative(totalCount);
 
-        return new PagedPledgePaymentsResult(Array.AsReadOnly(items.ToArray()), page, pageSize, totalCount);
+        return new PagedPledgePaymentsResult(
+            Array.AsReadOnly(items.ToArray()),
+            page,
+            pageSize,
+            totalCount
+        );
     }
 }

@@ -23,7 +23,8 @@ public static class ServiceExtensions
 
         services.AddProblemDetails();
         services.Configure<Microsoft.AspNetCore.Routing.RouteHandlerOptions>(options =>
-            options.ThrowOnBadRequest = false);
+            options.ThrowOnBadRequest = false
+        );
 
         return services;
     }

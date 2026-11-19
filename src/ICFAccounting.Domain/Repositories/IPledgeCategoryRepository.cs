@@ -23,7 +23,10 @@ public interface IPledgeCategoryRepository
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>The category, or <see langword="null"/> if no entry has the identifier.</returns>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>
-    Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken = default);
+    Task<PledgeCategory?> GetByIdAsync(
+        PledgeCategoryId id,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Retrieves all pledge categories without applying sorting.

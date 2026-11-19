@@ -11,15 +11,29 @@ public sealed class UpdateAsyncTests
     public async Task UpdateAsync_updates_pledge_with_injected_time_provider()
     {
         var fixture = new PledgeServiceTestFixture();
-        var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New(), "Original", fixture.Clock);
+        var pledge = Pledge.Create(
+            2026,
+            100m,
+            PledgerId.New(),
+            PledgeCategoryId.New(),
+            "Original",
+            fixture.Clock
+        );
         var originalCreatedAt = pledge.CreatedAt;
         var updatedPledgerId = PledgerId.New();
         var updatedCategoryId = PledgeCategoryId.New();
         fixture.Clock.Advance(TimeSpan.FromMinutes(5));
-        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._)).Returns(pledge);
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._))
+            .Returns(pledge);
 
         var result = await fixture.Service.UpdateAsync(
-            pledge.Id, 2027, 125m, updatedPledgerId, updatedCategoryId, "Updated");
+            pledge.Id,
+            2027,
+            125m,
+            updatedPledgerId,
+            updatedCategoryId,
+            "Updated"
+        );
 
         Assert.Same(pledge, result);
         Assert.Equal(2027, pledge.Year);
@@ -28,7 +42,10 @@ public sealed class UpdateAsyncTests
         Assert.Equal(updatedCategoryId, pledge.PledgeCategoryId);
         Assert.Equal("Updated", pledge.Comment);
         Assert.Equal(originalCreatedAt, pledge.CreatedAt);
-        Assert.Equal(PledgeServiceTestFixture.StartTime.AddMinutes(5).UtcDateTime, pledge.UpdatedAt);
+        Assert.Equal(
+            PledgeServiceTestFixture.StartTime.AddMinutes(5).UtcDateTime,
+            pledge.UpdatedAt
+        );
         A.CallTo(() => fixture.Repository.UpdateAsync(pledge, A<CancellationToken>._))
             .MustHaveHappenedOnceExactly();
     }
@@ -38,9 +55,17 @@ public sealed class UpdateAsyncTests
     {
         var fixture = new PledgeServiceTestFixture();
         var id = PledgeId.New();
-        A.CallTo(() => fixture.Repository.GetByIdAsync(id, A<CancellationToken>._)).Returns((Pledge?)null);
+        A.CallTo(() => fixture.Repository.GetByIdAsync(id, A<CancellationToken>._))
+            .Returns((Pledge?)null);
 
-        var result = await fixture.Service.UpdateAsync(id, 2026, 100m, PledgerId.New(), PledgeCategoryId.New(), null);
+        var result = await fixture.Service.UpdateAsync(
+            id,
+            2026,
+            100m,
+            PledgerId.New(),
+            PledgeCategoryId.New(),
+            null
+        );
 
         Assert.Null(result);
         A.CallTo(() => fixture.Repository.UpdateAsync(A<Pledge>._, A<CancellationToken>._))
@@ -51,11 +76,27 @@ public sealed class UpdateAsyncTests
     public async Task UpdateAsync_when_domain_rejects_values_throws_without_persisting_or_changing_pledge()
     {
         var fixture = new PledgeServiceTestFixture();
-        var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New(), "Original", fixture.Clock);
-        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._)).Returns(pledge);
+        var pledge = Pledge.Create(
+            2026,
+            100m,
+            PledgerId.New(),
+            PledgeCategoryId.New(),
+            "Original",
+            fixture.Clock
+        );
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._))
+            .Returns(pledge);
 
-        await Assert.ThrowsAnyAsync<ArgumentException>(() => fixture.Service.UpdateAsync(
-            pledge.Id, 2019, 125m, PledgerId.New(), PledgeCategoryId.New(), "Updated"));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            fixture.Service.UpdateAsync(
+                pledge.Id,
+                2019,
+                125m,
+                PledgerId.New(),
+                PledgeCategoryId.New(),
+                "Updated"
+            )
+        );
 
         Assert.Equal(2026, pledge.Year);
         Assert.Equal(100m, pledge.Amount);
@@ -68,13 +109,28 @@ public sealed class UpdateAsyncTests
     public async Task UpdateAsync_forwards_cancellation_token_to_repository()
     {
         var fixture = new PledgeServiceTestFixture();
-        var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New(), null, fixture.Clock);
+        var pledge = Pledge.Create(
+            2026,
+            100m,
+            PledgerId.New(),
+            PledgeCategoryId.New(),
+            null,
+            fixture.Clock
+        );
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
-        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, cancellationToken)).Returns(pledge);
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, cancellationToken))
+            .Returns(pledge);
 
         await fixture.Service.UpdateAsync(
-            pledge.Id, 2027, 125m, pledge.PledgerId, pledge.PledgeCategoryId, null, cancellationToken);
+            pledge.Id,
+            2027,
+            125m,
+            pledge.PledgerId,
+            pledge.PledgeCategoryId,
+            null,
+            cancellationToken
+        );
 
         A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, cancellationToken))
             .MustHaveHappenedOnceExactly();

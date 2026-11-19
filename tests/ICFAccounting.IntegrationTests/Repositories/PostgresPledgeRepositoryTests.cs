@@ -11,7 +11,8 @@ using Npgsql;
 namespace ICFAccounting.IntegrationTests.Repositories;
 
 [Collection(nameof(PostgresTestCollection))]
-public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
+public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture)
+    : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -72,13 +73,19 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
     [InlineData(true, PledgeSortBy.Amount, SortOrder.Ascending)]
     [InlineData(true, PledgeSortBy.Amount, SortOrder.Descending)]
     public async Task Pledge_queries_filter_sort_and_page_in_sql(
-        bool byCategory, PledgeSortBy sortBy, SortOrder sortOrder)
+        bool byCategory,
+        PledgeSortBy sortBy,
+        SortOrder sortOrder
+    )
     {
         var (pledger, category) = await SeedParentsAsync();
         var (otherPledger, otherCategory) = await SeedParentsAsync();
         var amounts = new[] { 10m, decimal.MaxValue, 2m, 10m, 0.01m };
-        var pledges = amounts.Select((amount, index) =>
-            Pledge.Create(2025 + index % 2, amount, pledger.Id, category.Id)).ToList();
+        var pledges = amounts
+            .Select(
+                (amount, index) => Pledge.Create(2025 + index % 2, amount, pledger.Id, category.Id)
+            )
+            .ToList();
         pledges.Add(Pledge.Create(2026, 50m, pledger.Id, otherCategory.Id));
         pledges.Add(Pledge.Create(2026, 60m, otherPledger.Id, category.Id));
         pledges.Add(Pledge.Create(2026, 70m, otherPledger.Id, otherCategory.Id));
@@ -88,15 +95,22 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
             await context.SaveChangesAsync();
         }
 
-        var matches = pledges.Where(pledge => byCategory
-            ? pledge.PledgeCategoryId == category.Id : pledge.PledgerId == pledger.Id);
-        var expected = sortBy == PledgeSortBy.Amount
-            ? sortOrder == SortOrder.Descending
-                ? matches.OrderByDescending(pledge => pledge.Amount) : matches.OrderBy(pledge => pledge.Amount)
-            : sortOrder == SortOrder.Descending
-                ? matches.OrderByDescending(pledge => pledge.Year) : matches.OrderBy(pledge => pledge.Year);
-        var expectedIds = expected.ThenByDescending(pledge => pledge.Id.Value)
-            .Skip(2).Take(2).Select(pledge => pledge.Id);
+        var matches = pledges.Where(pledge =>
+            byCategory ? pledge.PledgeCategoryId == category.Id : pledge.PledgerId == pledger.Id
+        );
+        var expected =
+            sortBy == PledgeSortBy.Amount
+                ? sortOrder == SortOrder.Descending
+                    ? matches.OrderByDescending(pledge => pledge.Amount)
+                    : matches.OrderBy(pledge => pledge.Amount)
+                : sortOrder == SortOrder.Descending
+                    ? matches.OrderByDescending(pledge => pledge.Year)
+                    : matches.OrderBy(pledge => pledge.Year);
+        var expectedIds = expected
+            .ThenByDescending(pledge => pledge.Id.Value)
+            .Skip(2)
+            .Take(2)
+            .Select(pledge => pledge.Id);
         await using var readContext = CreateContext();
         var repository = new PostgresPledgeRepository(readContext);
         var query = new PledgeQuery(2, 2, sortBy, sortOrder);
@@ -115,8 +129,10 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
     public async Task Default_and_out_of_range_queries_preserve_totals_and_page_sizes()
     {
         var (pledger, category) = await SeedParentsAsync();
-        var pledges = Enumerable.Range(0, 21)
-            .Select(index => Pledge.Create(2020 + index, index + 1m, pledger.Id, category.Id)).ToList();
+        var pledges = Enumerable
+            .Range(0, 21)
+            .Select(index => Pledge.Create(2020 + index, index + 1m, pledger.Id, category.Id))
+            .ToList();
         await using (var context = CreateContext())
         {
             context.Pledges.AddRange(pledges);
@@ -131,9 +147,18 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
         Assert.Equal(21, byPledger.TotalCount);
         Assert.Equal(2, byPledger.TotalPages);
         Assert.Equal(2040, byPledger.Items[0].Year);
-        Assert.Equal(byPledger.Items.Select(pledge => pledge.Id), byCategory.Items.Select(pledge => pledge.Id));
-        var beyondPledger = await repository.GetByPledgerAsync(pledger.Id, new PledgeQuery(int.MaxValue, 100));
-        var beyondCategory = await repository.GetByCategoryAsync(category.Id, new PledgeQuery(int.MaxValue, 100));
+        Assert.Equal(
+            byPledger.Items.Select(pledge => pledge.Id),
+            byCategory.Items.Select(pledge => pledge.Id)
+        );
+        var beyondPledger = await repository.GetByPledgerAsync(
+            pledger.Id,
+            new PledgeQuery(int.MaxValue, 100)
+        );
+        var beyondCategory = await repository.GetByCategoryAsync(
+            category.Id,
+            new PledgeQuery(int.MaxValue, 100)
+        );
         Assert.Empty(beyondPledger.Items);
         Assert.Empty(beyondCategory.Items);
         Assert.Equal(21, beyondPledger.TotalCount);
@@ -168,12 +193,15 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
             token => repository.UpdateAsync(pledge, token),
             token => repository.GetByIdAsync(pledge.Id, token),
             token => repository.GetByPledgerAsync(pledge.PledgerId, cancellationToken: token),
-            token => repository.GetByCategoryAsync(pledge.PledgeCategoryId, cancellationToken: token),
-            token => repository.RemoveAsync(pledge.Id, token)
+            token =>
+                repository.GetByCategoryAsync(pledge.PledgeCategoryId, cancellationToken: token),
+            token => repository.RemoveAsync(pledge.Id, token),
         ];
         foreach (var operation in operations)
         {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation(cancellation.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                operation(cancellation.Token)
+            );
         }
 
         Assert.Empty(context.ChangeTracker.Entries());
@@ -187,10 +215,14 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
         await using (var context = CreateContext())
         {
             var repository = new PostgresPledgeRepository(context);
-            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
-                () => repository.RemoveAsync(pledge.Id));
+            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() =>
+                repository.RemoveAsync(pledge.Id)
+            );
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
+            Assert.Equal(
+                PostgresErrorCodes.ForeignKeyViolation,
+                Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState
+            );
         }
 
         await AssertRelatedRecordsExistAsync(pledge, payment);
@@ -203,22 +235,33 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
     [InlineData("Category", false)]
     [InlineData("Category", true)]
     public async Task Invalid_reference_writes_fail_without_corrupting_saved_records(
-        string missingReference, bool update)
+        string missingReference,
+        bool update
+    )
     {
         var (pledge, payment) = await SeedPaymentAsync();
         var originalPledgerId = pledge.PledgerId;
         var originalCategoryId = pledge.PledgeCategoryId;
         await using (var context = CreateContext())
         {
-            var invalid = update ? pledge : Pledge.Create(2026, 50m, originalPledgerId, originalCategoryId);
-            invalid.Update(2026, 50m,
+            var invalid = update
+                ? pledge
+                : Pledge.Create(2026, 50m, originalPledgerId, originalCategoryId);
+            invalid.Update(
+                2026,
+                50m,
                 missingReference == "Pledger" ? PledgerId.New() : originalPledgerId,
-                missingReference == "Category" ? PledgeCategoryId.New() : originalCategoryId);
+                missingReference == "Category" ? PledgeCategoryId.New() : originalCategoryId
+            );
             var repository = new PostgresPledgeRepository(context);
-            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
-                () => update ? repository.UpdateAsync(invalid) : repository.AddAsync(invalid));
+            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() =>
+                update ? repository.UpdateAsync(invalid) : repository.AddAsync(invalid)
+            );
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
+            Assert.Equal(
+                PostgresErrorCodes.ForeignKeyViolation,
+                Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState
+            );
         }
 
         await using var readContext = CreateContext();
@@ -277,8 +320,12 @@ public sealed class PostgresPledgeRepositoryTests(PostgresModelFixture fixture) 
             pledge.Update(2027, 200m, pledge.PledgerId, pledge.PledgeCategoryId);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.UpdateAsync(pledge, cancellation.Token));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.RemoveAsync(pledge.Id, cancellation.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.UpdateAsync(pledge, cancellation.Token)
+            );
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.RemoveAsync(pledge.Id, cancellation.Token)
+            );
             Assert.Empty(context.ChangeTracker.Entries());
         }
 

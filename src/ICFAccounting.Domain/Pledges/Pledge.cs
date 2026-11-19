@@ -16,7 +16,8 @@ public sealed class Pledge
         PledgeCategoryId pledgeCategoryId,
         string? comment,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt
+    )
     {
         Id = id;
         Year = year;
@@ -53,14 +54,22 @@ public sealed class Pledge
         PledgerId pledgerId,
         PledgeCategoryId pledgeCategoryId,
         string? comment = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null
+    )
     {
         Validate(year, amount, pledgerId, pledgeCategoryId);
 
         var createdAt = (timeProvider ?? TimeProvider.System).GetUtcNow().UtcDateTime;
         return new Pledge(
-            PledgeId.New(), year, amount, pledgerId, pledgeCategoryId,
-            NormalizeComment(comment), createdAt, createdAt);
+            PledgeId.New(),
+            year,
+            amount,
+            pledgerId,
+            pledgeCategoryId,
+            NormalizeComment(comment),
+            createdAt,
+            createdAt
+        );
     }
 
     /// <summary>
@@ -72,7 +81,8 @@ public sealed class Pledge
         PledgerId pledgerId,
         PledgeCategoryId pledgeCategoryId,
         string? comment = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null
+    )
     {
         Validate(year, amount, pledgerId, pledgeCategoryId);
 
@@ -85,21 +95,34 @@ public sealed class Pledge
     }
 
     private static void Validate(
-        int year, decimal amount, PledgerId pledgerId, PledgeCategoryId pledgeCategoryId)
+        int year,
+        decimal amount,
+        PledgerId pledgerId,
+        PledgeCategoryId pledgeCategoryId
+    )
     {
         if (year is < 2020 or > 2099)
         {
-            throw new ArgumentOutOfRangeException(nameof(year), "Year must be between 2020 and 2099.");
+            throw new ArgumentOutOfRangeException(
+                nameof(year),
+                "Year must be between 2020 and 2099."
+            );
         }
 
         if (amount <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than zero.");
+            throw new ArgumentOutOfRangeException(
+                nameof(amount),
+                "Amount must be greater than zero."
+            );
         }
 
         if (decimal.Round(amount, 2) != amount)
         {
-            throw new ArgumentException("Amount must have at most two decimal places.", nameof(amount));
+            throw new ArgumentException(
+                "Amount must have at most two decimal places.",
+                nameof(amount)
+            );
         }
 
         if (pledgerId == default)
@@ -109,7 +132,10 @@ public sealed class Pledge
 
         if (pledgeCategoryId == default)
         {
-            throw new ArgumentException("Pledge category ID cannot be empty.", nameof(pledgeCategoryId));
+            throw new ArgumentException(
+                "Pledge category ID cannot be empty.",
+                nameof(pledgeCategoryId)
+            );
         }
     }
 

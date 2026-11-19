@@ -47,6 +47,8 @@ public sealed class PledgeQueryTests
     [InlineData(PledgeSortBy.Year, (SortOrder)2)]
     public void Constructor_rejects_unsupported_sorting(PledgeSortBy sortBy, SortOrder sortOrder)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new PledgeQuery(sortBy: sortBy, sortOrder: sortOrder));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new PledgeQuery(sortBy: sortBy, sortOrder: sortOrder)
+        );
     }
 }

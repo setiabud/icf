@@ -44,7 +44,10 @@ public interface IPledgeRepository
     /// </remarks>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>
     Task<PagedPledgesResult> GetByPledgerAsync(
-        PledgerId pledgerId, PledgeQuery? query = null, CancellationToken cancellationToken = default);
+        PledgerId pledgerId,
+        PledgeQuery? query = null,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Retrieves a page of pledges in a category.
@@ -62,7 +65,10 @@ public interface IPledgeRepository
     /// </remarks>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>
     Task<PagedPledgesResult> GetByCategoryAsync(
-        PledgeCategoryId pledgeCategoryId, PledgeQuery? query = null, CancellationToken cancellationToken = default);
+        PledgeCategoryId pledgeCategoryId,
+        PledgeQuery? query = null,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Stores a pledge, inserting it if no entry has the identifier.

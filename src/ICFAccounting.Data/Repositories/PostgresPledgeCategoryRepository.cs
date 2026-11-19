@@ -20,38 +20,57 @@ public sealed class PostgresPledgeCategoryRepository : IPledgeCategoryRepository
 
     /// <inheritdoc />
     public async Task<PledgeCategory?> GetByIdAsync(
-        PledgeCategoryId pledgeCategoryId, CancellationToken cancellationToken = default)
+        PledgeCategoryId pledgeCategoryId,
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        return await _context.PledgeCategories.AsNoTracking()
+        return await _context
+            .PledgeCategories.AsNoTracking()
             .SingleOrDefaultAsync(category => category.Id == pledgeCategoryId, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<PledgeCategory>> GetAllAsync(CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PledgeCategory>> GetAllAsync(
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
         return await _context.PledgeCategories.AsNoTracking().ToListAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task AddAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
+    public async Task AddAsync(
+        PledgeCategory pledgeCategory,
+        CancellationToken cancellationToken = default
+    )
     {
         await SaveAsync(pledgeCategory, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task UpdateAsync(PledgeCategory pledgeCategory, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(
+        PledgeCategory pledgeCategory,
+        CancellationToken cancellationToken = default
+    )
     {
         await SaveAsync(pledgeCategory, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task RemoveAsync(PledgeCategoryId pledgeCategoryId, CancellationToken cancellationToken = default)
+    public async Task RemoveAsync(
+        PledgeCategoryId pledgeCategoryId,
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var category = await _context.PledgeCategories.FindAsync([pledgeCategoryId], cancellationToken)
-            ?? throw new KeyNotFoundException($"PledgeCategory {pledgeCategoryId.Value} was not found.");
+        var category = await _context.PledgeCategories.FindAsync(
+            [pledgeCategoryId],
+            cancellationToken
+        )
+            ?? throw new KeyNotFoundException(
+                $"PledgeCategory {pledgeCategoryId.Value} was not found."
+            );
         _context.PledgeCategories.Remove(category);
         await _context.SaveChangesAsync(cancellationToken);
     }
@@ -60,7 +79,10 @@ public sealed class PostgresPledgeCategoryRepository : IPledgeCategoryRepository
     {
         ArgumentNullException.ThrowIfNull(pledgeCategory);
         cancellationToken.ThrowIfCancellationRequested();
-        var existing = await _context.PledgeCategories.FindAsync([pledgeCategory.Id], cancellationToken);
+        var existing = await _context.PledgeCategories.FindAsync(
+            [pledgeCategory.Id],
+            cancellationToken
+        );
         if (existing is null)
         {
             await _context.PledgeCategories.AddAsync(pledgeCategory, cancellationToken);

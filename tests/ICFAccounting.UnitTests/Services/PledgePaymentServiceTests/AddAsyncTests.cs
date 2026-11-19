@@ -24,8 +24,12 @@ public sealed class AddAsyncTests
 
         await Assert.ThrowsAsync<ArgumentNullException>(() => fixture.Service.AddAsync(null!));
 
-        A.CallTo(() => fixture.Repository.AddAsync(A<ICFAccounting.Domain.PledgePayments.PledgePayment>._,
-                A<CancellationToken>._))
+        A.CallTo(() =>
+                fixture.Repository.AddAsync(
+                    A<ICFAccounting.Domain.PledgePayments.PledgePayment>._,
+                    A<CancellationToken>._
+                )
+            )
             .MustNotHaveHappened();
     }
 
@@ -38,8 +42,9 @@ public sealed class AddAsyncTests
         A.CallTo(() => fixture.Repository.AddAsync(payment, A<CancellationToken>._))
             .ThrowsAsync(exception);
 
-        var result = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => fixture.Service.AddAsync(payment));
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.Service.AddAsync(payment)
+        );
 
         Assert.Same(exception, result);
     }

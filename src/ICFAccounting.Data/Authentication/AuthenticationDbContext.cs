@@ -23,7 +23,10 @@ public sealed class AuthenticationDbContext(DbContextOptions<AuthenticationDbCon
         {
             profile.Property(user => user.Name).HasMaxLength(256);
             profile.Property(user => user.ProfileImageUrl).HasMaxLength(2048);
-            profile.HasOne<UserAccount>().WithOne().HasForeignKey<UserProfile>(user => user.Id)
+            profile
+                .HasOne<UserAccount>()
+                .WithOne()
+                .HasForeignKey<UserProfile>(user => user.Id)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

@@ -110,12 +110,12 @@ No browser-exposed environment variable contains a secret.
 The API paths below are upstream paths; the browser adds the `/api` proxy prefix.
 Authentication and accounting responses are marked `Cache-Control: no-store`.
 
-| Method and path | Authentication | Result |
-| --- | --- | --- |
-| `GET /auth/csrf` | Anonymous allowed | `{ "requestToken": "..." }` and HttpOnly antiforgery cookie |
-| `POST /auth/login` | Anonymous allowed; CSRF required | `{ "email": "...", "password": "..." }` creates a session |
-| `GET /auth/session` | Required | User profile and absolute `expiresAt`; otherwise `401` |
-| `POST /auth/logout` | Required; CSRF required | `204` and cleared browser session cookie |
+| Method and path     | Authentication                   | Result                                                      |
+|---------------------|----------------------------------|-------------------------------------------------------------|
+| `GET /auth/csrf`    | Anonymous allowed                | `{ "requestToken": "..." }` and HttpOnly antiforgery cookie |
+| `POST /auth/login`  | Anonymous allowed; CSRF required | `{ "email": "...", "password": "..." }` creates a session   |
+| `GET /auth/session` | Required                         | User profile and absolute `expiresAt`; otherwise `401`      |
+| `POST /auth/logout` | Required; CSRF required          | `204` and cleared browser session cookie                    |
 
 Successful login/session responses contain `id`, `name`, `email`,
 `profileImageUrl` (nullable), and `expiresAt`. No password hash or bearer token is
@@ -157,12 +157,12 @@ verified HTTPS upstream so API HTTPS redirection and Secure cookies work without
 trusting arbitrary forwarded headers. HTTP requests to the public site must
 redirect to HTTPS at the edge before accepting credentials.
 
-| Setting | Purpose |
-| --- | --- |
+| Setting                            | Purpose                                                                          |
+|------------------------------------|----------------------------------------------------------------------------------|
 | `ConnectionStrings__ICFAccounting` | Required server-side PostgreSQL connection string; use a deployment secret store |
-| `VITE_API_BASE_URL` | Build-time public API prefix; normally `/api` |
-| `ASPNETCORE_ENVIRONMENT` | `Production` outside local development |
-| `DataProtection__KeyRingPath` | Optional persistent/shared server-side key-ring directory |
+| `VITE_API_BASE_URL`                | Build-time public API prefix; normally `/api`                                    |
+| `ASPNETCORE_ENVIRONMENT`           | `Production` outside local development                                           |
+| `DataProtection__KeyRingPath`      | Optional persistent/shared server-side key-ring directory                        |
 
 Persist Data Protection keys across restarts and share the key ring across API
 instances. The application name is fixed to `ICFAccounting`. If setting

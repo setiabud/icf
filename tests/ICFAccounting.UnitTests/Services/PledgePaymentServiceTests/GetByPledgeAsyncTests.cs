@@ -13,12 +13,18 @@ public sealed class GetByPledgeAsyncTests
         var fixture = new PledgePaymentServiceTestFixture();
         var pledgeId = PledgeId.New();
         var repositoryResult = PagedPledgePaymentsResult.Create([], 1, 20, 0);
-        A.CallTo(() => fixture.Repository.GetByPledgeAsync(
-                pledgeId,
-                A<PledgePaymentQuery>.That.Matches(query => query.Page == 1 && query.PageSize == 20
-                    && query.SortBy == PledgePaymentSortBy.PaymentDate
-                    && query.SortOrder == SortOrder.Descending),
-                A<CancellationToken>._))
+        A.CallTo(() =>
+                fixture.Repository.GetByPledgeAsync(
+                    pledgeId,
+                    A<PledgePaymentQuery>.That.Matches(query =>
+                        query.Page == 1
+                        && query.PageSize == 20
+                        && query.SortBy == PledgePaymentSortBy.PaymentDate
+                        && query.SortOrder == SortOrder.Descending
+                    ),
+                    A<CancellationToken>._
+                )
+            )
             .Returns(repositoryResult);
 
         var result = await fixture.Service.GetByPledgeAsync(pledgeId);
@@ -31,16 +37,28 @@ public sealed class GetByPledgeAsyncTests
     {
         var fixture = new PledgePaymentServiceTestFixture();
         var pledgeId = PledgeId.New();
-        var query = new PledgePaymentQuery(page: 3, pageSize: 7, sortBy: PledgePaymentSortBy.Amount);
+        var query = new PledgePaymentQuery(
+            page: 3,
+            pageSize: 7,
+            sortBy: PledgePaymentSortBy.Amount
+        );
         var repositoryResult = PagedPledgePaymentsResult.Create([], 3, 7, 0);
         using var cancellationTokenSource = new CancellationTokenSource();
-        A.CallTo(() => fixture.Repository.GetByPledgeAsync(pledgeId, query, cancellationTokenSource.Token))
+        A.CallTo(() =>
+                fixture.Repository.GetByPledgeAsync(pledgeId, query, cancellationTokenSource.Token)
+            )
             .Returns(repositoryResult);
 
-        var result = await fixture.Service.GetByPledgeAsync(pledgeId, query, cancellationTokenSource.Token);
+        var result = await fixture.Service.GetByPledgeAsync(
+            pledgeId,
+            query,
+            cancellationTokenSource.Token
+        );
 
         Assert.Same(repositoryResult, result);
-        A.CallTo(() => fixture.Repository.GetByPledgeAsync(pledgeId, query, cancellationTokenSource.Token))
+        A.CallTo(() =>
+                fixture.Repository.GetByPledgeAsync(pledgeId, query, cancellationTokenSource.Token)
+            )
             .MustHaveHappenedOnceExactly();
     }
 
@@ -50,21 +68,33 @@ public sealed class GetByPledgeAsyncTests
     [InlineData(PledgePaymentSortBy.Amount, SortOrder.Ascending)]
     [InlineData(PledgePaymentSortBy.Amount, SortOrder.Descending)]
     public async Task GetByPledgeAsync_forwards_each_sort_combination(
-        PledgePaymentSortBy sortBy, SortOrder sortOrder)
+        PledgePaymentSortBy sortBy,
+        SortOrder sortOrder
+    )
     {
         var fixture = new PledgePaymentServiceTestFixture();
         var pledgeId = PledgeId.New();
         var query = new PledgePaymentQuery(sortBy: sortBy, sortOrder: sortOrder);
-        A.CallTo(() => fixture.Repository.GetByPledgeAsync(pledgeId, A<PledgePaymentQuery>._, A<CancellationToken>._))
+        A.CallTo(() =>
+                fixture.Repository.GetByPledgeAsync(
+                    pledgeId,
+                    A<PledgePaymentQuery>._,
+                    A<CancellationToken>._
+                )
+            )
             .Returns(PagedPledgePaymentsResult.Create([], 1, 20, 0));
 
         await fixture.Service.GetByPledgeAsync(pledgeId, query);
 
-        A.CallTo(() => fixture.Repository.GetByPledgeAsync(
-                pledgeId,
-                A<PledgePaymentQuery>.That.Matches(forwarded => forwarded.SortBy == sortBy
-                    && forwarded.SortOrder == sortOrder),
-                A<CancellationToken>._))
+        A.CallTo(() =>
+                fixture.Repository.GetByPledgeAsync(
+                    pledgeId,
+                    A<PledgePaymentQuery>.That.Matches(forwarded =>
+                        forwarded.SortBy == sortBy && forwarded.SortOrder == sortOrder
+                    ),
+                    A<CancellationToken>._
+                )
+            )
             .MustHaveHappenedOnceExactly();
     }
 

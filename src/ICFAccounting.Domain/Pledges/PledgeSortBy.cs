@@ -6,5 +6,5 @@ namespace ICFAccounting.Domain.Pledges;
 public enum PledgeSortBy
 {
     Year,
-    Amount
+    Amount,
 }

@@ -15,7 +15,8 @@ public sealed class PledgePayment
         string? comment,
         bool active,
         DateTime createdAt,
-        DateTime updatedAt)
+        DateTime updatedAt
+    )
     {
         Id = id;
         PledgeId = pledgeId;
@@ -51,7 +52,8 @@ public sealed class PledgePayment
         decimal amount,
         DateTime paymentDate,
         string? comment = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null
+    )
     {
         Validate(pledgeId, amount, paymentDate);
 
@@ -64,7 +66,8 @@ public sealed class PledgePayment
             NormalizeComment(comment),
             true,
             createdAt,
-            createdAt);
+            createdAt
+        );
     }
 
     /// <summary>
@@ -76,7 +79,8 @@ public sealed class PledgePayment
         DateTime paymentDate,
         string? comment,
         bool active,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null
+    )
     {
         Validate(pledgeId, amount, paymentDate);
 
@@ -97,12 +101,18 @@ public sealed class PledgePayment
 
         if (amount <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be greater than zero.");
+            throw new ArgumentOutOfRangeException(
+                nameof(amount),
+                "Amount must be greater than zero."
+            );
         }
 
         if (decimal.Round(amount, 2) != amount)
         {
-            throw new ArgumentException("Amount must have at most two decimal places.", nameof(amount));
+            throw new ArgumentException(
+                "Amount must have at most two decimal places.",
+                nameof(amount)
+            );
         }
 
         if (paymentDate == default)

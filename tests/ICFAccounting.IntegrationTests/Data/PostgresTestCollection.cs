@@ -4,6 +4,4 @@ namespace ICFAccounting.IntegrationTests.Data;
 /// Shares one PostgreSQL container across persistence tests without running them concurrently.
 /// </summary>
 [CollectionDefinition(nameof(PostgresTestCollection))]
-public sealed class PostgresTestCollection : ICollectionFixture<PostgresModelFixture>
-{
-}
+public sealed class PostgresTestCollection : ICollectionFixture<PostgresModelFixture> { }

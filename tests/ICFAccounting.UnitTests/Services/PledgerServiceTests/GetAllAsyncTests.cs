@@ -13,14 +13,22 @@ public sealed class GetAllAsyncTests
         IReadOnlyList<Pledger> pledgers =
         [
             Pledger.Create("Community Fund"),
-            Pledger.Create("Education Fund")
+            Pledger.Create("Education Fund"),
         ];
         using var cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = cancellationTokenSource.Token;
         var repositoryResult = PagedPledgersResult.Create(pledgers, 1, 10, 12);
-        var defaultQueryCall = A.CallTo(() => fixture.Repository.GetAllAsync(
-                A<PledgerQuery>.That.Matches(query => query.Page == 1 && query.PageSize == 20
-                    && query.SortBy == PledgerSortBy.PledgerName && query.SortOrder == SortOrder.Ascending), cancellationToken));
+        var defaultQueryCall = A.CallTo(() =>
+            fixture.Repository.GetAllAsync(
+                A<PledgerQuery>.That.Matches(query =>
+                    query.Page == 1
+                    && query.PageSize == 20
+                    && query.SortBy == PledgerSortBy.PledgerName
+                    && query.SortOrder == SortOrder.Ascending
+                ),
+                cancellationToken
+            )
+        );
         defaultQueryCall.Returns(repositoryResult);
 
         var result = await fixture.Service.GetAllAsync(cancellationToken: cancellationToken);
@@ -44,7 +52,8 @@ public sealed class GetAllAsyncTests
         using var tokenSource = new CancellationTokenSource();
         IReadOnlyList<Pledger> pledgers = [Pledger.Create("Education Fund")];
         var repositoryResult = PagedPledgersResult.Create(pledgers, 2, 5, 6);
-        A.CallTo(() => fixture.Repository.GetAllAsync(query, tokenSource.Token)).Returns(repositoryResult);
+        A.CallTo(() => fixture.Repository.GetAllAsync(query, tokenSource.Token))
+            .Returns(repositoryResult);
 
         var result = await fixture.Service.GetAllAsync(query, tokenSource.Token);
 
@@ -61,7 +70,10 @@ public sealed class GetAllAsyncTests
     [Theory]
     [InlineData(0, 0)]
     [InlineData(12, 2)]
-    public async Task GetAllAsync_with_empty_page_preserves_total_count(int totalCount, int totalPages)
+    public async Task GetAllAsync_with_empty_page_preserves_total_count(
+        int totalCount,
+        int totalPages
+    )
     {
         var fixture = new PledgerServiceTestFixture();
         var query = new PledgerQuery(page: 3);

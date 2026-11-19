@@ -1,6 +1,6 @@
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Http.Json;
-using System.Buffers.Binary;
 using ICFAccounting.Data.Authentication;
 using ICFAccounting.IntegrationTests.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -15,7 +15,8 @@ using Microsoft.Extensions.Options;
 namespace ICFAccounting.IntegrationTests.Api;
 
 [Collection(nameof(PostgresTestCollection))]
-public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) : PostgresApiTestBase(fixture)
+public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture)
+    : PostgresApiTestBase(fixture)
 {
     private const string PASSWORD = "Test-only-Password-83!";
 
@@ -37,11 +38,14 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
     public async Task Every_accounting_write_requires_backend_authentication()
     {
         using var client = CreateAnonymousClient();
-        foreach (var resource in new[] { "pledgers", "pledge-categories", "pledges", "pledge-payments" })
+        foreach (
+            var resource in new[] { "pledgers", "pledge-categories", "pledges", "pledge-payments" }
+        )
         {
             foreach (var method in new[] { HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete })
             {
-                var path = method == HttpMethod.Post ? $"/{resource}" : $"/{resource}/{Guid.NewGuid()}";
+                var path =
+                    method == HttpMethod.Post ? $"/{resource}" : $"/{resource}/{Guid.NewGuid()}";
                 using var request = new HttpRequestMessage(method, path);
                 using var response = await client.SendAsync(request);
                 await ApiTestHelpers.AssertProblemAsync(response, HttpStatusCode.Unauthorized);
@@ -56,8 +60,9 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         using var client = CreateAnonymousClient();
         using var login = await LoginAsync(client);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        var cookie = Assert.Single(login.Headers.GetValues("Set-Cookie"),
-            value => value.StartsWith("__Host-ICFAccounting.Session="));
+        var cookie = Assert.Single(login.Headers.GetValues("Set-Cookie"), value =>
+            value.StartsWith("__Host-ICFAccounting.Session=")
+        );
         Assert.Contains("secure", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("httponly", cookie, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("samesite=strict", cookie, StringComparison.OrdinalIgnoreCase);
@@ -70,15 +75,22 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         DateTimeOffset profileCreatedAt;
         using (var firstScope = _factory.Services.CreateScope())
         {
-            profileCreatedAt = (await firstScope.ServiceProvider.GetRequiredService<AuthenticationDbContext>()
-                .UserProfiles.SingleAsync()).CreatedAt;
+            profileCreatedAt = (
+                await firstScope
+                    .ServiceProvider.GetRequiredService<AuthenticationDbContext>()
+                    .UserProfiles.SingleAsync()
+            ).CreatedAt;
         }
 
         using var restored = await client.GetAsync("/auth/session");
         Assert.Equal(HttpStatusCode.OK, restored.StatusCode);
         Assert.Equal(firstProfile.Id, (await restored.Content.ReadFromJsonAsync<Profile>())!.Id);
         Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/pledgers")).StatusCode);
-        using var created = await SendWithTokenAsync(client, "/pledgers", new { pledgerName = "Authenticated member" });
+        using var created = await SendWithTokenAsync(
+            client,
+            "/pledgers",
+            new { pledgerName = "Authenticated member" }
+        );
         Assert.Equal(HttpStatusCode.Created, created.StatusCode);
 
         using var secondClient = CreateAnonymousClient();
@@ -106,7 +118,10 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         (await LoginAsync(client)).EnsureSuccessStatusCode();
         using var response = await SendWithTokenAsync(client, "/auth/logout");
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/auth/session")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/auth/session")).StatusCode
+        );
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/pledgers")).StatusCode);
     }
 
@@ -116,7 +131,8 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         await ProvisionAsync();
         using var scope = _factory.Services.CreateScope();
         var clock = new SessionTestClock();
-        var options = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
+        var options = scope
+            .ServiceProvider.GetRequiredService<IOptionsMonitor<CookieAuthenticationOptions>>()
             .Get(IdentityConstants.ApplicationScheme);
         options.TimeProvider = clock;
         using var client = CreateAnonymousClient();
@@ -124,10 +140,15 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         clock.Advance(TimeSpan.FromHours(7));
         using var active = await client.GetAsync("/auth/session");
         Assert.Equal(HttpStatusCode.OK, active.StatusCode);
-        Assert.False(active.Headers.TryGetValues("Set-Cookie", out var cookies) &&
-            cookies.Any(cookie => cookie.StartsWith("__Host-ICFAccounting.Session=")));
+        Assert.False(
+            active.Headers.TryGetValues("Set-Cookie", out var cookies)
+                && cookies.Any(cookie => cookie.StartsWith("__Host-ICFAccounting.Session="))
+        );
         clock.Advance(TimeSpan.FromHours(1).Add(TimeSpan.FromSeconds(1)));
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/auth/session")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/auth/session")).StatusCode
+        );
         Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/pledgers")).StatusCode);
     }
 
@@ -137,8 +158,11 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         await ProvisionAsync();
         using var client = CreateAnonymousClient();
         using var wrong = await LoginAsync(client, "wrong-password");
-        using var unknown = await SendWithTokenAsync(client, "/auth/login",
-            new { email = "unknown@example.test", password = PASSWORD });
+        using var unknown = await SendWithTokenAsync(
+            client,
+            "/auth/login",
+            new { email = "unknown@example.test", password = PASSWORD }
+        );
         var first = await ApiTestHelpers.AssertProblemAsync(wrong, HttpStatusCode.Unauthorized);
         var second = await ApiTestHelpers.AssertProblemAsync(unknown, HttpStatusCode.Unauthorized);
         Assert.Equal(first.Title, second.Title);
@@ -147,7 +171,10 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         var database = scope.ServiceProvider.GetRequiredService<AuthenticationDbContext>();
         Assert.Single(await database.Users.ToListAsync());
         Assert.Empty(await database.UserProfiles.ToListAsync());
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/auth/session")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/auth/session")).StatusCode
+        );
     }
 
     [Fact]
@@ -169,12 +196,17 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
     {
         await ProvisionAsync();
         using var client = CreateAnonymousClient();
-        using var login = await client.PostAsJsonAsync("/auth/login",
-            new { email = "member@example.test", password = PASSWORD });
+        using var login = await client.PostAsJsonAsync(
+            "/auth/login",
+            new { email = "member@example.test", password = PASSWORD }
+        );
         await ApiTestHelpers.AssertProblemAsync(login, HttpStatusCode.BadRequest);
         var anonymousToken = await client.GetFromJsonAsync<Token>("/auth/csrf");
         (await LoginAsync(client)).EnsureSuccessStatusCode();
-        using var write = await client.PostAsJsonAsync("/pledgers", new { pledgerName = "Rejected" });
+        using var write = await client.PostAsJsonAsync(
+            "/pledgers",
+            new { pledgerName = "Rejected" }
+        );
         await ApiTestHelpers.AssertProblemAsync(write, HttpStatusCode.BadRequest);
         using var logout = await client.PostAsync("/auth/logout", null);
         await ApiTestHelpers.AssertProblemAsync(logout, HttpStatusCode.BadRequest);
@@ -191,10 +223,18 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         using var client = CreateAnonymousClient();
         for (var attempt = 0; attempt < 20; attempt++)
         {
-            using var invalid = await SendWithTokenAsync(client, "/auth/login", new { email = "", password = "" });
+            using var invalid = await SendWithTokenAsync(
+                client,
+                "/auth/login",
+                new { email = "", password = "" }
+            );
             Assert.Equal(HttpStatusCode.BadRequest, invalid.StatusCode);
         }
-        using var limited = await SendWithTokenAsync(client, "/auth/login", new { email = "", password = "" });
+        using var limited = await SendWithTokenAsync(
+            client,
+            "/auth/login",
+            new { email = "", password = "" }
+        );
         await ApiTestHelpers.AssertProblemAsync(limited, HttpStatusCode.TooManyRequests);
         Assert.Equal(TimeSpan.FromSeconds(60), limited.Headers.RetryAfter?.Delta);
     }
@@ -205,31 +245,59 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         var id = await ProvisionAsync();
         using var first = _factory.Services.CreateScope();
         using var second = _factory.Services.CreateScope();
-        var firstAccount = (await first.ServiceProvider.GetRequiredService<UserManager<UserAccount>>().FindByIdAsync(id))!;
-        var secondAccount = (await second.ServiceProvider.GetRequiredService<UserManager<UserAccount>>().FindByIdAsync(id))!;
+        var firstAccount = (
+            await first
+                .ServiceProvider.GetRequiredService<UserManager<UserAccount>>()
+                .FindByIdAsync(id)
+        )!;
+        var secondAccount = (
+            await second
+                .ServiceProvider.GetRequiredService<UserManager<UserAccount>>()
+                .FindByIdAsync(id)
+        )!;
         var profiles = await Task.WhenAll(
-            first.ServiceProvider.GetRequiredService<UserProfileStore>().GetOrCreateAsync(firstAccount, CancellationToken.None),
-            second.ServiceProvider.GetRequiredService<UserProfileStore>().GetOrCreateAsync(secondAccount, CancellationToken.None));
+            first
+                .ServiceProvider.GetRequiredService<UserProfileStore>()
+                .GetOrCreateAsync(firstAccount, CancellationToken.None),
+            second
+                .ServiceProvider.GetRequiredService<UserProfileStore>()
+                .GetOrCreateAsync(secondAccount, CancellationToken.None)
+        );
         Assert.Equal(profiles[0].Id, profiles[1].Id);
         Assert.Equal(profiles[0].CreatedAt, profiles[1].CreatedAt);
         using var verification = _factory.Services.CreateScope();
-        Assert.Equal(1, await verification.ServiceProvider.GetRequiredService<AuthenticationDbContext>().UserProfiles.CountAsync());
+        Assert.Equal(
+            1,
+            await verification
+                .ServiceProvider.GetRequiredService<AuthenticationDbContext>()
+                .UserProfiles.CountAsync()
+        );
     }
 
     [Fact]
     public async Task Provisioning_rejects_weak_passwords_and_duplicate_email()
     {
         using var scope = _factory.Services.CreateScope();
-        await scope.ServiceProvider.GetRequiredService<AuthenticationDbContext>().Database.MigrateAsync();
+        await scope
+            .ServiceProvider.GetRequiredService<AuthenticationDbContext>()
+            .Database.MigrateAsync();
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<UserAccount>>();
         var weak = await manager.CreateAsync(
-            new UserAccount { UserName = "weak@example.test", Email = "weak@example.test" }, "short");
+            new UserAccount { UserName = "weak@example.test", Email = "weak@example.test" },
+            "short"
+        );
         Assert.False(weak.Succeeded);
         Assert.Contains(weak.Errors, error => error.Code == "PasswordTooShort");
-        var existing = new UserAccount { UserName = "first@example.test", Email = "first@example.test" };
+        var existing = new UserAccount
+        {
+            UserName = "first@example.test",
+            Email = "first@example.test",
+        };
         Assert.True((await manager.CreateAsync(existing, PASSWORD)).Succeeded);
         var duplicate = await manager.CreateAsync(
-            new UserAccount { UserName = "second@example.test", Email = "FIRST@example.test" }, PASSWORD);
+            new UserAccount { UserName = "second@example.test", Email = "FIRST@example.test" },
+            PASSWORD
+        );
         Assert.False(duplicate.Succeeded);
         Assert.Contains(duplicate.Errors, error => error.Code == "DuplicateEmail");
     }
@@ -242,7 +310,10 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         var database = scope.ServiceProvider.GetRequiredService<AuthenticationDbContext>();
         await database.Database.MigrateAsync();
         Assert.False(database.Database.HasPendingModelChanges());
-        Assert.Equal(database.Database.GetMigrations(), await database.Database.GetAppliedMigrationsAsync());
+        Assert.Equal(
+            database.Database.GetMigrations(),
+            await database.Database.GetAppliedMigrationsAsync()
+        );
         Assert.Single(await database.Users.ToListAsync());
         await database.GetService<IMigrator>().MigrateAsync(Migration.InitialDatabase);
         Assert.Empty(await database.Database.GetAppliedMigrationsAsync());
@@ -266,21 +337,34 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
             var manager = scope.ServiceProvider.GetRequiredService<UserManager<UserAccount>>();
             var user = (await manager.FindByEmailAsync("member@example.test"))!;
             var token = await manager.GeneratePasswordResetTokenAsync(user);
-            Assert.True((await manager.ResetPasswordAsync(user, token, "Another-Test-Password-83!")).Succeeded);
+            Assert.True(
+                (
+                    await manager.ResetPasswordAsync(user, token, "Another-Test-Password-83!")
+                ).Succeeded
+            );
         }
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/auth/session")).StatusCode);
+        Assert.Equal(
+            HttpStatusCode.Unauthorized,
+            (await client.GetAsync("/auth/session")).StatusCode
+        );
         Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(client)).StatusCode);
-        using var registration = await SendWithTokenAsync(client, "/auth/register",
-            new { email = "new@example.test", password = PASSWORD });
+        using var registration = await SendWithTokenAsync(
+            client,
+            "/auth/register",
+            new { email = "new@example.test", password = PASSWORD }
+        );
         Assert.NotEqual(HttpStatusCode.OK, registration.StatusCode);
         Assert.NotEqual(HttpStatusCode.Created, registration.StatusCode);
     }
 
-    private HttpClient CreateAnonymousClient() => _factory.CreateClient(new WebApplicationFactoryClientOptions
-    {
-        BaseAddress = new Uri("https://localhost"),
-        AllowAutoRedirect = false
-    });
+    private HttpClient CreateAnonymousClient() =>
+        _factory.CreateClient(
+            new WebApplicationFactoryClientOptions
+            {
+                BaseAddress = new Uri("https://localhost"),
+                AllowAutoRedirect = false,
+            }
+        );
 
     private async Task<string> ProvisionAsync()
     {
@@ -290,19 +374,30 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
         var manager = scope.ServiceProvider.GetRequiredService<UserManager<UserAccount>>();
         var user = new UserAccount
         {
-            UserName = "member@example.test", Email = "member@example.test", DisplayName = "Test Member",
-            ProfileImageUrl = "https://images.example.test/member.png"
+            UserName = "member@example.test",
+            Email = "member@example.test",
+            DisplayName = "Test Member",
+            ProfileImageUrl = "https://images.example.test/member.png",
         };
         var result = await manager.CreateAsync(user, PASSWORD);
-        Assert.True(result.Succeeded, string.Join("; ", result.Errors.Select(error => error.Description)));
+        Assert.True(
+            result.Succeeded,
+            string.Join("; ", result.Errors.Select(error => error.Description))
+        );
         Assert.Empty(await database.UserProfiles.ToListAsync());
         return user.Id;
     }
 
-    private static Task<HttpResponseMessage> LoginAsync(HttpClient client, string password = PASSWORD) =>
-        SendWithTokenAsync(client, "/auth/login", new { email = "member@example.test", password });
+    private static Task<HttpResponseMessage> LoginAsync(
+        HttpClient client,
+        string password = PASSWORD
+    ) => SendWithTokenAsync(client, "/auth/login", new { email = "member@example.test", password });
 
-    private static async Task<HttpResponseMessage> SendWithTokenAsync(HttpClient client, string path, object? body = null)
+    private static async Task<HttpResponseMessage> SendWithTokenAsync(
+        HttpClient client,
+        string path,
+        object? body = null
+    )
     {
         var token = await client.GetFromJsonAsync<Token>("/auth/csrf");
         using var request = new HttpRequestMessage(HttpMethod.Post, path);
@@ -315,12 +410,15 @@ public sealed class AuthenticationEndpointsTests(PostgresModelFixture fixture) :
     }
 
     private sealed record Token(string RequestToken);
+
     private sealed record Profile(string Id, string Name, string? ProfileImageUrl);
 
     private sealed class SessionTestClock : TimeProvider
     {
         private DateTimeOffset _now = DateTimeOffset.UtcNow;
+
         public override DateTimeOffset GetUtcNow() => _now;
+
         public void Advance(TimeSpan duration) => _now += duration;
     }
 }

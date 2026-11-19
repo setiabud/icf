@@ -41,14 +41,16 @@ public sealed class PagedPledgePaymentsResultTests
     [InlineData(1, 10, -1)]
     public void Create_rejects_invalid_metadata(int page, int pageSize, int totalCount)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PagedPledgePaymentsResult.Create([], page, pageSize, totalCount));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PagedPledgePaymentsResult.Create([], page, pageSize, totalCount)
+        );
     }
 
     [Fact]
     public void Create_rejects_null_items()
     {
-        Assert.Throws<ArgumentNullException>(
-            () => PagedPledgePaymentsResult.Create(null!, 1, 10, 0));
+        Assert.Throws<ArgumentNullException>(() =>
+            PagedPledgePaymentsResult.Create(null!, 1, 10, 0)
+        );
     }
 }

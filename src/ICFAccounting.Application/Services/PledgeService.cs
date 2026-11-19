@@ -24,7 +24,8 @@ public sealed class PledgeService : IPledgeService
     public PledgeService(
         IPledgeRepository pledgeRepository,
         ILogger<PledgeService> logger,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider
+    )
     {
         ArgumentNullException.ThrowIfNull(pledgeRepository);
         ArgumentNullException.ThrowIfNull(logger);
@@ -45,7 +46,10 @@ public sealed class PledgeService : IPledgeService
     }
 
     /// <inheritdoc />
-    public async Task<Pledge?> GetByIdAsync(PledgeId id, CancellationToken cancellationToken = default)
+    public async Task<Pledge?> GetByIdAsync(
+        PledgeId id,
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge");
 
@@ -62,12 +66,19 @@ public sealed class PledgeService : IPledgeService
 
     /// <inheritdoc />
     public async Task<PagedPledgesResult> GetByPledgerAsync(
-        PledgerId pledgerId, PledgeQuery? query = null, CancellationToken cancellationToken = default)
+        PledgerId pledgerId,
+        PledgeQuery? query = null,
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(pledgerId, "Pledger");
 
         query ??= new PledgeQuery();
-        var pledges = await _pledgeRepository.GetByPledgerAsync(pledgerId, query, cancellationToken);
+        var pledges = await _pledgeRepository.GetByPledgerAsync(
+            pledgerId,
+            query,
+            cancellationToken
+        );
         _logger.PledgesByPledgerRetrieved(pledgerId, pledges.Items.Count);
         return pledges;
     }
@@ -76,12 +87,17 @@ public sealed class PledgeService : IPledgeService
     public async Task<PagedPledgesResult> GetByCategoryAsync(
         PledgeCategoryId pledgeCategoryId,
         PledgeQuery? query = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(pledgeCategoryId, "Pledge category");
 
         query ??= new PledgeQuery();
-        var pledges = await _pledgeRepository.GetByCategoryAsync(pledgeCategoryId, query, cancellationToken);
+        var pledges = await _pledgeRepository.GetByCategoryAsync(
+            pledgeCategoryId,
+            query,
+            cancellationToken
+        );
         _logger.PledgesByCategoryRetrieved(pledgeCategoryId, pledges.Items.Count);
         return pledges;
     }
@@ -94,7 +110,8 @@ public sealed class PledgeService : IPledgeService
         PledgerId pledgerId,
         PledgeCategoryId pledgeCategoryId,
         string? comment,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledge");
         ServiceGuard.ThrowIfEmptyId(pledgerId, "Pledger");

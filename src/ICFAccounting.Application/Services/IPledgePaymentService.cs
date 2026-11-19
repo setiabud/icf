@@ -22,7 +22,9 @@ public interface IPledgePaymentService
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>The payment, or <see langword="null"/> if no payment has the identifier.</returns>
     Task<PledgePayment?> GetByIdAsync(
-        PledgePaymentId id, CancellationToken cancellationToken = default);
+        PledgePaymentId id,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Retrieves a page of payments made toward a pledge.
@@ -33,7 +35,8 @@ public interface IPledgePaymentService
     Task<PagedPledgePaymentsResult> GetByPledgeAsync(
         PledgeId pledgeId,
         PledgePaymentQuery? query = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Updates a payment and returns it, or returns null when no payment has the given identifier.
@@ -53,7 +56,8 @@ public interface IPledgePaymentService
         DateTime paymentDate,
         string? comment,
         bool active,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Removes a pledge payment by its identifier.

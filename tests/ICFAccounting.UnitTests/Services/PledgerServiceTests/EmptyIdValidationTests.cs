@@ -8,15 +8,18 @@ public sealed class EmptyIdValidationTests
 
     [Theory]
     [MemberData(nameof(Operations))]
-    public async Task Empty_id_throws_specific_message_and_parameter_without_calling_repository(string operation)
+    public async Task Empty_id_throws_specific_message_and_parameter_without_calling_repository(
+        string operation
+    )
     {
         var fixture = new PledgerServiceTestFixture();
         Func<Task> act = operation switch
         {
             "GetById" => () => fixture.Service.GetByIdAsync(default),
-            "Update" => () => fixture.Service.UpdateAsync(default, "Mission Fund", true, null, false),
+            "Update" => () =>
+                fixture.Service.UpdateAsync(default, "Mission Fund", true, null, false),
             "Remove" => () => fixture.Service.RemoveAsync(default),
-            _ => throw new ArgumentOutOfRangeException(nameof(operation))
+            _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
 
         var exception = await Assert.ThrowsAsync<ArgumentException>(act);

@@ -11,27 +11,40 @@ internal sealed class PledgePaymentConfiguration : IEntityTypeConfiguration<Pled
     {
         builder.ToTable("PledgePayments");
         builder.HasKey(payment => payment.Id);
-        builder.Property(payment => payment.Id)
+        builder
+            .Property(payment => payment.Id)
             .HasConversion(identity => identity.Value, value => new PledgePaymentId(value))
             .ValueGeneratedNever();
-        builder.Property(payment => payment.PledgeId)
+        builder
+            .Property(payment => payment.PledgeId)
             .HasConversion(identity => identity.Value, value => new PledgeId(value));
         builder.Property(payment => payment.Amount).HasColumnType("numeric");
-        builder.Property(payment => payment.PaymentDate)
+        builder
+            .Property(payment => payment.PaymentDate)
             .HasColumnType("timestamp without time zone")
             .HasConversion<PaymentDateConverter>();
         builder.Property(payment => payment.Comment).HasColumnType("text");
-        builder.Property(payment => payment.CreatedAt)
+        builder
+            .Property(payment => payment.CreatedAt)
             .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
-        builder.Property(payment => payment.UpdatedAt)
+        builder
+            .Property(payment => payment.UpdatedAt)
             .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
 
-        builder.HasOne<Pledge>().WithMany()
+        builder
+            .HasOne<Pledge>()
+            .WithMany()
             .HasForeignKey(payment => payment.PledgeId)
             .OnDelete(DeleteBehavior.NoAction);
-        builder.HasIndex(payment => new { payment.PledgeId, payment.PaymentDate, payment.Id })
+        builder
+            .HasIndex(payment => new
+            {
+                payment.PledgeId,
+                payment.PaymentDate,
+                payment.Id,
+            })
             .IsDescending(false, true, true);
     }
 }

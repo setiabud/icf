@@ -11,7 +11,8 @@ public sealed class PledgePaymentQuery
         int page = 1,
         int pageSize = 20,
         PledgePaymentSortBy sortBy = PledgePaymentSortBy.PaymentDate,
-        SortOrder sortOrder = SortOrder.Descending)
+        SortOrder sortOrder = SortOrder.Descending
+    )
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(page, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
@@ -19,12 +20,20 @@ public sealed class PledgePaymentQuery
 
         if (!Enum.IsDefined(sortBy))
         {
-            throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, "Unsupported pledge payment sort field.");
+            throw new ArgumentOutOfRangeException(
+                nameof(sortBy),
+                sortBy,
+                "Unsupported pledge payment sort field."
+            );
         }
 
         if (!Enum.IsDefined(sortOrder))
         {
-            throw new ArgumentOutOfRangeException(nameof(sortOrder), sortOrder, "Unsupported sort order.");
+            throw new ArgumentOutOfRangeException(
+                nameof(sortOrder),
+                sortOrder,
+                "Unsupported sort order."
+            );
         }
 
         Page = page;

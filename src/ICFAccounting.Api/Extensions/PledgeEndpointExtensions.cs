@@ -65,7 +65,8 @@ public static class PledgeEndpointExtensions
         CreatePledgeRequest request,
         IPledgeService pledgeService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -74,7 +75,8 @@ public static class PledgeEndpointExtensions
                 request.Amount,
                 new PledgerId(request.PledgerId),
                 new PledgeCategoryId(request.PledgeCategoryId),
-                request.Comment);
+                request.Comment
+            );
             await pledgeService.AddAsync(pledge, cancellationToken);
 
             return Results.Created($"/pledges/{pledge.Id.Value}", ToPledgeResponse(pledge));
@@ -88,7 +90,8 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -96,7 +99,8 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge could not be created.");
+                detail: "Pledge could not be created."
+            );
         }
     }
 
@@ -108,27 +112,36 @@ public static class PledgeEndpointExtensions
         int page = 1,
         int pageSize = 20,
         string sortBy = nameof(PledgeSortBy.Year),
-        string sortOrder = nameof(SortOrder.Descending))
+        string sortOrder = nameof(SortOrder.Descending)
+    )
     {
         if (pledgerId == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: "Pledger ID cannot be empty.");
+                detail: "Pledger ID cannot be empty."
+            );
         }
 
-        if (!Enum.TryParse<PledgeSortBy>(sortBy, true, out var parsedSortBy)
+        if (
+            !Enum.TryParse<PledgeSortBy>(sortBy, true, out var parsedSortBy)
             || !Enum.IsDefined(parsedSortBy)
             || !string.Equals(sortBy, parsedSortBy.ToString(), StringComparison.OrdinalIgnoreCase)
             || !Enum.TryParse<SortOrder>(sortOrder, true, out var parsedSortOrder)
             || !Enum.IsDefined(parsedSortOrder)
-            || !string.Equals(sortOrder, parsedSortOrder.ToString(), StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(
+                sortOrder,
+                parsedSortOrder.ToString(),
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: "SortBy must be Year or Amount, and SortOrder must be Ascending or Descending.");
+                detail: "SortBy must be Year or Amount, and SortOrder must be Ascending or Descending."
+            );
         }
 
         PledgeQuery query;
@@ -141,39 +154,48 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
 
         try
         {
             var pledges = await pledgeService.GetByPledgerAsync(
-                new PledgerId(pledgerId), query, cancellationToken);
-            return Results.Ok(new PledgePageResponse
-            {
-                Items = pledges.Items.Select(ToPledgeResponse).ToArray(),
-                Page = pledges.Page,
-                PageSize = pledges.PageSize,
-                TotalCount = pledges.TotalCount,
-                TotalPages = pledges.TotalPages
-            });
+                new PledgerId(pledgerId),
+                query,
+                cancellationToken
+            );
+            return Results.Ok(
+                new PledgePageResponse
+                {
+                    Items = pledges.Items.Select(ToPledgeResponse).ToArray(),
+                    Page = pledges.Page,
+                    PageSize = pledges.PageSize,
+                    TotalCount = pledges.TotalCount,
+                    TotalPages = pledges.TotalPages,
+                }
+            );
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
                 exception,
                 "An unexpected error occurred while retrieving pledges for pledger {PledgerId}.",
-                pledgerId);
+                pledgerId
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledges could not be retrieved.");
+                detail: "Pledges could not be retrieved."
+            );
         }
     }
 
@@ -185,27 +207,36 @@ public static class PledgeEndpointExtensions
         int page = 1,
         int pageSize = 20,
         string sortBy = nameof(PledgeSortBy.Year),
-        string sortOrder = nameof(SortOrder.Descending))
+        string sortOrder = nameof(SortOrder.Descending)
+    )
     {
         if (pledgeCategoryId == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category ID",
-                detail: "Pledge category ID cannot be empty.");
+                detail: "Pledge category ID cannot be empty."
+            );
         }
 
-        if (!Enum.TryParse<PledgeSortBy>(sortBy, true, out var parsedSortBy)
+        if (
+            !Enum.TryParse<PledgeSortBy>(sortBy, true, out var parsedSortBy)
             || !Enum.IsDefined(parsedSortBy)
             || !string.Equals(sortBy, parsedSortBy.ToString(), StringComparison.OrdinalIgnoreCase)
             || !Enum.TryParse<SortOrder>(sortOrder, true, out var parsedSortOrder)
             || !Enum.IsDefined(parsedSortOrder)
-            || !string.Equals(sortOrder, parsedSortOrder.ToString(), StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(
+                sortOrder,
+                parsedSortOrder.ToString(),
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: "SortBy must be Year or Amount, and SortOrder must be Ascending or Descending.");
+                detail: "SortBy must be Year or Amount, and SortOrder must be Ascending or Descending."
+            );
         }
 
         PledgeQuery query;
@@ -218,39 +249,48 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: exception.Message);
+                detail: exception.Message
+            );
         }
 
         try
         {
             var pledges = await pledgeService.GetByCategoryAsync(
-                new PledgeCategoryId(pledgeCategoryId), query, cancellationToken);
-            return Results.Ok(new PledgePageResponse
-            {
-                Items = pledges.Items.Select(ToPledgeResponse).ToArray(),
-                Page = pledges.Page,
-                PageSize = pledges.PageSize,
-                TotalCount = pledges.TotalCount,
-                TotalPages = pledges.TotalPages
-            });
+                new PledgeCategoryId(pledgeCategoryId),
+                query,
+                cancellationToken
+            );
+            return Results.Ok(
+                new PledgePageResponse
+                {
+                    Items = pledges.Items.Select(ToPledgeResponse).ToArray(),
+                    Page = pledges.Page,
+                    PageSize = pledges.PageSize,
+                    TotalCount = pledges.TotalCount,
+                    TotalPages = pledges.TotalPages,
+                }
+            );
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge query",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
                 exception,
                 "An unexpected error occurred while retrieving pledges for category {PledgeCategoryId}.",
-                pledgeCategoryId);
+                pledgeCategoryId
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledges could not be retrieved.");
+                detail: "Pledges could not be retrieved."
+            );
         }
     }
 
@@ -259,25 +299,30 @@ public static class PledgeEndpointExtensions
         UpdatePledgeRequest request,
         IPledgeService pledgeService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge ID",
-                detail: "Pledge ID cannot be empty.");
+                detail: "Pledge ID cannot be empty."
+            );
         }
 
-        if (request.Year is not { } year
+        if (
+            request.Year is not { } year
             || request.Amount is not { } amount
             || request.PledgerId is not { } pledgerId
-            || request.PledgeCategoryId is not { } pledgeCategoryId)
+            || request.PledgeCategoryId is not { } pledgeCategoryId
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge update",
-                detail: "Year, Amount, PledgerId, and PledgeCategoryId are required.");
+                detail: "Year, Amount, PledgerId, and PledgeCategoryId are required."
+            );
         }
 
         if (pledgerId == Guid.Empty || pledgeCategoryId == Guid.Empty)
@@ -285,7 +330,8 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge update",
-                detail: "PledgerId and PledgeCategoryId cannot be empty.");
+                detail: "PledgerId and PledgeCategoryId cannot be empty."
+            );
         }
 
         try
@@ -297,29 +343,34 @@ public static class PledgeEndpointExtensions
                 new PledgerId(pledgerId),
                 new PledgeCategoryId(pledgeCategoryId),
                 request.Comment,
-                cancellationToken);
-            return pledge is null
-                ? Results.NotFound()
-                : Results.Ok(ToPledgeResponse(pledge));
+                cancellationToken
+            );
+            return pledge is null ? Results.NotFound() : Results.Ok(ToPledgeResponse(pledge));
         }
-            catch (RelationshipConflictException exception)
-            {
-                return ProblemDetailsHelpers.RelationshipConflict(exception);
-            }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
+        }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge update",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while updating pledge {PledgeId}.", id);
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while updating pledge {PledgeId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge could not be updated.");
+                detail: "Pledge could not be updated."
+            );
         }
     }
 
@@ -327,37 +378,43 @@ public static class PledgeEndpointExtensions
         Guid id,
         IPledgeService pledgeService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge ID",
-                detail: "Pledge ID cannot be empty.");
+                detail: "Pledge ID cannot be empty."
+            );
         }
 
         try
         {
             var pledge = await pledgeService.GetByIdAsync(new PledgeId(id), cancellationToken);
-            return pledge is null
-                ? Results.NotFound()
-                : Results.Ok(ToPledgeResponse(pledge));
+            return pledge is null ? Results.NotFound() : Results.Ok(ToPledgeResponse(pledge));
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while retrieving pledge {PledgeId}.", id);
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while retrieving pledge {PledgeId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge could not be retrieved.");
+                detail: "Pledge could not be retrieved."
+            );
         }
     }
 
@@ -365,14 +422,16 @@ public static class PledgeEndpointExtensions
         Guid id,
         IPledgeService pledgeService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge ID",
-                detail: "Pledge ID cannot be empty.");
+                detail: "Pledge ID cannot be empty."
+            );
         }
 
         try
@@ -393,15 +452,21 @@ public static class PledgeEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while removing pledge {PledgeId}.", id);
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while removing pledge {PledgeId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge could not be removed.");
+                detail: "Pledge could not be removed."
+            );
         }
     }
 
@@ -416,7 +481,7 @@ public static class PledgeEndpointExtensions
             PledgeCategoryId = pledge.PledgeCategoryId.Value,
             Comment = pledge.Comment,
             CreatedAt = pledge.CreatedAt,
-            UpdatedAt = pledge.UpdatedAt
+            UpdatedAt = pledge.UpdatedAt,
         };
     }
 }

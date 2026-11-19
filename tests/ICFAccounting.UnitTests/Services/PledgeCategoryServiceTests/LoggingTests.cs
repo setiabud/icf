@@ -35,7 +35,8 @@ public sealed class LoggingTests
     public async Task GetByIdAsync_logs_retrieved_category()
     {
         var category = PledgeCategory.Create("Tithe");
-        A.CallTo(() => _repository.GetByIdAsync(category.Id, A<CancellationToken>._)).Returns(category);
+        A.CallTo(() => _repository.GetByIdAsync(category.Id, A<CancellationToken>._))
+            .Returns(category);
 
         await _service.GetByIdAsync(category.Id);
 
@@ -46,7 +47,8 @@ public sealed class LoggingTests
     public async Task GetByIdAsync_logs_category_not_found()
     {
         var id = PledgeCategoryId.New();
-        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._)).Returns((PledgeCategory?)null);
+        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._))
+            .Returns((PledgeCategory?)null);
 
         await _service.GetByIdAsync(id);
 
@@ -68,7 +70,8 @@ public sealed class LoggingTests
     public async Task UpdateAsync_logs_updated_category()
     {
         var category = PledgeCategory.Create("Tithe");
-        A.CallTo(() => _repository.GetByIdAsync(category.Id, A<CancellationToken>._)).Returns(category);
+        A.CallTo(() => _repository.GetByIdAsync(category.Id, A<CancellationToken>._))
+            .Returns(category);
 
         await _service.UpdateAsync(category.Id, "Building Fund", true);
 
@@ -79,7 +82,8 @@ public sealed class LoggingTests
     public async Task UpdateAsync_logs_category_not_found_for_update()
     {
         var id = PledgeCategoryId.New();
-        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._)).Returns((PledgeCategory?)null);
+        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._))
+            .Returns((PledgeCategory?)null);
 
         await _service.UpdateAsync(id, "Building Fund", true);
 
@@ -100,7 +104,8 @@ public sealed class LoggingTests
     public async Task RemoveAsync_when_repository_throws_does_not_log_removal()
     {
         var id = PledgeCategoryId.New();
-        A.CallTo(() => _repository.RemoveAsync(id, A<CancellationToken>._)).ThrowsAsync(new KeyNotFoundException());
+        A.CallTo(() => _repository.RemoveAsync(id, A<CancellationToken>._))
+            .ThrowsAsync(new KeyNotFoundException());
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.RemoveAsync(id));
 

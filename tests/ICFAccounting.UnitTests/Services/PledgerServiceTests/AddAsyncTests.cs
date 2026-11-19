@@ -24,8 +24,7 @@ public sealed class AddAsyncTests
     {
         var fixture = new PledgerServiceTestFixture();
 
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => fixture.Service.AddAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => fixture.Service.AddAsync(null!));
 
         A.CallTo(() => fixture.Repository.AddAsync(A<Pledger>._, A<CancellationToken>._))
             .MustNotHaveHappened();

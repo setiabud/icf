@@ -19,7 +19,10 @@ public interface IPledgeCategoryService
     /// <param name="id">The identifier of the pledge category to retrieve.</param>
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     /// <returns>The pledge category, or <see langword="null"/> if no category has the identifier.</returns>
-    Task<PledgeCategory?> GetByIdAsync(PledgeCategoryId id, CancellationToken cancellationToken = default);
+    Task<PledgeCategory?> GetByIdAsync(
+        PledgeCategoryId id,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Adds a pledge category.
@@ -40,7 +43,8 @@ public interface IPledgeCategoryService
         PledgeCategoryId id,
         string categoryName,
         bool active,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Removes a pledge category by its identifier.

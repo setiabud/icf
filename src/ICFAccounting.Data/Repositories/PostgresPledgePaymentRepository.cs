@@ -17,7 +17,9 @@ public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
 
     /// <summary>Creates a repository using the scoped accounting context and logger.</summary>
     public PostgresPledgePaymentRepository(
-        ICFAccountingDbContext context, ILogger<PostgresPledgePaymentRepository> logger)
+        ICFAccountingDbContext context,
+        ILogger<PostgresPledgePaymentRepository> logger
+    )
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(logger);
@@ -26,24 +28,34 @@ public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
     }
 
     /// <inheritdoc />
-    public async Task AddAsync(PledgePayment pledgePayment, CancellationToken cancellationToken = default)
+    public async Task AddAsync(
+        PledgePayment pledgePayment,
+        CancellationToken cancellationToken = default
+    )
     {
         await SaveAsync(pledgePayment, cancellationToken);
         _logger.LogDebug("Added pledge payment {PledgePaymentId}.", pledgePayment.Id);
     }
 
     /// <inheritdoc />
-    public async Task UpdateAsync(PledgePayment pledgePayment, CancellationToken cancellationToken = default)
+    public async Task UpdateAsync(
+        PledgePayment pledgePayment,
+        CancellationToken cancellationToken = default
+    )
     {
         await SaveAsync(pledgePayment, cancellationToken);
         _logger.LogDebug("Updated pledge payment {PledgePaymentId}.", pledgePayment.Id);
     }
 
     /// <inheritdoc />
-    public async Task<PledgePayment?> GetByIdAsync(PledgePaymentId id, CancellationToken cancellationToken = default)
+    public async Task<PledgePayment?> GetByIdAsync(
+        PledgePaymentId id,
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var payment = await _context.PledgePayments.AsNoTracking()
+        var payment = await _context
+            .PledgePayments.AsNoTracking()
             .SingleOrDefaultAsync(payment => payment.Id == id, cancellationToken);
         _logger.LogDebug("Retrieved pledge payment {PledgePaymentId}.", id);
         return payment;
@@ -64,11 +76,14 @@ public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
     public async Task<PagedPledgePaymentsResult> GetByPledgeAsync(
         PledgeId pledgeId,
         PledgePaymentQuery? query = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         cancellationToken.ThrowIfCancellationRequested();
         query ??= new PledgePaymentQuery();
-        var matches = _context.PledgePayments.AsNoTracking().Where(payment => payment.PledgeId == pledgeId);
+        var matches = _context
+            .PledgePayments.AsNoTracking()
+            .Where(payment => payment.PledgeId == pledgeId);
         var totalCount = await matches.CountAsync(cancellationToken);
         var offset = ((long)query.Page - 1) * query.PageSize;
         if (offset >= totalCount)
@@ -84,11 +99,21 @@ public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
             PledgePaymentSortBy.Amount => query.SortOrder == SortOrder.Descending
                 ? matches.OrderByDescending(payment => payment.Amount)
                 : matches.OrderBy(payment => payment.Amount),
-            _ => throw new ArgumentOutOfRangeException(nameof(query), "Unsupported pledge payment sort field.")
+            _ => throw new ArgumentOutOfRangeException(
+                nameof(query),
+                "Unsupported pledge payment sort field."
+            ),
         };
-        var payments = await ordered.ThenByDescending(payment => payment.Id)
-            .Skip((int)offset).Take(query.PageSize).ToListAsync(cancellationToken);
-        _logger.LogDebug("Retrieved {PledgePaymentCount} payments for pledge {PledgeId}.", payments.Count, pledgeId);
+        var payments = await ordered
+            .ThenByDescending(payment => payment.Id)
+            .Skip((int)offset)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+        _logger.LogDebug(
+            "Retrieved {PledgePaymentCount} payments for pledge {PledgeId}.",
+            payments.Count,
+            pledgeId
+        );
         return PagedPledgePaymentsResult.Create(payments, query.Page, query.PageSize, totalCount);
     }
 
@@ -96,7 +121,10 @@ public sealed class PostgresPledgePaymentRepository : IPledgePaymentRepository
     {
         ArgumentNullException.ThrowIfNull(pledgePayment);
         cancellationToken.ThrowIfCancellationRequested();
-        var existing = await _context.PledgePayments.FindAsync([pledgePayment.Id], cancellationToken);
+        var existing = await _context.PledgePayments.FindAsync(
+            [pledgePayment.Id],
+            cancellationToken
+        );
         if (existing is null)
         {
             await _context.PledgePayments.AddAsync(pledgePayment, cancellationToken);

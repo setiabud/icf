@@ -45,40 +45,83 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
         {
             using var client = CreateClient(factory, allowAutoRedirect: false);
             using var scope = factory.Services.CreateScope();
-            Assert.IsType<PostgresPledgerRepository>(scope.ServiceProvider.GetRequiredService<IPledgerRepository>());
-            Assert.IsType<PostgresPledgeCategoryRepository>(scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>());
-            Assert.IsType<PostgresPledgeRepository>(scope.ServiceProvider.GetRequiredService<IPledgeRepository>());
-            Assert.IsType<PostgresPledgePaymentRepository>(scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>());
-            Assert.Equal(_databaseName,
-                scope.ServiceProvider.GetRequiredService<ICFAccountingDbContext>().Database.GetDbConnection().Database);
+            Assert.IsType<PostgresPledgerRepository>(
+                scope.ServiceProvider.GetRequiredService<IPledgerRepository>()
+            );
+            Assert.IsType<PostgresPledgeCategoryRepository>(
+                scope.ServiceProvider.GetRequiredService<IPledgeCategoryRepository>()
+            );
+            Assert.IsType<PostgresPledgeRepository>(
+                scope.ServiceProvider.GetRequiredService<IPledgeRepository>()
+            );
+            Assert.IsType<PostgresPledgePaymentRepository>(
+                scope.ServiceProvider.GetRequiredService<IPledgePaymentRepository>()
+            );
+            Assert.Equal(
+                _databaseName,
+                scope
+                    .ServiceProvider.GetRequiredService<ICFAccountingDbContext>()
+                    .Database.GetDbConnection()
+                    .Database
+            );
 
-            pledger = await PostCreatedAsync<PledgerResponse>(client, "/pledgers",
-                new CreatePledgerRequest { PledgerName = "SQL API pledger" });
-            category = await PostCreatedAsync<PledgeCategoryResponse>(client, "/pledge-categories",
-                new CreatePledgeCategoryRequest { CategoryName = "SQL API category" });
-            pledge = await PostCreatedAsync<PledgeResponse>(client, "/pledges", new CreatePledgeRequest
-            {
-                Year = 2026,
-                Amount = 125.50m,
-                PledgerId = pledger.Id,
-                PledgeCategoryId = category.Id,
-                Comment = "API SQL persistence"
-            });
-            payment = await PostCreatedAsync<PledgePaymentResponse>(client, "/pledge-payments", new CreatePledgePaymentRequest
-            {
-                PledgeId = pledge.Id,
-                Amount = 25.50m,
-                PaymentDate = new DateTime(2026, 10, 27),
-                Comment = "API SQL payment"
-            });
+            pledger = await PostCreatedAsync<PledgerResponse>(
+                client,
+                "/pledgers",
+                new CreatePledgerRequest { PledgerName = "SQL API pledger" }
+            );
+            category = await PostCreatedAsync<PledgeCategoryResponse>(
+                client,
+                "/pledge-categories",
+                new CreatePledgeCategoryRequest { CategoryName = "SQL API category" }
+            );
+            pledge = await PostCreatedAsync<PledgeResponse>(
+                client,
+                "/pledges",
+                new CreatePledgeRequest
+                {
+                    Year = 2026,
+                    Amount = 125.50m,
+                    PledgerId = pledger.Id,
+                    PledgeCategoryId = category.Id,
+                    Comment = "API SQL persistence",
+                }
+            );
+            payment = await PostCreatedAsync<PledgePaymentResponse>(
+                client,
+                "/pledge-payments",
+                new CreatePledgePaymentRequest
+                {
+                    PledgeId = pledge.Id,
+                    Amount = 25.50m,
+                    PaymentDate = new DateTime(2026, 10, 27),
+                    Comment = "API SQL payment",
+                }
+            );
         }
 
         using var restartedFactory = CreateFactory(_databaseName);
         using var restartedClient = CreateClient(restartedFactory);
-        Assert.Equal(pledger, await restartedClient.GetFromJsonAsync<PledgerResponse>($"/pledgers/{pledger.Id}"));
-        Assert.Equal(category, await restartedClient.GetFromJsonAsync<PledgeCategoryResponse>($"/pledge-categories/{category.Id}"));
-        Assert.Equal(pledge, await restartedClient.GetFromJsonAsync<PledgeResponse>($"/pledges/{pledge.Id}"));
-        Assert.Equal(payment, await restartedClient.GetFromJsonAsync<PledgePaymentResponse>($"/pledge-payments/{payment.Id}"));
+        Assert.Equal(
+            pledger,
+            await restartedClient.GetFromJsonAsync<PledgerResponse>($"/pledgers/{pledger.Id}")
+        );
+        Assert.Equal(
+            category,
+            await restartedClient.GetFromJsonAsync<PledgeCategoryResponse>(
+                $"/pledge-categories/{category.Id}"
+            )
+        );
+        Assert.Equal(
+            pledge,
+            await restartedClient.GetFromJsonAsync<PledgeResponse>($"/pledges/{pledge.Id}")
+        );
+        Assert.Equal(
+            payment,
+            await restartedClient.GetFromJsonAsync<PledgePaymentResponse>(
+                $"/pledge-payments/{payment.Id}"
+            )
+        );
 
         await using var readContext = fixture.CreateContext(_databaseName);
         Assert.Equal(1, await readContext.Pledgers.CountAsync());
@@ -108,31 +151,49 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
     [InlineData("Pledge", false)]
     [InlineData("Pledge", true)]
     public async Task Missing_reference_writes_return_sanitized_conflict_without_partial_changes(
-        string missingReference, bool update)
+        string missingReference,
+        bool update
+    )
     {
         using var factory = CreateFactory(_databaseName);
         using var client = CreateClient(factory);
         var (pledger, category, pledge, payment) = await CreateRelatedRecordsAsync(client);
         var path = missingReference == "Pledge" ? "/pledge-payments" : "/pledges";
         var identity = missingReference == "Pledge" ? payment.Id : pledge.Id;
-        object request = missingReference == "Pledge" ? new
-        {
-            PledgeId = Guid.NewGuid(), Amount = 20m, PaymentDate = new DateTime(2026, 10, 27),
-            Active = false, Comment = "Rejected payment"
-        } : new
-        {
-            Year = 2027, Amount = 50m, Comment = "Rejected pledge",
-            PledgerId = missingReference == "Pledger" ? Guid.NewGuid() : pledger.Id,
-            PledgeCategoryId = missingReference == "Category" ? Guid.NewGuid() : category.Id
-        };
+        object request =
+            missingReference == "Pledge"
+                ? new
+                {
+                    PledgeId = Guid.NewGuid(),
+                    Amount = 20m,
+                    PaymentDate = new DateTime(2026, 10, 27),
+                    Active = false,
+                    Comment = "Rejected payment",
+                }
+                : new
+                {
+                    Year = 2027,
+                    Amount = 50m,
+                    Comment = "Rejected pledge",
+                    PledgerId = missingReference == "Pledger" ? Guid.NewGuid() : pledger.Id,
+                    PledgeCategoryId = missingReference == "Category"
+                        ? Guid.NewGuid()
+                        : category.Id,
+                };
 
         using var response = update
             ? await client.PutAsJsonAsync($"{path}/{identity}", request)
             : await client.PostAsJsonAsync(path, request);
 
         await AssertSanitizedConflictAsync(response);
-        Assert.Equal(pledge, await client.GetFromJsonAsync<PledgeResponse>($"/pledges/{pledge.Id}"));
-        Assert.Equal(payment, await client.GetFromJsonAsync<PledgePaymentResponse>($"/pledge-payments/{payment.Id}"));
+        Assert.Equal(
+            pledge,
+            await client.GetFromJsonAsync<PledgeResponse>($"/pledges/{pledge.Id}")
+        );
+        Assert.Equal(
+            payment,
+            await client.GetFromJsonAsync<PledgePaymentResponse>($"/pledge-payments/{payment.Id}")
+        );
         await using var context = fixture.CreateContext(_databaseName);
         Assert.Equal(1, await context.Pledges.CountAsync());
         Assert.Equal(1, await context.PledgePayments.CountAsync());
@@ -142,7 +203,9 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
     [InlineData("Pledger")]
     [InlineData("Category")]
     [InlineData("Pledge")]
-    public async Task Referenced_deletes_return_conflict_and_succeed_after_dependencies_are_removed(string aggregate)
+    public async Task Referenced_deletes_return_conflict_and_succeed_after_dependencies_are_removed(
+        string aggregate
+    )
     {
         using var factory = CreateFactory(_databaseName);
         using var client = CreateClient(factory);
@@ -151,21 +214,39 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
         {
             "Pledger" => $"/pledgers/{pledger.Id}",
             "Category" => $"/pledge-categories/{category.Id}",
-            _ => $"/pledges/{pledge.Id}"
+            _ => $"/pledges/{pledge.Id}",
         };
 
         using var response = await client.DeleteAsync(path);
         await AssertSanitizedConflictAsync(response);
-        Assert.Equal(pledger, await client.GetFromJsonAsync<PledgerResponse>($"/pledgers/{pledger.Id}"));
-        Assert.Equal(category, await client.GetFromJsonAsync<PledgeCategoryResponse>($"/pledge-categories/{category.Id}"));
-        Assert.Equal(pledge, await client.GetFromJsonAsync<PledgeResponse>($"/pledges/{pledge.Id}"));
-        Assert.Equal(payment, await client.GetFromJsonAsync<PledgePaymentResponse>($"/pledge-payments/{payment.Id}"));
+        Assert.Equal(
+            pledger,
+            await client.GetFromJsonAsync<PledgerResponse>($"/pledgers/{pledger.Id}")
+        );
+        Assert.Equal(
+            category,
+            await client.GetFromJsonAsync<PledgeCategoryResponse>(
+                $"/pledge-categories/{category.Id}"
+            )
+        );
+        Assert.Equal(
+            pledge,
+            await client.GetFromJsonAsync<PledgeResponse>($"/pledges/{pledge.Id}")
+        );
+        Assert.Equal(
+            payment,
+            await client.GetFromJsonAsync<PledgePaymentResponse>($"/pledge-payments/{payment.Id}")
+        );
 
-        foreach (var allowedPath in new[]
-        {
-            $"/pledge-payments/{payment.Id}", $"/pledges/{pledge.Id}",
-            $"/pledgers/{pledger.Id}", $"/pledge-categories/{category.Id}"
-        })
+        foreach (
+            var allowedPath in new[]
+            {
+                $"/pledge-payments/{payment.Id}",
+                $"/pledges/{pledge.Id}",
+                $"/pledgers/{pledger.Id}",
+                $"/pledge-categories/{category.Id}",
+            }
+        )
         {
             using var deleted = await client.DeleteAsync(allowedPath);
             Assert.Equal(HttpStatusCode.NoContent, deleted.StatusCode);
@@ -191,15 +272,22 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
         var target = $"{path}/{Guid.NewGuid()}";
         var request = new
         {
-            PledgerName = "Missing", CategoryName = "Missing", Active = true,
-            Email = (string?)null, EnableNotification = false,
-            Year = 2026, Amount = 100m, PledgerId = Guid.NewGuid(),
-            PledgeCategoryId = Guid.NewGuid(), PledgeId = Guid.NewGuid(),
-            PaymentDate = new DateTime(2026, 10, 27)
+            PledgerName = "Missing",
+            CategoryName = "Missing",
+            Active = true,
+            Email = (string?)null,
+            EnableNotification = false,
+            Year = 2026,
+            Amount = 100m,
+            PledgerId = Guid.NewGuid(),
+            PledgeCategoryId = Guid.NewGuid(),
+            PledgeId = Guid.NewGuid(),
+            PaymentDate = new DateTime(2026, 10, 27),
         };
 
         using var response = update
-            ? await client.PutAsJsonAsync(target, request) : await client.DeleteAsync(target);
+            ? await client.PutAsJsonAsync(target, request)
+            : await client.DeleteAsync(target);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -207,7 +295,9 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Check_violations_are_not_misclassified_as_relationship_conflicts(bool synchronous)
+    public async Task Check_violations_are_not_misclassified_as_relationship_conflicts(
+        bool synchronous
+    )
     {
         await using (var context = fixture.CreateContext(_databaseName))
         {
@@ -215,19 +305,24 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
                 """
                 ALTER TABLE "public"."Pledgers"
                 ADD CONSTRAINT "CK_Pledgers_RejectTestName" CHECK ("PledgerName" <> 'RejectedByCheck')
-                """);
+                """
+            );
             context.Pledgers.Add(ICFAccounting.Domain.Pledgers.Pledger.Create("RejectedByCheck"));
             var exception = synchronous
                 ? Assert.Throws<DbUpdateException>(() => context.SaveChanges())
                 : await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
-            Assert.Equal(PostgresErrorCodes.CheckViolation,
-                Assert.IsType<PostgresException>(exception.InnerException).SqlState);
+            Assert.Equal(
+                PostgresErrorCodes.CheckViolation,
+                Assert.IsType<PostgresException>(exception.InnerException).SqlState
+            );
         }
 
         using var factory = CreateFactory(_databaseName);
         using var client = CreateClient(factory);
-        using var response = await client.PostAsJsonAsync("/pledgers",
-            new CreatePledgerRequest { PledgerName = "RejectedByCheck" });
+        using var response = await client.PostAsJsonAsync(
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "RejectedByCheck" }
+        );
         var problem = await AssertProblemAsync(response, HttpStatusCode.InternalServerError);
         Assert.Equal("An unexpected error occurred", problem.Title);
         var body = await response.Content.ReadAsStringAsync();
@@ -251,27 +346,53 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
         var source = factory.Services.GetRequiredService<EndpointDataSource>();
         var endpoint = Assert.Single(source.Endpoints.OfType<RouteEndpoint>(), candidate =>
             candidate.RoutePattern.RawText == path
-            && candidate.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods.Contains(method));
-        var response = Assert.Single(endpoint.Metadata.GetOrderedMetadata<IProducesResponseTypeMetadata>(),
-            metadata => metadata.StatusCode == 409);
+            && candidate.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods.Contains(method)
+        );
+        var response = Assert.Single(
+            endpoint.Metadata.GetOrderedMetadata<IProducesResponseTypeMetadata>(),
+            metadata => metadata.StatusCode == 409
+        );
         Assert.Contains("application/problem+json", response.ContentTypes);
     }
 
-    private static async Task<(PledgerResponse Pledger, PledgeCategoryResponse Category,
-        PledgeResponse Pledge, PledgePaymentResponse Payment)> CreateRelatedRecordsAsync(HttpClient client)
+    private static async Task<(
+        PledgerResponse Pledger,
+        PledgeCategoryResponse Category,
+        PledgeResponse Pledge,
+        PledgePaymentResponse Payment
+    )> CreateRelatedRecordsAsync(HttpClient client)
     {
-        var pledger = await PostCreatedAsync<PledgerResponse>(client, "/pledgers",
-            new CreatePledgerRequest { PledgerName = "Conflict test pledger" });
-        var category = await PostCreatedAsync<PledgeCategoryResponse>(client, "/pledge-categories",
-            new CreatePledgeCategoryRequest { CategoryName = "Conflict test category" });
-        var pledge = await PostCreatedAsync<PledgeResponse>(client, "/pledges", new CreatePledgeRequest
-        {
-            Year = 2026, Amount = 100m, PledgerId = pledger.Id, PledgeCategoryId = category.Id
-        });
-        var payment = await PostCreatedAsync<PledgePaymentResponse>(client, "/pledge-payments", new CreatePledgePaymentRequest
-        {
-            PledgeId = pledge.Id, Amount = 10m, PaymentDate = new DateTime(2026, 10, 27)
-        });
+        var pledger = await PostCreatedAsync<PledgerResponse>(
+            client,
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "Conflict test pledger" }
+        );
+        var category = await PostCreatedAsync<PledgeCategoryResponse>(
+            client,
+            "/pledge-categories",
+            new CreatePledgeCategoryRequest { CategoryName = "Conflict test category" }
+        );
+        var pledge = await PostCreatedAsync<PledgeResponse>(
+            client,
+            "/pledges",
+            new CreatePledgeRequest
+            {
+                Year = 2026,
+                Amount = 100m,
+                PledgerId = pledger.Id,
+                PledgeCategoryId = category.Id,
+            }
+        );
+        var payment = await PostCreatedAsync<PledgePaymentResponse>(
+            client,
+            "/pledge-payments",
+            new CreatePledgePaymentRequest
+            {
+                PledgeId = pledge.Id,
+                Amount = 10m,
+                PaymentDate = new DateTime(2026, 10, 27),
+            }
+        );
         return (pledger, category, pledge, payment);
     }
 
@@ -292,7 +413,11 @@ public sealed class PostgresApiRegistrationTests(PostgresModelFixture fixture) :
         return new PostgresApiFactory(context.Database.GetDbConnection().ConnectionString);
     }
 
-    private static async Task<TResponse> PostCreatedAsync<TResponse>(HttpClient client, string path, object request)
+    private static async Task<TResponse> PostCreatedAsync<TResponse>(
+        HttpClient client,
+        string path,
+        object request
+    )
     {
         using var response = await client.PostAsJsonAsync(path, request);
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);

@@ -16,10 +16,17 @@ public sealed class EmptyIdValidationTests
         {
             "GetById" => () => fixture.Service.GetByIdAsync(default),
             "GetByPledge" => () => fixture.Service.GetByPledgeAsync(default),
-            "Update" => () => fixture.Service.UpdateAsync(
-                default, PledgeId.New(), 10m, PledgePaymentServiceTestFixture.StartTime.UtcDateTime, null, true),
+            "Update" => () =>
+                fixture.Service.UpdateAsync(
+                    default,
+                    PledgeId.New(),
+                    10m,
+                    PledgePaymentServiceTestFixture.StartTime.UtcDateTime,
+                    null,
+                    true
+                ),
             "Remove" => () => fixture.Service.RemoveAsync(default),
-            _ => throw new ArgumentOutOfRangeException(nameof(operation))
+            _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
 
         await Assert.ThrowsAsync<ArgumentException>(act);

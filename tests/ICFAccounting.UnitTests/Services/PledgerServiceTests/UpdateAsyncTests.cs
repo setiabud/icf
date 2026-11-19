@@ -18,7 +18,13 @@ public sealed class UpdateAsyncTests
             .Returns(pledger);
 
         var result = await fixture.Service.UpdateAsync(
-            pledger.Id, "Mission Fund", false, "mission@example.org", true, cancellationToken);
+            pledger.Id,
+            "Mission Fund",
+            false,
+            "mission@example.org",
+            true,
+            cancellationToken
+        );
 
         Assert.Same(pledger, result);
         Assert.NotNull(result);
@@ -27,7 +33,10 @@ public sealed class UpdateAsyncTests
         Assert.Equal("mission@example.org", result.Email);
         Assert.True(result.EnableNotification);
         Assert.Equal(originalCreatedAt, result.CreatedAt);
-        Assert.Equal(PledgerServiceTestFixture.StartTime.AddMinutes(5).UtcDateTime, result.UpdatedAt);
+        Assert.Equal(
+            PledgerServiceTestFixture.StartTime.AddMinutes(5).UtcDateTime,
+            result.UpdatedAt
+        );
         A.CallTo(() => fixture.Repository.UpdateAsync(pledger, cancellationToken))
             .MustHaveHappenedOnceExactly();
     }
@@ -58,8 +67,9 @@ public sealed class UpdateAsyncTests
         A.CallTo(() => fixture.Repository.UpdateAsync(pledger, A<CancellationToken>._))
             .ThrowsAsync(exception);
 
-        var result = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => fixture.Service.UpdateAsync(pledger.Id, "Mission Fund", true, null, false));
+        var result = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            fixture.Service.UpdateAsync(pledger.Id, "Mission Fund", true, null, false)
+        );
 
         Assert.Same(exception, result);
     }
@@ -69,8 +79,9 @@ public sealed class UpdateAsyncTests
     {
         var fixture = new PledgerServiceTestFixture();
 
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => fixture.Service.UpdateAsync(default, "Mission Fund", true, null, false));
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            fixture.Service.UpdateAsync(default, "Mission Fund", true, null, false)
+        );
 
         Assert.Empty(Fake.GetCalls(fixture.Repository));
     }
@@ -83,8 +94,9 @@ public sealed class UpdateAsyncTests
     {
         var fixture = new PledgerServiceTestFixture();
 
-        await Assert.ThrowsAnyAsync<ArgumentException>(
-            () => fixture.Service.UpdateAsync(PledgerId.New(), name!, true, null, false));
+        await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            fixture.Service.UpdateAsync(PledgerId.New(), name!, true, null, false)
+        );
 
         Assert.Empty(Fake.GetCalls(fixture.Repository));
     }

@@ -7,7 +7,6 @@ internal sealed class UtcDateTimeConverter : ValueConverter<DateTime, DateTime>
     public UtcDateTimeConverter()
         : base(
             timestamp => DateTime.SpecifyKind(timestamp, DateTimeKind.Unspecified),
-            timestamp => DateTime.SpecifyKind(timestamp, DateTimeKind.Utc))
-    {
-    }
+            timestamp => DateTime.SpecifyKind(timestamp, DateTimeKind.Utc)
+        ) { }
 }

@@ -10,7 +10,8 @@ using Npgsql;
 namespace ICFAccounting.IntegrationTests.Repositories;
 
 [Collection(nameof(PostgresTestCollection))]
-public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
+public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fixture)
+    : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -53,14 +54,18 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
             Assert.Equal("Final", stored.Comment);
             Assert.False(stored.Active);
             Assert.Equal(payment.CreatedAt, stored.CreatedAt);
-            Assert.Contains((await repository.GetByPledgeAsync(pledge.Id)).Items, entity => entity.Id == payment.Id);
+            Assert.Contains((await repository.GetByPledgeAsync(pledge.Id)).Items, entity =>
+                entity.Id == payment.Id
+            );
             await repository.RemoveAsync(payment.Id);
         }
 
         await using var readContext = CreateContext();
         var readRepository = CreatePaymentRepository(readContext);
         Assert.Null(await readRepository.GetByIdAsync(payment.Id));
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => readRepository.RemoveAsync(payment.Id));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            readRepository.RemoveAsync(payment.Id)
+        );
     }
 
     [Theory]
@@ -69,31 +74,52 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
     [InlineData(PledgePaymentSortBy.Amount, SortOrder.Ascending)]
     [InlineData(PledgePaymentSortBy.Amount, SortOrder.Descending)]
     public async Task Payment_queries_filter_sort_and_page_in_sql(
-        PledgePaymentSortBy sortBy, SortOrder sortOrder)
+        PledgePaymentSortBy sortBy,
+        SortOrder sortOrder
+    )
     {
         var pledge = await SeedPledgeAsync();
         var otherPledge = await SeedPledgeAsync();
         var amounts = new[] { 10m, decimal.MaxValue, 2m, 10m, 0.01m };
-        var payments = amounts.Select((amount, index) => PledgePayment.Create(
-            pledge.Id, amount, new DateTime(2026, 10, 26).AddDays(index % 2))).ToList();
+        var payments = amounts
+            .Select(
+                (amount, index) =>
+                    PledgePayment.Create(
+                        pledge.Id,
+                        amount,
+                        new DateTime(2026, 10, 26).AddDays(index % 2)
+                    )
+            )
+            .ToList();
         payments[0].Update(pledge.Id, payments[0].Amount, payments[0].PaymentDate, null, false);
         await using (var context = CreateContext())
         {
             context.PledgePayments.AddRange(payments);
-            context.PledgePayments.Add(PledgePayment.Create(otherPledge.Id, 999m, new DateTime(2026, 1, 1)));
+            context.PledgePayments.Add(
+                PledgePayment.Create(otherPledge.Id, 999m, new DateTime(2026, 1, 1))
+            );
             await context.SaveChangesAsync();
         }
 
-        var expected = sortBy == PledgePaymentSortBy.Amount
-            ? sortOrder == SortOrder.Descending
-                ? payments.OrderByDescending(payment => payment.Amount) : payments.OrderBy(payment => payment.Amount)
-            : sortOrder == SortOrder.Descending
-                ? payments.OrderByDescending(payment => payment.PaymentDate) : payments.OrderBy(payment => payment.PaymentDate);
-        var expectedIds = expected.ThenByDescending(payment => payment.Id.Value)
-            .Skip(2).Take(2).Select(payment => payment.Id);
+        var expected =
+            sortBy == PledgePaymentSortBy.Amount
+                ? sortOrder == SortOrder.Descending
+                    ? payments.OrderByDescending(payment => payment.Amount)
+                    : payments.OrderBy(payment => payment.Amount)
+                : sortOrder == SortOrder.Descending
+                    ? payments.OrderByDescending(payment => payment.PaymentDate)
+                    : payments.OrderBy(payment => payment.PaymentDate);
+        var expectedIds = expected
+            .ThenByDescending(payment => payment.Id.Value)
+            .Skip(2)
+            .Take(2)
+            .Select(payment => payment.Id);
         await using var readContext = CreateContext();
         var repository = CreatePaymentRepository(readContext);
-        var result = await repository.GetByPledgeAsync(pledge.Id, new PledgePaymentQuery(2, 2, sortBy, sortOrder));
+        var result = await repository.GetByPledgeAsync(
+            pledge.Id,
+            new PledgePaymentQuery(2, 2, sortBy, sortOrder)
+        );
         Assert.Equal(expectedIds, result.Items.Select(payment => payment.Id));
         Assert.Equal(5, result.TotalCount);
         Assert.Equal(2, result.Page);
@@ -106,8 +132,11 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
     public async Task Default_and_out_of_range_queries_preserve_totals_and_page_sizes()
     {
         var pledge = await SeedPledgeAsync();
-        var payments = Enumerable.Range(0, 21)
-            .Select(index => PledgePayment.Create(pledge.Id, index + 1m, new DateTime(2026, 1, 1).AddDays(index)))
+        var payments = Enumerable
+            .Range(0, 21)
+            .Select(index =>
+                PledgePayment.Create(pledge.Id, index + 1m, new DateTime(2026, 1, 1).AddDays(index))
+            )
             .ToList();
         await using (var context = CreateContext())
         {
@@ -122,7 +151,10 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
         Assert.Equal(21, result.TotalCount);
         Assert.Equal(2, result.TotalPages);
         Assert.Equal(new DateTime(2026, 1, 21), result.Items[0].PaymentDate);
-        var beyondEnd = await repository.GetByPledgeAsync(pledge.Id, new PledgePaymentQuery(int.MaxValue, 100));
+        var beyondEnd = await repository.GetByPledgeAsync(
+            pledge.Id,
+            new PledgePaymentQuery(int.MaxValue, 100)
+        );
         Assert.Empty(beyondEnd.Items);
         Assert.Equal(21, beyondEnd.TotalCount);
     }
@@ -152,11 +184,13 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
             token => repository.UpdateAsync(payment, token),
             token => repository.GetByIdAsync(payment.Id, token),
             token => repository.GetByPledgeAsync(payment.PledgeId, cancellationToken: token),
-            token => repository.RemoveAsync(payment.Id, token)
+            token => repository.RemoveAsync(payment.Id, token),
         ];
         foreach (var operation in operations)
         {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation(cancellation.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                operation(cancellation.Token)
+            );
         }
 
         Assert.Empty(context.ChangeTracker.Entries());
@@ -171,14 +205,19 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
         var (pledge, payment) = await SeedPaymentAsync();
         await using (var context = CreateContext())
         {
-            var invalid = update ? payment
+            var invalid = update
+                ? payment
                 : PledgePayment.Create(pledge.Id, 20m, new DateTime(2026, 10, 27));
             invalid.Update(PledgeId.New(), 20m, invalid.PaymentDate, null, true);
             var repository = CreatePaymentRepository(context);
-            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
-                () => update ? repository.UpdateAsync(invalid) : repository.AddAsync(invalid));
+            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() =>
+                update ? repository.UpdateAsync(invalid) : repository.AddAsync(invalid)
+            );
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
+            Assert.Equal(
+                PostgresErrorCodes.ForeignKeyViolation,
+                Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState
+            );
         }
 
         await using var readContext = CreateContext();
@@ -237,8 +276,12 @@ public sealed class PostgresPledgePaymentRepositoryTests(PostgresModelFixture fi
             payment.Update(pledge.Id, 20m, payment.PaymentDate, null, false);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.UpdateAsync(payment, cancellation.Token));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.RemoveAsync(payment.Id, cancellation.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.UpdateAsync(payment, cancellation.Token)
+            );
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.RemoveAsync(payment.Id, cancellation.Token)
+            );
             Assert.Empty(context.ChangeTracker.Entries());
         }
 

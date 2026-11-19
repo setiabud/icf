@@ -16,7 +16,7 @@ public sealed class PostgresModelFixture : IAsyncLifetime
         EnsureDatabaseExists(databaseName);
         var connectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
         {
-            Database = databaseName
+            Database = databaseName,
         };
         var options = new DbContextOptionsBuilder<ICFAccountingDbContext>()
             .UseNpgsql(connectionString.ConnectionString)
@@ -45,14 +45,17 @@ public sealed class PostgresModelFixture : IAsyncLifetime
                 return;
             }
 
-            var adminConnectionString = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
+            var adminConnectionString = new NpgsqlConnectionStringBuilder(
+                _container.GetConnectionString()
+            )
             {
-                Database = "postgres"
+                Database = "postgres",
             };
             using var connection = new NpgsqlConnection(adminConnectionString.ConnectionString);
             connection.Open();
             using var command = connection.CreateCommand();
-            command.CommandText = $"CREATE DATABASE {new NpgsqlCommandBuilder().QuoteIdentifier(databaseName)}";
+            command.CommandText =
+                $"CREATE DATABASE {new NpgsqlCommandBuilder().QuoteIdentifier(databaseName)}";
             command.ExecuteNonQuery();
             _createdDatabases.Add(databaseName);
         }

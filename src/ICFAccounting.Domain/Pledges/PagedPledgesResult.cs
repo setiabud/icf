@@ -24,13 +24,22 @@ public sealed class PagedPledgesResult
     public int TotalPages => (int)(((long)TotalCount + PageSize - 1) / PageSize);
 
     public static PagedPledgesResult Create(
-        IReadOnlyList<Pledge> items, int page, int pageSize, int totalCount)
+        IReadOnlyList<Pledge> items,
+        int page,
+        int pageSize,
+        int totalCount
+    )
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentOutOfRangeException.ThrowIfLessThan(page, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
         ArgumentOutOfRangeException.ThrowIfNegative(totalCount);
 
-        return new PagedPledgesResult(Array.AsReadOnly(items.ToArray()), page, pageSize, totalCount);
+        return new PagedPledgesResult(
+            Array.AsReadOnly(items.ToArray()),
+            page,
+            pageSize,
+            totalCount
+        );
     }
 }

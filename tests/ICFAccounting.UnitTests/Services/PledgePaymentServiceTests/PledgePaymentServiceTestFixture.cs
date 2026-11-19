@@ -30,6 +30,12 @@ internal sealed class PledgePaymentServiceTestFixture
 
     public static PledgePayment CreatePayment(TimeProvider? clock = null)
     {
-        return PledgePayment.Create(PledgeId.New(), 10m, new DateTime(2026, 1, 10), "Original", clock);
+        return PledgePayment.Create(
+            PledgeId.New(),
+            10m,
+            new DateTime(2026, 1, 10),
+            "Original",
+            clock
+        );
     }
 }

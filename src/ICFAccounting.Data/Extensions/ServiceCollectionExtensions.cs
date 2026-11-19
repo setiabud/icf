@@ -14,7 +14,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds a scoped accounting context and PostgreSQL repositories using the ICFAccounting connection string.
     /// </summary>
-    public static IServiceCollection AddDataServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDataServices(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(configuration);
@@ -22,11 +25,14 @@ public static class ServiceCollectionExtensions
         if (string.IsNullOrWhiteSpace(connectionString))
         {
             throw new InvalidOperationException(
-                "The ICFAccounting connection string is required. Set ConnectionStrings__ICFAccounting " +
-                "or configure ConnectionStrings:ICFAccounting with .NET user-secrets for local development.");
+                "The ICFAccounting connection string is required. Set ConnectionStrings__ICFAccounting "
+                    + "or configure ConnectionStrings:ICFAccounting with .NET user-secrets for local development."
+            );
         }
 
-        services.AddDbContext<ICFAccountingDbContext>(options => options.UseNpgsql(connectionString));
+        services.AddDbContext<ICFAccountingDbContext>(options =>
+            options.UseNpgsql(connectionString)
+        );
         services.AddScoped<IPledgerRepository, PostgresPledgerRepository>();
         services.AddScoped<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>();
         services.AddScoped<IPledgeRepository, PostgresPledgeRepository>();

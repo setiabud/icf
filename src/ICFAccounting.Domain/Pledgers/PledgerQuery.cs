@@ -8,7 +8,8 @@ public sealed class PledgerQuery
         int page = 1,
         int pageSize = 20,
         PledgerSortBy sortBy = PledgerSortBy.PledgerName,
-        SortOrder sortOrder = SortOrder.Ascending)
+        SortOrder sortOrder = SortOrder.Ascending
+    )
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(page, 1);
         ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
@@ -16,12 +17,20 @@ public sealed class PledgerQuery
 
         if (!Enum.IsDefined(sortBy))
         {
-            throw new ArgumentOutOfRangeException(nameof(sortBy), sortBy, "Unsupported pledger sort field.");
+            throw new ArgumentOutOfRangeException(
+                nameof(sortBy),
+                sortBy,
+                "Unsupported pledger sort field."
+            );
         }
 
         if (!Enum.IsDefined(sortOrder))
         {
-            throw new ArgumentOutOfRangeException(nameof(sortOrder), sortOrder, "Unsupported sort order.");
+            throw new ArgumentOutOfRangeException(
+                nameof(sortOrder),
+                sortOrder,
+                "Unsupported sort order."
+            );
         }
 
         Page = page;

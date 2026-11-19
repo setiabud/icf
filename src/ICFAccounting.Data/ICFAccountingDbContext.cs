@@ -17,9 +17,8 @@ public sealed class ICFAccountingDbContext : DbContext
     /// <summary>
     /// Creates a context using externally configured database options.
     /// </summary>
-    public ICFAccountingDbContext(DbContextOptions<ICFAccountingDbContext> options) : base(options)
-    {
-    }
+    public ICFAccountingDbContext(DbContextOptions<ICFAccountingDbContext> options)
+        : base(options) { }
 
     /// <summary>Gets the pledgers.</summary>
     public DbSet<Pledger> Pledgers => Set<Pledger>();
@@ -49,7 +48,9 @@ public sealed class ICFAccountingDbContext : DbContext
 
     /// <inheritdoc />
     public override async Task<int> SaveChangesAsync(
-        bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default
+    )
     {
         NormalizeTimestampPrecision();
         try
@@ -65,35 +66,47 @@ public sealed class ICFAccountingDbContext : DbContext
     // Keep immediate write responses equal to reads of PostgreSQL's microsecond timestamps.
     private void NormalizeTimestampPrecision()
     {
-        foreach (var entry in ChangeTracker.Entries()
-            .Where(entry => entry.State is EntityState.Added or EntityState.Modified))
+        foreach (
+            var entry in ChangeTracker
+                .Entries()
+                .Where(entry => entry.State is EntityState.Added or EntityState.Modified)
+        )
         {
             foreach (var property in entry.Properties)
             {
-                if (property.CurrentValue is not DateTime timestamp
-                    || timestamp.Ticks % TimeSpan.TicksPerMicrosecond == 0)
+                if (
+                    property.CurrentValue is not DateTime timestamp
+                    || timestamp.Ticks % TimeSpan.TicksPerMicrosecond == 0
+                )
                 {
                     continue;
                 }
 
                 property.CurrentValue = new DateTime(
                     timestamp.Ticks - timestamp.Ticks % TimeSpan.TicksPerMicrosecond,
-                    timestamp.Kind);
+                    timestamp.Kind
+                );
             }
         }
     }
 
     private bool IsRelationshipConflict(DbUpdateException exception)
     {
-        if (exception.InnerException is not PostgresException postgresException
+        if (
+            exception.InnerException is not PostgresException postgresException
             || postgresException.SqlState != PostgresErrorCodes.ForeignKeyViolation
-            || postgresException.ConstraintName is not { } constraintName)
+            || postgresException.ConstraintName is not { } constraintName
+        )
         {
             return false;
         }
 
-        var foreignKeyNames = Model.GetEntityTypes().SelectMany(entity => entity.GetForeignKeys())
-            .Select(foreignKey => foreignKey.GetConstraintName()).OfType<string>().ToArray();
+        var foreignKeyNames = Model
+            .GetEntityTypes()
+            .SelectMany(entity => entity.GetForeignKeys())
+            .Select(foreignKey => foreignKey.GetConstraintName())
+            .OfType<string>()
+            .ToArray();
         return foreignKeyNames.Contains(constraintName, StringComparer.Ordinal);
     }
 
@@ -105,7 +118,8 @@ public sealed class ICFAccountingDbContext : DbContext
             "icf_case_insensitive_accent_sensitive",
             locale: "und-u-ks-level2",
             provider: "icu",
-            deterministic: false);
+            deterministic: false
+        );
         modelBuilder.ApplyConfiguration(new PledgerConfiguration());
         modelBuilder.ApplyConfiguration(new PledgeCategoryConfiguration());
         modelBuilder.ApplyConfiguration(new PledgeConfiguration());
@@ -114,6 +128,8 @@ public sealed class ICFAccountingDbContext : DbContext
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.Properties<string>().UseCollation("icf_case_insensitive_accent_sensitive");
+        configurationBuilder
+            .Properties<string>()
+            .UseCollation("icf_case_insensitive_accent_sensitive");
     }
 }

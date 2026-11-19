@@ -40,8 +40,9 @@ public sealed class PagedPledgersResultTests
     [InlineData(1, 10, -1)]
     public void Create_rejects_invalid_metadata(int page, int pageSize, int totalCount)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => PagedPledgersResult.Create([], page, pageSize, totalCount));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            PagedPledgersResult.Create([], page, pageSize, totalCount)
+        );
     }
 
     [Fact]

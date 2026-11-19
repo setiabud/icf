@@ -19,7 +19,7 @@
   "noConfigSearch": true,
   "dictionaries": ["data-science", "fullstack", "cpp-compound-words"],
   "words": [
-    "megalinter", 
+    "megalinter",
     "oxsecurity",
     "Archy",
     "reprioritize",
@@ -49,7 +49,10 @@
     "nums",
     "describedby",
     "httponly",
-    "signins"
+    "signins",
+    "buildtransitive",
+    "pledgername",
+    "vite"
   ],
   "version": "0.2"
 }

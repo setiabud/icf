@@ -56,35 +56,47 @@ public static class PledgePaymentEndpointExtensions
         CreatePledgePaymentRequest request,
         IPledgePaymentService pledgePaymentService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
             var pledgePayment = PledgePayment.Create(
-                new PledgeId(request.PledgeId), request.Amount, request.PaymentDate, request.Comment);
+                new PledgeId(request.PledgeId),
+                request.Amount,
+                request.PaymentDate,
+                request.Comment
+            );
             await pledgePaymentService.AddAsync(pledgePayment, cancellationToken);
 
             return Results.Created(
-                $"/pledge-payments/{pledgePayment.Id.Value}", ToPledgePaymentResponse(pledgePayment));
+                $"/pledge-payments/{pledgePayment.Id.Value}",
+                ToPledgePaymentResponse(pledgePayment)
+            );
         }
-            catch (RelationshipConflictException exception)
-            {
-                return ProblemDetailsHelpers.RelationshipConflict(exception);
-            }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
+        }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while creating a pledge payment.");
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while creating a pledge payment."
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge payment could not be created.");
+                detail: "Pledge payment could not be created."
+            );
         }
     }
 
@@ -96,27 +108,36 @@ public static class PledgePaymentEndpointExtensions
         int page = 1,
         int pageSize = 20,
         string sortBy = nameof(PledgePaymentSortBy.PaymentDate),
-        string sortOrder = nameof(SortOrder.Descending))
+        string sortOrder = nameof(SortOrder.Descending)
+    )
     {
         if (pledgeId == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge ID",
-                detail: "Pledge ID cannot be empty.");
+                detail: "Pledge ID cannot be empty."
+            );
         }
 
-        if (!Enum.TryParse<PledgePaymentSortBy>(sortBy, true, out var parsedSortBy)
+        if (
+            !Enum.TryParse<PledgePaymentSortBy>(sortBy, true, out var parsedSortBy)
             || !Enum.IsDefined(parsedSortBy)
             || !string.Equals(sortBy, parsedSortBy.ToString(), StringComparison.OrdinalIgnoreCase)
             || !Enum.TryParse<SortOrder>(sortOrder, true, out var parsedSortOrder)
             || !Enum.IsDefined(parsedSortOrder)
-            || !string.Equals(sortOrder, parsedSortOrder.ToString(), StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(
+                sortOrder,
+                parsedSortOrder.ToString(),
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment query",
-                detail: "SortBy must be PaymentDate or Amount, and SortOrder must be Ascending or Descending.");
+                detail: "SortBy must be PaymentDate or Amount, and SortOrder must be Ascending or Descending."
+            );
         }
 
         PledgePaymentQuery query;
@@ -129,39 +150,48 @@ public static class PledgePaymentEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment query",
-                detail: exception.Message);
+                detail: exception.Message
+            );
         }
 
         try
         {
             var payments = await pledgePaymentService.GetByPledgeAsync(
-                new PledgeId(pledgeId), query, cancellationToken);
-            return Results.Ok(new PledgePaymentPageResponse
-            {
-                Items = payments.Items.Select(ToPledgePaymentResponse).ToArray(),
-                Page = payments.Page,
-                PageSize = payments.PageSize,
-                TotalCount = payments.TotalCount,
-                TotalPages = payments.TotalPages
-            });
+                new PledgeId(pledgeId),
+                query,
+                cancellationToken
+            );
+            return Results.Ok(
+                new PledgePaymentPageResponse
+                {
+                    Items = payments.Items.Select(ToPledgePaymentResponse).ToArray(),
+                    Page = payments.Page,
+                    PageSize = payments.PageSize,
+                    TotalCount = payments.TotalCount,
+                    TotalPages = payments.TotalPages,
+                }
+            );
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment query",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
                 exception,
                 "An unexpected error occurred while retrieving payments for pledge {PledgeId}.",
-                pledgeId);
+                pledgeId
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge payments could not be retrieved.");
+                detail: "Pledge payments could not be retrieved."
+            );
         }
     }
 
@@ -170,55 +200,71 @@ public static class PledgePaymentEndpointExtensions
         UpdatePledgePaymentRequest request,
         IPledgePaymentService pledgePaymentService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment ID",
-                detail: "Pledge payment ID cannot be empty.");
+                detail: "Pledge payment ID cannot be empty."
+            );
         }
 
-        if (request.PledgeId is not { } pledgeId
+        if (
+            request.PledgeId is not { } pledgeId
             || request.Amount is not { } amount
             || request.PaymentDate is not { } paymentDate
-            || request.Active is not { } active)
+            || request.Active is not { } active
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment update",
-                detail: "PledgeId, Amount, PaymentDate, and Active are required.");
+                detail: "PledgeId, Amount, PaymentDate, and Active are required."
+            );
         }
 
         try
         {
             var pledgePayment = await pledgePaymentService.UpdateAsync(
-                new PledgePaymentId(id), new PledgeId(pledgeId), amount, paymentDate,
-                request.Comment, active, cancellationToken);
+                new PledgePaymentId(id),
+                new PledgeId(pledgeId),
+                amount,
+                paymentDate,
+                request.Comment,
+                active,
+                cancellationToken
+            );
             return pledgePayment is null
                 ? Results.NotFound()
                 : Results.Ok(ToPledgePaymentResponse(pledgePayment));
         }
-            catch (RelationshipConflictException exception)
-            {
-                return ProblemDetailsHelpers.RelationshipConflict(exception);
-            }
+        catch (RelationshipConflictException exception)
+        {
+            return ProblemDetailsHelpers.RelationshipConflict(exception);
+        }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment update",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
-                exception, "An unexpected error occurred while updating pledge payment {PledgePaymentId}.", id);
+                exception,
+                "An unexpected error occurred while updating pledge payment {PledgePaymentId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge payment could not be updated.");
+                detail: "Pledge payment could not be updated."
+            );
         }
     }
 
@@ -226,20 +272,24 @@ public static class PledgePaymentEndpointExtensions
         Guid id,
         IPledgePaymentService pledgePaymentService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment ID",
-                detail: "Pledge payment ID cannot be empty.");
+                detail: "Pledge payment ID cannot be empty."
+            );
         }
 
         try
         {
             var pledgePayment = await pledgePaymentService.GetByIdAsync(
-                new PledgePaymentId(id), cancellationToken);
+                new PledgePaymentId(id),
+                cancellationToken
+            );
             return pledgePayment is null
                 ? Results.NotFound()
                 : Results.Ok(ToPledgePaymentResponse(pledgePayment));
@@ -249,16 +299,21 @@ public static class PledgePaymentEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
-                exception, "An unexpected error occurred while retrieving pledge payment {PledgePaymentId}.", id);
+                exception,
+                "An unexpected error occurred while retrieving pledge payment {PledgePaymentId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge payment could not be retrieved.");
+                detail: "Pledge payment could not be retrieved."
+            );
         }
     }
 
@@ -266,14 +321,16 @@ public static class PledgePaymentEndpointExtensions
         Guid id,
         IPledgePaymentService pledgePaymentService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment ID",
-                detail: "Pledge payment ID cannot be empty.");
+                detail: "Pledge payment ID cannot be empty."
+            );
         }
 
         try
@@ -290,16 +347,21 @@ public static class PledgePaymentEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge payment ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
-                exception, "An unexpected error occurred while removing pledge payment {PledgePaymentId}.", id);
+                exception,
+                "An unexpected error occurred while removing pledge payment {PledgePaymentId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge payment could not be removed.");
+                detail: "Pledge payment could not be removed."
+            );
         }
     }
 
@@ -314,7 +376,7 @@ public static class PledgePaymentEndpointExtensions
             Comment = pledgePayment.Comment,
             Active = pledgePayment.Active,
             CreatedAt = pledgePayment.CreatedAt,
-            UpdatedAt = pledgePayment.UpdatedAt
+            UpdatedAt = pledgePayment.UpdatedAt,
         };
     }
 }

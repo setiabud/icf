@@ -22,7 +22,8 @@ public sealed class PledgerService : IPledgerService
     public PledgerService(
         IPledgerRepository pledgerRepository,
         ILogger<PledgerService> logger,
-        TimeProvider timeProvider)
+        TimeProvider timeProvider
+    )
     {
         ArgumentNullException.ThrowIfNull(pledgerRepository);
         ArgumentNullException.ThrowIfNull(logger);
@@ -43,7 +44,10 @@ public sealed class PledgerService : IPledgerService
     }
 
     /// <inheritdoc />
-    public async Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken = default)
+    public async Task<Pledger?> GetByIdAsync(
+        PledgerId id,
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledger");
 
@@ -61,7 +65,8 @@ public sealed class PledgerService : IPledgerService
     /// <inheritdoc />
     public async Task<PagedPledgersResult> GetAllAsync(
         PledgerQuery? query = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         query ??= new PledgerQuery();
         var pledgers = await _pledgerRepository.GetAllAsync(query, cancellationToken);
@@ -76,7 +81,8 @@ public sealed class PledgerService : IPledgerService
         bool active,
         string? email,
         bool enableNotification,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         ServiceGuard.ThrowIfEmptyId(id, "Pledger");
         // Checked before the lookup so a blank name is rejected (400) even when the ID is unknown (404).

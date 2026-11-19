@@ -34,50 +34,63 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     public async Task Database_migration_creates_the_expected_postgres_schema()
     {
         await using var context = fixture.CreateContext();
-        var tables = await context.Database.SqlQueryRaw<string>(
-            """
-            SELECT table_name AS "Value" FROM information_schema.tables
-            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-                AND table_name <> '__EFMigrationsHistory'
-            """)
-            .OrderBy(tableName => tableName).ToListAsync();
+        var tables = await context
+            .Database.SqlQueryRaw<string>(
+                """
+                SELECT table_name AS "Value" FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                    AND table_name <> '__EFMigrationsHistory'
+                """
+            )
+            .OrderBy(tableName => tableName)
+            .ToListAsync();
         Assert.Equal(["PledgeCategories", "PledgePayments", "Pledgers", "Pledges"], tables);
 
-        var collation = await context.Database.SqlQueryRaw<string>(
-            """
-            SELECT collname AS "Value" FROM pg_collation
-            WHERE collname = 'icf_case_insensitive_accent_sensitive'
-            """)
+        var collation = await context
+            .Database.SqlQueryRaw<string>(
+                """
+                SELECT collname AS "Value" FROM pg_collation
+                WHERE collname = 'icf_case_insensitive_accent_sensitive'
+                """
+            )
             .SingleAsync();
         Assert.Equal("icf_case_insensitive_accent_sensitive", collation);
 
-        var amountColumns = await context.Database.SqlQueryRaw<int>(
-            """
-            SELECT COUNT(*)::int AS "Value" FROM information_schema.columns
-            WHERE table_schema = 'public'
-                AND table_name IN ('Pledges', 'PledgePayments')
-                AND column_name = 'Amount' AND data_type = 'numeric'
-                AND numeric_precision IS NULL AND numeric_scale IS NULL
-            """).SingleAsync();
+        var amountColumns = await context
+            .Database.SqlQueryRaw<int>(
+                """
+                SELECT COUNT(*)::int AS "Value" FROM information_schema.columns
+                WHERE table_schema = 'public'
+                    AND table_name IN ('Pledges', 'PledgePayments')
+                    AND column_name = 'Amount' AND data_type = 'numeric'
+                    AND numeric_precision IS NULL AND numeric_scale IS NULL
+                """
+            )
+            .SingleAsync();
         Assert.Equal(2, amountColumns);
 
-        var restrictedRelationships = await context.Database.SqlQueryRaw<int>(
-            """
-            SELECT COUNT(*)::int AS "Value"
-            FROM information_schema.table_constraints AS constraints
-            INNER JOIN information_schema.referential_constraints AS relationships
-                USING (constraint_catalog, constraint_schema, constraint_name)
-            WHERE constraints.constraint_schema = 'public'
-                AND constraints.constraint_type = 'FOREIGN KEY'
-                AND relationships.delete_rule = 'NO ACTION'
-            """).SingleAsync();
+        var restrictedRelationships = await context
+            .Database.SqlQueryRaw<int>(
+                """
+                SELECT COUNT(*)::int AS "Value"
+                FROM information_schema.table_constraints AS constraints
+                INNER JOIN information_schema.referential_constraints AS relationships
+                    USING (constraint_catalog, constraint_schema, constraint_name)
+                WHERE constraints.constraint_schema = 'public'
+                    AND constraints.constraint_type = 'FOREIGN KEY'
+                    AND relationships.delete_rule = 'NO ACTION'
+                """
+            )
+            .SingleAsync();
         Assert.Equal(3, restrictedRelationships);
     }
 
     [Fact]
     public async Task Database_migration_can_roll_back_and_reapply_in_an_isolated_database()
     {
-        await using var context = fixture.CreateContext($"ICFAccountingRollbackTests_{Guid.NewGuid():N}");
+        await using var context = fixture.CreateContext(
+            $"ICFAccountingRollbackTests_{Guid.NewGuid():N}"
+        );
         try
         {
             await context.Database.MigrateAsync();
@@ -92,18 +105,23 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
             await context.GetService<IMigrator>().MigrateAsync(Migration.InitialDatabase);
 
             Assert.Empty(await context.Database.GetAppliedMigrationsAsync());
-            var remainingTables = await context.Database.SqlQueryRaw<string>(
-                """
-                SELECT table_name AS "Value" FROM information_schema.tables
-                WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-                    AND table_name <> '__EFMigrationsHistory'
-                """)
+            var remainingTables = await context
+                .Database.SqlQueryRaw<string>(
+                    """
+                    SELECT table_name AS "Value" FROM information_schema.tables
+                    WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+                        AND table_name <> '__EFMigrationsHistory'
+                    """
+                )
                 .ToListAsync();
             Assert.Empty(remainingTables);
 
             await context.Database.MigrateAsync();
 
-            Assert.Equal(context.Database.GetMigrations(), await context.Database.GetAppliedMigrationsAsync());
+            Assert.Equal(
+                context.Database.GetMigrations(),
+                await context.Database.GetAppliedMigrationsAsync()
+            );
             Assert.Empty(await context.Pledgers.ToListAsync());
             Assert.Empty(await context.PledgeCategories.ToListAsync());
             Assert.Empty(await context.Pledges.ToListAsync());
@@ -121,7 +139,10 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     [InlineData(typeof(Pledge), "Pledges", 8)]
     [InlineData(typeof(PledgePayment), "PledgePayments", 8)]
     public void Model_maps_all_properties_and_client_generated_identity(
-        Type entityType, string tableName, int propertyCount)
+        Type entityType,
+        string tableName,
+        int propertyCount
+    )
     {
         using var context = fixture.CreateContext();
         var entity = context.Model.FindEntityType(entityType)!;
@@ -134,16 +155,24 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
         Assert.Equal(ValueGenerated.Never, identity.ValueGenerated);
         Assert.Equal(typeof(Guid), identity.GetTypeMapping().Converter!.ProviderClrType);
         Assert.Equal("uuid", identity.GetColumnType());
-        Assert.Equal("timestamp without time zone", entity.FindProperty("CreatedAt")!.GetColumnType());
-        Assert.Equal("timestamp without time zone", entity.FindProperty("UpdatedAt")!.GetColumnType());
+        Assert.Equal(
+            "timestamp without time zone",
+            entity.FindProperty("CreatedAt")!.GetColumnType()
+        );
+        Assert.Equal(
+            "timestamp without time zone",
+            entity.FindProperty("UpdatedAt")!.GetColumnType()
+        );
     }
 
     [Fact]
     public void Model_maps_only_required_non_cascading_foreign_keys()
     {
         using var context = fixture.CreateContext();
-        var foreignKeys = context.Model.GetEntityTypes()
-            .SelectMany(entity => entity.GetForeignKeys()).ToList();
+        var foreignKeys = context
+            .Model.GetEntityTypes()
+            .SelectMany(entity => entity.GetForeignKeys())
+            .ToList();
         Assert.Equal(3, foreignKeys.Count);
         Assert.All(foreignKeys, foreignKey =>
         {
@@ -151,8 +180,10 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
             Assert.Equal(DeleteBehavior.NoAction, foreignKey.DeleteBehavior);
             Assert.Null(foreignKey.DependentToPrincipal);
             Assert.Null(foreignKey.PrincipalToDependent);
-            Assert.Equal(typeof(Guid), Assert.Single(foreignKey.Properties)
-                .GetTypeMapping().Converter!.ProviderClrType);
+            Assert.Equal(
+                typeof(Guid),
+                Assert.Single(foreignKey.Properties).GetTypeMapping().Converter!.ProviderClrType
+            );
         });
     }
 
@@ -161,8 +192,11 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     {
         using var context = fixture.CreateContext();
         var model = context.GetService<IDesignTimeModel>().Model;
-        var strings = model.GetEntityTypes().SelectMany(entity => entity.GetProperties())
-            .Where(property => property.ClrType == typeof(string)).ToList();
+        var strings = model
+            .GetEntityTypes()
+            .SelectMany(entity => entity.GetProperties())
+            .Where(property => property.ClrType == typeof(string))
+            .ToList();
         Assert.Equal(5, strings.Count);
         Assert.All(strings, property =>
         {
@@ -190,8 +224,16 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     {
         var pledger = Pledger.Create(new string('P', 500));
         var category = PledgeCategory.Create(new string('C', 500));
-        var pledge = Pledge.Create(2026, decimal.MaxValue, pledger.Id, category.Id, new string('A', 5000));
-        var paymentDate = new DateTime(2026, 10, 27, 12, 30, 0, DateTimeKind.Unspecified).AddTicks(1230);
+        var pledge = Pledge.Create(
+            2026,
+            decimal.MaxValue,
+            pledger.Id,
+            category.Id,
+            new string('A', 5000)
+        );
+        var paymentDate = new DateTime(2026, 10, 27, 12, 30, 0, DateTimeKind.Unspecified).AddTicks(
+            1230
+        );
         var payment = PledgePayment.Create(pledge.Id, 12345678901234567890123456.78m, paymentDate);
 
         await using (var context = fixture.CreateContext())
@@ -201,10 +243,16 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
         }
 
         await using var readContext = fixture.CreateContext();
-        var storedPledger = await readContext.Pledgers.SingleAsync(entity => entity.Id == pledger.Id);
-        var storedCategory = await readContext.PledgeCategories.SingleAsync(entity => entity.Id == category.Id);
+        var storedPledger = await readContext.Pledgers.SingleAsync(entity =>
+            entity.Id == pledger.Id
+        );
+        var storedCategory = await readContext.PledgeCategories.SingleAsync(entity =>
+            entity.Id == category.Id
+        );
         var storedPledge = await readContext.Pledges.SingleAsync(entity => entity.Id == pledge.Id);
-        var storedPayment = await readContext.PledgePayments.SingleAsync(entity => entity.Id == payment.Id);
+        var storedPayment = await readContext.PledgePayments.SingleAsync(entity =>
+            entity.Id == payment.Id
+        );
 
         Assert.Equal(pledger.PledgerName, storedPledger.PledgerName);
         Assert.Equal(category.CategoryName, storedCategory.CategoryName);
@@ -238,7 +286,9 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     {
         var pledger = Pledger.Create("Timestamp precision");
         var timestamp = new DateTime(2026, 11, 14, 12, 30, 0, DateTimeKind.Utc).AddTicks(1237);
-        var expectedTimestamp = new DateTime(2026, 11, 14, 12, 30, 0, DateTimeKind.Utc).AddTicks(1230);
+        var expectedTimestamp = new DateTime(2026, 11, 14, 12, 30, 0, DateTimeKind.Utc).AddTicks(
+            1230
+        );
         await using var context = fixture.CreateContext();
         context.Pledgers.Add(pledger);
         context.Entry(pledger).Property(entity => entity.CreatedAt).CurrentValue = timestamp;
@@ -254,7 +304,9 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
         }
 
         await using var readContext = fixture.CreateContext();
-        var storedPledger = await readContext.Pledgers.SingleAsync(entity => entity.Id == pledger.Id);
+        var storedPledger = await readContext.Pledgers.SingleAsync(entity =>
+            entity.Id == pledger.Id
+        );
         Assert.Equal(expectedTimestamp, pledger.CreatedAt);
         Assert.Equal(expectedTimestamp, pledger.UpdatedAt);
         Assert.Equal(pledger.CreatedAt, storedPledger.CreatedAt);
@@ -278,22 +330,40 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
 
         await using (var context = fixture.CreateContext())
         {
-            var storedPledger = await context.Pledgers.SingleAsync(entity => entity.Id == pledger.Id);
-            var storedCategory = await context.PledgeCategories.SingleAsync(entity => entity.Id == category.Id);
+            var storedPledger = await context.Pledgers.SingleAsync(entity =>
+                entity.Id == pledger.Id
+            );
+            var storedCategory = await context.PledgeCategories.SingleAsync(entity =>
+                entity.Id == category.Id
+            );
             var storedPledge = await context.Pledges.SingleAsync(entity => entity.Id == pledge.Id);
-            var storedPayment = await context.PledgePayments.SingleAsync(entity => entity.Id == payment.Id);
+            var storedPayment = await context.PledgePayments.SingleAsync(entity =>
+                entity.Id == payment.Id
+            );
             storedPledger.Update("After", false, null, false);
             storedCategory.Update("After", false);
             storedPledge.Update(2026, 100m, pledger.Id, category.Id, "Updated pledge");
-            storedPayment.Update(pledge.Id, 20m, new DateTime(2026, 10, 27), "Updated payment", false);
+            storedPayment.Update(
+                pledge.Id,
+                20m,
+                new DateTime(2026, 10, 27),
+                "Updated payment",
+                false
+            );
             await context.SaveChangesAsync();
         }
 
         await using var readContext = fixture.CreateContext();
-        var updatedPledger = await readContext.Pledgers.SingleAsync(entity => entity.Id == pledger.Id);
-        var updatedCategory = await readContext.PledgeCategories.SingleAsync(entity => entity.Id == category.Id);
+        var updatedPledger = await readContext.Pledgers.SingleAsync(entity =>
+            entity.Id == pledger.Id
+        );
+        var updatedCategory = await readContext.PledgeCategories.SingleAsync(entity =>
+            entity.Id == category.Id
+        );
         var updatedPledge = await readContext.Pledges.SingleAsync(entity => entity.Id == pledge.Id);
-        var updatedPayment = await readContext.PledgePayments.SingleAsync(entity => entity.Id == payment.Id);
+        var updatedPayment = await readContext.PledgePayments.SingleAsync(entity =>
+            entity.Id == payment.Id
+        );
         Assert.Equal("After", updatedPledger.PledgerName);
         Assert.False(updatedPledger.Active);
         Assert.Equal("After", updatedCategory.CategoryName);
@@ -329,18 +399,29 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
         await using var deleteContext = fixture.CreateContext();
         object referenced = aggregate switch
         {
-            "Pledger" => await deleteContext.Pledgers.SingleAsync(entity => entity.Id == pledger.Id),
-            "PledgeCategory" => await deleteContext.PledgeCategories.SingleAsync(entity => entity.Id == category.Id),
-            _ => await deleteContext.Pledges.SingleAsync(entity => entity.Id == pledge.Id)
+            "Pledger" => await deleteContext.Pledgers.SingleAsync(entity =>
+                entity.Id == pledger.Id
+            ),
+            "PledgeCategory" => await deleteContext.PledgeCategories.SingleAsync(entity =>
+                entity.Id == category.Id
+            ),
+            _ => await deleteContext.Pledges.SingleAsync(entity => entity.Id == pledge.Id),
         };
         deleteContext.Remove(referenced);
-        var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() => deleteContext.SaveChangesAsync());
+        var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() =>
+            deleteContext.SaveChangesAsync()
+        );
         var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
+        Assert.Equal(
+            PostgresErrorCodes.ForeignKeyViolation,
+            Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState
+        );
 
         await using var readContext = fixture.CreateContext();
         Assert.True(await readContext.Pledgers.AnyAsync(entity => entity.Id == pledger.Id));
-        Assert.True(await readContext.PledgeCategories.AnyAsync(entity => entity.Id == category.Id));
+        Assert.True(
+            await readContext.PledgeCategories.AnyAsync(entity => entity.Id == category.Id)
+        );
         Assert.True(await readContext.Pledges.AnyAsync(entity => entity.Id == pledge.Id));
         Assert.True(await readContext.PledgePayments.AnyAsync(entity => entity.Id == payment.Id));
     }
@@ -352,7 +433,10 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     [InlineData("PledgeCategory", true)]
     [InlineData("Pledge", false)]
     [InlineData("Pledge", true)]
-    public async Task SaveChanges_rejects_missing_foreign_key_references(string missingReference, bool synchronous)
+    public async Task SaveChanges_rejects_missing_foreign_key_references(
+        string missingReference,
+        bool synchronous
+    )
     {
         var pledger = Pledger.Create("Existing pledger");
         var category = PledgeCategory.Create("Existing category");
@@ -362,20 +446,32 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
 
         if (missingReference == "Pledge")
         {
-            context.PledgePayments.Add(PledgePayment.Create(PledgeId.New(), 10m, new DateTime(2026, 10, 27)));
+            context.PledgePayments.Add(
+                PledgePayment.Create(PledgeId.New(), 10m, new DateTime(2026, 10, 27))
+            );
         }
         else
         {
-            context.Pledges.Add(Pledge.Create(2026, 100m,
-                missingReference == "Pledger" ? PledgerId.New() : pledger.Id,
-                missingReference == "PledgeCategory" ? PledgeCategoryId.New() : category.Id));
+            context.Pledges.Add(
+                Pledge.Create(
+                    2026,
+                    100m,
+                    missingReference == "Pledger" ? PledgerId.New() : pledger.Id,
+                    missingReference == "PledgeCategory" ? PledgeCategoryId.New() : category.Id
+                )
+            );
         }
 
         var exception = synchronous
             ? Assert.Throws<RelationshipConflictException>(() => context.SaveChanges())
-            : await Assert.ThrowsAsync<RelationshipConflictException>(() => context.SaveChangesAsync());
+            : await Assert.ThrowsAsync<RelationshipConflictException>(() =>
+                context.SaveChangesAsync()
+            );
         var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-        Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
+        Assert.Equal(
+            PostgresErrorCodes.ForeignKeyViolation,
+            Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState
+        );
     }
 
     [Fact]
@@ -383,14 +479,23 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
     {
         decimal[] amounts =
         [
-            0.01m, 2m, 10m, 792281625142643375935439503.35m,
-            7922816251426433759354395033.5m, decimal.MaxValue
+            0.01m,
+            2m,
+            10m,
+            792281625142643375935439503.35m,
+            7922816251426433759354395033.5m,
+            decimal.MaxValue,
         ];
         var pledger = Pledger.Create("Amount query pledger");
         var category = PledgeCategory.Create("Amount query category");
-        var pledges = amounts.Select(amount => Pledge.Create(2026, amount, pledger.Id, category.Id)).ToList();
-        var payments = amounts.Select(amount => PledgePayment.Create(
-            pledges[0].Id, amount, new DateTime(2026, 10, 27))).ToList();
+        var pledges = amounts
+            .Select(amount => Pledge.Create(2026, amount, pledger.Id, category.Id))
+            .ToList();
+        var payments = amounts
+            .Select(amount =>
+                PledgePayment.Create(pledges[0].Id, amount, new DateTime(2026, 10, 27))
+            )
+            .ToList();
         await using (var context = fixture.CreateContext())
         {
             context.AddRange(pledger, category);
@@ -403,18 +508,30 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
         var minimum = amounts[0];
         var maximum = amounts[^1];
         var paymentPledgeId = pledges[0].Id;
-        var storedPledgeAmounts = await readContext.Pledges
-            .Where(pledge => pledge.PledgerId == pledger.Id && pledge.Amount >= minimum)
-            .OrderBy(pledge => pledge.Amount).Select(pledge => pledge.Amount).ToListAsync();
-        var storedPaymentAmounts = await readContext.PledgePayments
-            .Where(payment => payment.PledgeId == paymentPledgeId && payment.Amount >= minimum)
-            .OrderBy(payment => payment.Amount).Select(payment => payment.Amount).ToListAsync();
+        var storedPledgeAmounts = await readContext
+            .Pledges.Where(pledge => pledge.PledgerId == pledger.Id && pledge.Amount >= minimum)
+            .OrderBy(pledge => pledge.Amount)
+            .Select(pledge => pledge.Amount)
+            .ToListAsync();
+        var storedPaymentAmounts = await readContext
+            .PledgePayments.Where(payment =>
+                payment.PledgeId == paymentPledgeId && payment.Amount >= minimum
+            )
+            .OrderBy(payment => payment.Amount)
+            .Select(payment => payment.Amount)
+            .ToListAsync();
         Assert.Equal(amounts, storedPledgeAmounts);
         Assert.Equal(amounts, storedPaymentAmounts);
-        Assert.True(await readContext.Pledges.AnyAsync(
-            pledge => pledge.PledgerId == pledger.Id && pledge.Amount == maximum));
-        Assert.True(await readContext.PledgePayments.AnyAsync(
-            payment => payment.PledgeId == paymentPledgeId && payment.Amount == maximum));
+        Assert.True(
+            await readContext.Pledges.AnyAsync(pledge =>
+                pledge.PledgerId == pledger.Id && pledge.Amount == maximum
+            )
+        );
+        Assert.True(
+            await readContext.PledgePayments.AnyAsync(payment =>
+                payment.PledgeId == paymentPledgeId && payment.Amount == maximum
+            )
+        );
     }
 
     [Fact]
@@ -428,12 +545,17 @@ public sealed class ICFAccountingDbContextTests(PostgresModelFixture fixture)
             context.AddRange(pledger, category, pledge);
             await context.SaveChangesAsync();
             await context.Database.ExecuteSqlInterpolatedAsync(
-                $"""UPDATE "public"."Pledges" SET "Amount" = 7922816251426433759354395033.51::numeric(38,2) WHERE "Id" = {pledge.Id.Value}""");
+                $"""UPDATE "public"."Pledges" SET "Amount" = 7922816251426433759354395033.51::numeric(38,2) WHERE "Id" = {pledge.Id.Value}"""
+            );
         }
 
         await using var readContext = fixture.CreateContext();
-        await Assert.ThrowsAsync<OverflowException>(() => readContext.Pledges
-            .Where(entity => entity.Id == pledge.Id).Select(entity => entity.Amount).SingleAsync());
+        await Assert.ThrowsAsync<OverflowException>(() =>
+            readContext
+                .Pledges.Where(entity => entity.Id == pledge.Id)
+                .Select(entity => entity.Amount)
+                .SingleAsync()
+        );
     }
 
     private static void AssertUtcTimestamp(DateTime expected, DateTime actual)

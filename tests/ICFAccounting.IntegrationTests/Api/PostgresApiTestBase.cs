@@ -21,7 +21,9 @@ public abstract class PostgresApiTestBase(PostgresModelFixture fixture) : IAsync
         await context.Database.MigrateAsync();
         await SeedAsync(context);
         using var factoryContext = CreateContext();
-        _factory = new PostgresApiFactory(factoryContext.Database.GetDbConnection().ConnectionString);
+        _factory = new PostgresApiFactory(
+            factoryContext.Database.GetDbConnection().ConnectionString
+        );
     }
 
     /// <inheritdoc />

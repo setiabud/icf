@@ -7,7 +7,15 @@ namespace ICFAccounting.UnitTests.Domain;
 
 public sealed class PledgeTests
 {
-    private static readonly DateTimeOffset StartTime = new DateTimeOffset(2026, 1, 15, 9, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StartTime = new DateTimeOffset(
+        2026,
+        1,
+        15,
+        9,
+        30,
+        0,
+        TimeSpan.Zero
+    );
 
     [Theory]
     [InlineData(2020)]
@@ -18,7 +26,14 @@ public sealed class PledgeTests
         var categoryId = PledgeCategoryId.New();
         var clock = new FakeTimeProvider(StartTime);
 
-        var pledge = Pledge.Create(year, 123.45m, pledgerId, categoryId, "  Annual pledge  ", clock);
+        var pledge = Pledge.Create(
+            year,
+            123.45m,
+            pledgerId,
+            categoryId,
+            "  Annual pledge  ",
+            clock
+        );
 
         Assert.NotEqual(Guid.Empty, pledge.Id.Value);
         Assert.Equal(year, pledge.Year);
@@ -58,25 +73,32 @@ public sealed class PledgeTests
         Assert.Equal(expected, pledge.Comment);
     }
 
-    public static TheoryData<int, decimal, PledgerId, PledgeCategoryId, string> InvalidInputs => new()
-    {
-        { 2019, 1m, PledgerId.New(), PledgeCategoryId.New(), "year" },
-        { 2100, 1m, PledgerId.New(), PledgeCategoryId.New(), "year" },
-        { 2026, 0m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
-        { 2026, -1m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
-        { 2026, 1.001m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
-        { 2026, 0.001m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
-        { 2026, 1m, default, PledgeCategoryId.New(), "pledgerId" },
-        { 2026, 1m, PledgerId.New(), default, "pledgeCategoryId" }
-    };
+    public static TheoryData<int, decimal, PledgerId, PledgeCategoryId, string> InvalidInputs =>
+        new()
+        {
+            { 2019, 1m, PledgerId.New(), PledgeCategoryId.New(), "year" },
+            { 2100, 1m, PledgerId.New(), PledgeCategoryId.New(), "year" },
+            { 2026, 0m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
+            { 2026, -1m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
+            { 2026, 1.001m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
+            { 2026, 0.001m, PledgerId.New(), PledgeCategoryId.New(), "amount" },
+            { 2026, 1m, default, PledgeCategoryId.New(), "pledgerId" },
+            { 2026, 1m, PledgerId.New(), default, "pledgeCategoryId" },
+        };
 
     [Theory]
     [MemberData(nameof(InvalidInputs))]
     public void Create_with_invalid_input_throws(
-        int year, decimal amount, PledgerId pledgerId, PledgeCategoryId categoryId, string parameter)
+        int year,
+        decimal amount,
+        PledgerId pledgerId,
+        PledgeCategoryId categoryId,
+        string parameter
+    )
     {
-        var exception = Assert.ThrowsAny<ArgumentException>(
-            () => Pledge.Create(year, amount, pledgerId, categoryId));
+        var exception = Assert.ThrowsAny<ArgumentException>(() =>
+            Pledge.Create(year, amount, pledgerId, categoryId)
+        );
 
         Assert.Equal(parameter, exception.ParamName);
     }
@@ -84,10 +106,22 @@ public sealed class PledgeTests
     [Theory]
     [MemberData(nameof(InvalidInputs))]
     public void Update_with_invalid_input_preserves_all_state(
-        int year, decimal amount, PledgerId pledgerId, PledgeCategoryId categoryId, string parameter)
+        int year,
+        decimal amount,
+        PledgerId pledgerId,
+        PledgeCategoryId categoryId,
+        string parameter
+    )
     {
         var clock = new FakeTimeProvider(StartTime);
-        var pledge = Pledge.Create(2026, 25m, PledgerId.New(), PledgeCategoryId.New(), "Original", clock);
+        var pledge = Pledge.Create(
+            2026,
+            25m,
+            PledgerId.New(),
+            PledgeCategoryId.New(),
+            "Original",
+            clock
+        );
         var originalId = pledge.Id;
         var originalPledgerId = pledge.PledgerId;
         var originalCategoryId = pledge.PledgeCategoryId;
@@ -95,8 +129,9 @@ public sealed class PledgeTests
         var originalUpdatedAt = pledge.UpdatedAt;
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        var exception = Assert.ThrowsAny<ArgumentException>(
-            () => pledge.Update(year, amount, pledgerId, categoryId, "Changed", clock));
+        var exception = Assert.ThrowsAny<ArgumentException>(() =>
+            pledge.Update(year, amount, pledgerId, categoryId, "Changed", clock)
+        );
 
         Assert.Equal(parameter, exception.ParamName);
         Assert.Equal(originalId, pledge.Id);
@@ -113,7 +148,14 @@ public sealed class PledgeTests
     public void Update_changes_fields_and_preserves_identity_and_creation_time()
     {
         var clock = new FakeTimeProvider(StartTime);
-        var pledge = Pledge.Create(2026, 25m, PledgerId.New(), PledgeCategoryId.New(), "Original", clock);
+        var pledge = Pledge.Create(
+            2026,
+            25m,
+            PledgerId.New(),
+            PledgeCategoryId.New(),
+            "Original",
+            clock
+        );
         var originalId = pledge.Id;
         var originalCreatedAt = pledge.CreatedAt;
         var pledgerId = PledgerId.New();

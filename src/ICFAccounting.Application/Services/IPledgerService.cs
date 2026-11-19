@@ -27,7 +27,10 @@ public interface IPledgerService
     /// </summary>
     /// <param name="query">The pagination and sorting options, or <see langword="null"/> to use defaults.</param>
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
-    Task<PagedPledgersResult> GetAllAsync(PledgerQuery? query = null, CancellationToken cancellationToken = default);
+    Task<PagedPledgersResult> GetAllAsync(
+        PledgerQuery? query = null,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Updates a pledger's details and notification preference.
@@ -45,7 +48,8 @@ public interface IPledgerService
         bool active,
         string? email,
         bool enableNotification,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Removes a pledger by its identifier.

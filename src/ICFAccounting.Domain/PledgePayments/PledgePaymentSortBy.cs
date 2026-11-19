@@ -6,5 +6,5 @@ namespace ICFAccounting.Domain.PledgePayments;
 public enum PledgePaymentSortBy
 {
     PaymentDate,
-    Amount
+    Amount,
 }

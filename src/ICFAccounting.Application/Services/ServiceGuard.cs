@@ -13,7 +13,8 @@ internal static class ServiceGuard
     public static void ThrowIfEmptyId<TId>(
         TId id,
         string entityName,
-        [CallerArgumentExpression(nameof(id))] string? paramName = null)
+        [CallerArgumentExpression(nameof(id))] string? paramName = null
+    )
         where TId : struct, IEquatable<TId>
     {
         if (id.Equals(default))

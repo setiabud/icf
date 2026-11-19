@@ -43,8 +43,7 @@ public sealed class GetByIdAsyncTests
     {
         var fixture = new PledgerServiceTestFixture();
 
-        await Assert.ThrowsAsync<ArgumentException>(
-            () => fixture.Service.GetByIdAsync(default));
+        await Assert.ThrowsAsync<ArgumentException>(() => fixture.Service.GetByIdAsync(default));
 
         A.CallTo(() => fixture.Repository.GetByIdAsync(A<PledgerId>._, A<CancellationToken>._))
             .MustNotHaveHappened();

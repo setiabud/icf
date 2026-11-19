@@ -12,31 +12,52 @@ internal sealed class PledgeConfiguration : IEntityTypeConfiguration<Pledge>
     {
         builder.ToTable("Pledges");
         builder.HasKey(pledge => pledge.Id);
-        builder.Property(pledge => pledge.Id)
+        builder
+            .Property(pledge => pledge.Id)
             .HasConversion(identity => identity.Value, value => new PledgeId(value))
             .ValueGeneratedNever();
-        builder.Property(pledge => pledge.PledgerId)
+        builder
+            .Property(pledge => pledge.PledgerId)
             .HasConversion(identity => identity.Value, value => new PledgerId(value));
-        builder.Property(pledge => pledge.PledgeCategoryId)
+        builder
+            .Property(pledge => pledge.PledgeCategoryId)
             .HasConversion(identity => identity.Value, value => new PledgeCategoryId(value));
         builder.Property(pledge => pledge.Amount).HasColumnType("numeric");
         builder.Property(pledge => pledge.Comment).HasColumnType("text");
-        builder.Property(pledge => pledge.CreatedAt)
+        builder
+            .Property(pledge => pledge.CreatedAt)
             .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
-        builder.Property(pledge => pledge.UpdatedAt)
+        builder
+            .Property(pledge => pledge.UpdatedAt)
             .HasColumnType("timestamp without time zone")
             .HasConversion<UtcDateTimeConverter>();
 
-        builder.HasOne<Pledger>().WithMany()
+        builder
+            .HasOne<Pledger>()
+            .WithMany()
             .HasForeignKey(pledge => pledge.PledgerId)
             .OnDelete(DeleteBehavior.NoAction);
-        builder.HasOne<PledgeCategory>().WithMany()
+        builder
+            .HasOne<PledgeCategory>()
+            .WithMany()
             .HasForeignKey(pledge => pledge.PledgeCategoryId)
             .OnDelete(DeleteBehavior.NoAction);
-        builder.HasIndex(pledge => new { pledge.PledgerId, pledge.Year, pledge.Id })
+        builder
+            .HasIndex(pledge => new
+            {
+                pledge.PledgerId,
+                pledge.Year,
+                pledge.Id,
+            })
             .IsDescending(false, true, true);
-        builder.HasIndex(pledge => new { pledge.PledgeCategoryId, pledge.Year, pledge.Id })
+        builder
+            .HasIndex(pledge => new
+            {
+                pledge.PledgeCategoryId,
+                pledge.Year,
+                pledge.Id,
+            })
             .IsDescending(false, true, true);
     }
 }

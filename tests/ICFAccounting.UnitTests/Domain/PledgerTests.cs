@@ -5,7 +5,15 @@ namespace ICFAccounting.UnitTests.Domain;
 
 public sealed class PledgerTests
 {
-    private static readonly DateTimeOffset StartTime = new DateTimeOffset(2026, 1, 15, 9, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StartTime = new DateTimeOffset(
+        2026,
+        1,
+        15,
+        9,
+        30,
+        0,
+        TimeSpan.Zero
+    );
 
     [Fact]
     public void Create_with_name_initializes_identity_and_audit_fields()
@@ -69,11 +77,20 @@ public sealed class PledgerTests
     {
         var clock = new FakeTimeProvider(StartTime);
         var pledger = Pledger.Create(
-            "Community Fund", clock, "community@example.org", enableNotification: true);
+            "Community Fund",
+            clock,
+            "community@example.org",
+            enableNotification: true
+        );
 
         clock.Advance(TimeSpan.FromMinutes(5));
         pledger.Update(
-            "Education Fund", false, "education@example.org", enableNotification: false, timeProvider: clock);
+            "Education Fund",
+            false,
+            "education@example.org",
+            enableNotification: false,
+            timeProvider: clock
+        );
 
         Assert.Equal("education@example.org", pledger.Email);
         Assert.False(pledger.EnableNotification);
@@ -97,8 +114,9 @@ public sealed class PledgerTests
         var pledger = Pledger.Create("Community Fund", email: "community@example.org");
         var originalUpdatedAt = pledger.UpdatedAt;
 
-        Assert.Throws<ArgumentException>(
-            () => pledger.Update("Education Fund", false, email: email, enableNotification: true));
+        Assert.Throws<ArgumentException>(() =>
+            pledger.Update("Education Fund", false, email: email, enableNotification: true)
+        );
 
         Assert.Equal("Community Fund", pledger.PledgerName);
         Assert.True(pledger.Active);

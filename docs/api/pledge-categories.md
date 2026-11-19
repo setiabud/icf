@@ -35,13 +35,13 @@ Success returns `201 Created` with a `Location: /pledge-categories/{id}`
 header and a pledge category response containing the fields documented under
 GET by ID below. The Location URL can be used to retrieve the created category.
 
-| Condition | Response |
-| --- | --- |
-| Pledge category created | `201 Created` with a Location header and pledge category details |
+| Condition                                         | Response                                                                                                                                         |
+|---------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| Pledge category created                           | `201 Created` with a Location header and pledge category details                                                                                 |
 | `categoryName` is absent or the body is malformed | `400 Bad Request` with ASP.NET Core's standard ProblemDetails body (request binding fails before the endpoint runs, so there is no custom title) |
-| `categoryName` is null, empty, or whitespace | `400 Bad Request` with title `Invalid pledge category name` |
-| The domain or service rejects the category | `400 Bad Request` with title `Invalid pledge category` |
-| Unexpected creation failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| `categoryName` is null, empty, or whitespace      | `400 Bad Request` with title `Invalid pledge category name`                                                                                      |
+| The domain or service rejects the category        | `400 Bad Request` with title `Invalid pledge category`                                                                                           |
+| Unexpected creation failure                       | `500 Internal Server Error` with a sanitized ProblemDetails body                                                                                 |
 
 ## GET /pledge-categories
 
@@ -49,32 +49,32 @@ Returns all pledge categories, including inactive categories, as a JSON array.
 Each item has the same response fields as GET by ID below. No pagination or
 sorting parameters are supported, and no particular order is guaranteed.
 
-| Condition | Response |
-| --- | --- |
-| Pledge categories exist | `200 OK` with an array of pledge category details |
-| No pledge categories exist | `200 OK` with `[]` |
-| The service throws an `ArgumentException` (defensive; this endpoint takes no input, so not expected in practice) | `400 Bad Request` with title `Invalid pledge category query` |
-| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                                                                                        | Response                                                         |
+|------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| Pledge categories exist                                                                                          | `200 OK` with an array of pledge category details                |
+| No pledge categories exist                                                                                       | `200 OK` with `[]`                                               |
+| The service throws an `ArgumentException` (defensive; this endpoint takes no input, so not expected in practice) | `400 Bad Request` with title `Invalid pledge category query`     |
+| Unexpected retrieval failure                                                                                     | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## GET /pledge-categories/{id}
 
 Returns `200 OK` with a single pledge category:
 
-| Field | Type | Description |
-| --- | --- | --- |
-| `id` | UUID | Pledge category identity |
-| `categoryName` | string | Category name |
-| `active` | boolean | Whether the category is active |
-| `createdAt` | UTC timestamp | Creation time |
-| `updatedAt` | UTC timestamp | Last update time |
+| Field          | Type          | Description                    |
+|----------------|---------------|--------------------------------|
+| `id`           | UUID          | Pledge category identity       |
+| `categoryName` | string        | Category name                  |
+| `active`       | boolean       | Whether the category is active |
+| `createdAt`    | UTC timestamp | Creation time                  |
+| `updatedAt`    | UTC timestamp | Last update time               |
 
-| Condition | Response |
-| --- | --- |
-| Pledge category exists | `200 OK` with the pledge category details |
-| No pledge category with that ID | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge category ID` |
-| Unexpected retrieval failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                             | Response                                                         |
+|-------------------------------------------------------|------------------------------------------------------------------|
+| Pledge category exists                                | `200 OK` with the pledge category details                        |
+| No pledge category with that ID                       | `404 Not Found`                                                  |
+| `id` is not a GUID                                    | `404 Not Found` (route does not match)                           |
+| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge category ID`        |
+| Unexpected retrieval failure                          | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## PUT /pledge-categories/{id}
 
@@ -93,27 +93,27 @@ Request:
 Both fields are required. `categoryName` must not be null, empty, or whitespace,
 and `active` must be `true` or `false`.
 
-| Condition | Response |
-| --- | --- |
-| Pledge category updated | `200 OK` with the updated pledge category details |
-| No pledge category with that ID | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID | `400 Bad Request` with title `Invalid pledge category ID` |
-| The body is invalid, or the service rejects the update | `400 Bad Request` with title `Invalid pledge category update` |
-| Unexpected lookup or update failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                              | Response                                                         |
+|--------------------------------------------------------|------------------------------------------------------------------|
+| Pledge category updated                                | `200 OK` with the updated pledge category details                |
+| No pledge category with that ID                        | `404 Not Found`                                                  |
+| `id` is not a GUID                                     | `404 Not Found` (route does not match)                           |
+| `id` is the empty GUID                                 | `400 Bad Request` with title `Invalid pledge category ID`        |
+| The body is invalid, or the service rejects the update | `400 Bad Request` with title `Invalid pledge category update`    |
+| Unexpected lookup or update failure                    | `500 Internal Server Error` with a sanitized ProblemDetails body |
 
 ## DELETE /pledge-categories/{id}
 
 Removes the pledge category with the given ID. There is no request body.
 
-| Condition | Response |
-| --- | --- |
-| Pledge category removed | `204 No Content` with an empty body |
-| No pledge category with that ID, including one already removed | `404 Not Found` |
-| `id` is not a GUID | `404 Not Found` (route does not match) |
-| `id` is the empty GUID, or the service rejects the ID | `400 Bad Request` with title `Invalid pledge category ID` |
-| Pledges reference the category | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no related records are removed |
-| Unexpected removal failure | `500 Internal Server Error` with a sanitized ProblemDetails body |
+| Condition                                                      | Response                                                                                           |
+|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| Pledge category removed                                        | `204 No Content` with an empty body                                                                |
+| No pledge category with that ID, including one already removed | `404 Not Found`                                                                                    |
+| `id` is not a GUID                                             | `404 Not Found` (route does not match)                                                             |
+| `id` is the empty GUID, or the service rejects the ID          | `400 Bad Request` with title `Invalid pledge category ID`                                          |
+| Pledges reference the category                                 | `409 Conflict` with sanitized relationship-conflict ProblemDetails; no related records are removed |
+| Unexpected removal failure                                     | `500 Internal Server Error` with a sanitized ProblemDetails body                                   |
 
 The repository throws `KeyNotFoundException` for an unknown ID (passed through
 by the service), which the endpoint translates into `404 Not Found`.

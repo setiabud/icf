@@ -45,6 +45,8 @@ public sealed class PledgerQueryTests
     [InlineData(PledgerSortBy.PledgerName, (SortOrder)2)]
     public void Constructor_rejects_unsupported_sorting(PledgerSortBy sortBy, SortOrder sortOrder)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new PledgerQuery(sortBy: sortBy, sortOrder: sortOrder));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new PledgerQuery(sortBy: sortBy, sortOrder: sortOrder)
+        );
     }
 }

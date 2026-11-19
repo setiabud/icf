@@ -12,8 +12,9 @@ public sealed class PledgePaymentServiceConstructorTests
     {
         var logger = A.Fake<ILogger<PledgePaymentService>>();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PledgePaymentService(null!, logger, TimeProvider.System));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PledgePaymentService(null!, logger, TimeProvider.System)
+        );
     }
 
     [Fact]
@@ -21,8 +22,9 @@ public sealed class PledgePaymentServiceConstructorTests
     {
         var repository = A.Fake<IPledgePaymentRepository>();
 
-        Assert.Throws<ArgumentNullException>(
-            () => new PledgePaymentService(repository, null!, TimeProvider.System));
+        Assert.Throws<ArgumentNullException>(() =>
+            new PledgePaymentService(repository, null!, TimeProvider.System)
+        );
     }
 
     [Fact]
@@ -31,8 +33,9 @@ public sealed class PledgePaymentServiceConstructorTests
         var repository = A.Fake<IPledgePaymentRepository>();
         var logger = A.Fake<ILogger<PledgePaymentService>>();
 
-        var exception = Assert.Throws<ArgumentNullException>(
-            () => new PledgePaymentService(repository, logger, null!));
+        var exception = Assert.Throws<ArgumentNullException>(() =>
+            new PledgePaymentService(repository, logger, null!)
+        );
 
         Assert.Equal("timeProvider", exception.ParamName);
     }

@@ -53,14 +53,16 @@ public static class PledgeCategoryEndpointExtensions
         CreatePledgeCategoryRequest request,
         IPledgeCategoryService pledgeCategoryService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(request.CategoryName))
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category name",
-                detail: "CategoryName is required and cannot be empty or whitespace.");
+                detail: "CategoryName is required and cannot be empty or whitespace."
+            );
         }
 
         try
@@ -69,29 +71,37 @@ public static class PledgeCategoryEndpointExtensions
             await pledgeCategoryService.AddAsync(pledgeCategory, cancellationToken);
 
             return Results.Created(
-                $"/pledge-categories/{pledgeCategory.Id.Value}", ToPledgeCategoryResponse(pledgeCategory));
+                $"/pledge-categories/{pledgeCategory.Id.Value}",
+                ToPledgeCategoryResponse(pledgeCategory)
+            );
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while creating a pledge category.");
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while creating a pledge category."
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge category could not be created.");
+                detail: "Pledge category could not be created."
+            );
         }
     }
 
     private static async Task<IResult> GetPledgeCategoriesAsync(
         IPledgeCategoryService pledgeCategoryService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -103,15 +113,20 @@ public static class PledgeCategoryEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category query",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while retrieving pledge categories.");
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while retrieving pledge categories."
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge categories could not be retrieved.");
+                detail: "Pledge categories could not be retrieved."
+            );
         }
     }
 
@@ -119,14 +134,16 @@ public static class PledgeCategoryEndpointExtensions
         Guid id,
         IPledgeCategoryService pledgeCategoryService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category ID",
-                detail: "Pledge category ID cannot be empty.");
+                detail: "Pledge category ID cannot be empty."
+            );
         }
 
         try
@@ -147,16 +164,21 @@ public static class PledgeCategoryEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
-                exception, "An unexpected error occurred while removing pledge category {PledgeCategoryId}.", id);
+                exception,
+                "An unexpected error occurred while removing pledge category {PledgeCategoryId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge category could not be removed.");
+                detail: "Pledge category could not be removed."
+            );
         }
     }
 
@@ -165,14 +187,16 @@ public static class PledgeCategoryEndpointExtensions
         UpdatePledgeCategoryRequest request,
         IPledgeCategoryService pledgeCategoryService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category ID",
-                detail: "Pledge category ID cannot be empty.");
+                detail: "Pledge category ID cannot be empty."
+            );
         }
 
         if (string.IsNullOrWhiteSpace(request.CategoryName) || request.Active is not { } active)
@@ -180,13 +204,18 @@ public static class PledgeCategoryEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category update",
-                detail: "CategoryName is required and cannot be empty or whitespace, and Active is required.");
+                detail: "CategoryName is required and cannot be empty or whitespace, and Active is required."
+            );
         }
 
         try
         {
             var pledgeCategory = await pledgeCategoryService.UpdateAsync(
-                new PledgeCategoryId(id), request.CategoryName, active, cancellationToken);
+                new PledgeCategoryId(id),
+                request.CategoryName,
+                active,
+                cancellationToken
+            );
             return pledgeCategory is null
                 ? Results.NotFound()
                 : Results.Ok(ToPledgeCategoryResponse(pledgeCategory));
@@ -196,16 +225,21 @@ public static class PledgeCategoryEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category update",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
-                exception, "An unexpected error occurred while updating pledge category {PledgeCategoryId}.", id);
+                exception,
+                "An unexpected error occurred while updating pledge category {PledgeCategoryId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge category could not be updated.");
+                detail: "Pledge category could not be updated."
+            );
         }
     }
 
@@ -213,20 +247,24 @@ public static class PledgeCategoryEndpointExtensions
         Guid id,
         IPledgeCategoryService pledgeCategoryService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category ID",
-                detail: "Pledge category ID cannot be empty.");
+                detail: "Pledge category ID cannot be empty."
+            );
         }
 
         try
         {
             var pledgeCategory = await pledgeCategoryService.GetByIdAsync(
-                new PledgeCategoryId(id), cancellationToken);
+                new PledgeCategoryId(id),
+                cancellationToken
+            );
             return pledgeCategory is null
                 ? Results.NotFound()
                 : Results.Ok(ToPledgeCategoryResponse(pledgeCategory));
@@ -236,16 +274,21 @@ public static class PledgeCategoryEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledge category ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             logger.LogError(
-                exception, "An unexpected error occurred while retrieving pledge category {PledgeCategoryId}.", id);
+                exception,
+                "An unexpected error occurred while retrieving pledge category {PledgeCategoryId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledge category could not be retrieved.");
+                detail: "Pledge category could not be retrieved."
+            );
         }
     }
 
@@ -257,7 +300,7 @@ public static class PledgeCategoryEndpointExtensions
             CategoryName = pledgeCategory.CategoryName,
             Active = pledgeCategory.Active,
             CreatedAt = pledgeCategory.CreatedAt,
-            UpdatedAt = pledgeCategory.UpdatedAt
+            UpdatedAt = pledgeCategory.UpdatedAt,
         };
     }
 }

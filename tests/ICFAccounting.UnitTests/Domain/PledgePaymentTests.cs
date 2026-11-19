@@ -15,7 +15,13 @@ public sealed class PledgePaymentTests
         var paymentDate = new DateTime(2026, 1, 10);
         var clock = new FakeTimeProvider(StartTime);
 
-        var payment = PledgePayment.Create(pledgeId, 123.45m, paymentDate, "  Monthly payment  ", clock);
+        var payment = PledgePayment.Create(
+            pledgeId,
+            123.45m,
+            paymentDate,
+            "  Monthly payment  ",
+            clock
+        );
 
         Assert.NotEqual(Guid.Empty, payment.Id.Value);
         Assert.Equal(pledgeId, payment.PledgeId);
@@ -52,19 +58,21 @@ public sealed class PledgePaymentTests
         Assert.Equal(payment.CreatedAt, payment.UpdatedAt);
     }
 
-    public static TheoryData<decimal, string> InvalidAmounts => new()
-    {
-        { 0m, "amount" },
-        { -1m, "amount" },
-        { 1.001m, "amount" }
-    };
+    public static TheoryData<decimal, string> InvalidAmounts =>
+        new()
+        {
+            { 0m, "amount" },
+            { -1m, "amount" },
+            { 1.001m, "amount" },
+        };
 
     [Theory]
     [MemberData(nameof(InvalidAmounts))]
     public void Create_with_invalid_amount_throws(decimal amount, string parameter)
     {
-        var exception = Assert.ThrowsAny<ArgumentException>(
-            () => PledgePayment.Create(PledgeId.New(), amount, StartTime.UtcDateTime));
+        var exception = Assert.ThrowsAny<ArgumentException>(() =>
+            PledgePayment.Create(PledgeId.New(), amount, StartTime.UtcDateTime)
+        );
 
         Assert.Equal(parameter, exception.ParamName);
     }
@@ -72,8 +80,9 @@ public sealed class PledgePaymentTests
     [Fact]
     public void Create_with_empty_pledge_id_throws()
     {
-        var exception = Assert.Throws<ArgumentException>(
-            () => PledgePayment.Create(default, 1m, StartTime.UtcDateTime));
+        var exception = Assert.Throws<ArgumentException>(() =>
+            PledgePayment.Create(default, 1m, StartTime.UtcDateTime)
+        );
 
         Assert.Equal("pledgeId", exception.ParamName);
     }
@@ -81,8 +90,9 @@ public sealed class PledgePaymentTests
     [Fact]
     public void Create_with_default_payment_date_throws()
     {
-        var exception = Assert.Throws<ArgumentException>(
-            () => PledgePayment.Create(PledgeId.New(), 1m, default));
+        var exception = Assert.Throws<ArgumentException>(() =>
+            PledgePayment.Create(PledgeId.New(), 1m, default)
+        );
 
         Assert.Equal("paymentDate", exception.ParamName);
     }
@@ -99,7 +109,14 @@ public sealed class PledgePaymentTests
         var originalCreatedAt = payment.CreatedAt;
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        payment.Update(updatedPledgeId, 25.50m, new DateTime(2026, 1, 20), "  Updated  ", false, clock);
+        payment.Update(
+            updatedPledgeId,
+            25.50m,
+            new DateTime(2026, 1, 20),
+            "  Updated  ",
+            false,
+            clock
+        );
 
         Assert.Equal(originalId, payment.Id);
         Assert.Equal(updatedPledgeId, payment.PledgeId);
@@ -115,15 +132,22 @@ public sealed class PledgePaymentTests
     public void Update_with_invalid_amount_throws_and_preserves_state()
     {
         var clock = new FakeTimeProvider(StartTime);
-        var payment = PledgePayment.Create(PledgeId.New(), 10m, StartTime.UtcDateTime, "Original", clock);
+        var payment = PledgePayment.Create(
+            PledgeId.New(),
+            10m,
+            StartTime.UtcDateTime,
+            "Original",
+            clock
+        );
         var originalId = payment.Id;
         var originalPledgeId = payment.PledgeId;
         var originalCreatedAt = payment.CreatedAt;
         var originalUpdatedAt = payment.UpdatedAt;
         clock.Advance(TimeSpan.FromMinutes(5));
 
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => payment.Update(payment.PledgeId, 0m, StartTime.UtcDateTime, "Changed", false, clock));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            payment.Update(payment.PledgeId, 0m, StartTime.UtcDateTime, "Changed", false, clock)
+        );
 
         Assert.Equal(originalId, payment.Id);
         Assert.Equal(originalPledgeId, payment.PledgeId);

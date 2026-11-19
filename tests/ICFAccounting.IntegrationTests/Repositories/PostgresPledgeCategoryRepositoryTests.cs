@@ -8,7 +8,8 @@ using Npgsql;
 namespace ICFAccounting.IntegrationTests.Repositories;
 
 [Collection(nameof(PostgresTestCollection))]
-public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture fixture) : PostgresRepositoryTestBase(fixture)
+public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture fixture)
+    : PostgresRepositoryTestBase(fixture)
 {
     [Theory]
     [InlineData(false)]
@@ -55,7 +56,9 @@ public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture f
         var readRepository = new PostgresPledgeCategoryRepository(readContext);
         Assert.Null(await readRepository.GetByIdAsync(category.Id));
         Assert.Empty(await readRepository.GetAllAsync());
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => readRepository.RemoveAsync(category.Id));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            readRepository.RemoveAsync(category.Id)
+        );
     }
 
     [Fact]
@@ -81,11 +84,13 @@ public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture f
             token => repository.UpdateAsync(category, token),
             token => repository.GetByIdAsync(category.Id, token),
             token => repository.GetAllAsync(token),
-            token => repository.RemoveAsync(category.Id, token)
+            token => repository.RemoveAsync(category.Id, token),
         ];
         foreach (var operation in operations)
         {
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => operation(cancellation.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                operation(cancellation.Token)
+            );
         }
 
         Assert.Empty(context.ChangeTracker.Entries());
@@ -99,10 +104,14 @@ public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture f
         await using (var context = CreateContext())
         {
             var repository = new PostgresPledgeCategoryRepository(context);
-            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(
-                () => repository.RemoveAsync(pledge.PledgeCategoryId));
+            var exception = await Assert.ThrowsAsync<RelationshipConflictException>(() =>
+                repository.RemoveAsync(pledge.PledgeCategoryId)
+            );
             var persistenceFailure = Assert.IsType<DbUpdateException>(exception.InnerException);
-            Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState);
+            Assert.Equal(
+                PostgresErrorCodes.ForeignKeyViolation,
+                Assert.IsType<PostgresException>(persistenceFailure.InnerException).SqlState
+            );
         }
 
         await AssertRelatedRecordsExistAsync(pledge, payment);
@@ -122,7 +131,9 @@ public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture f
         }
 
         await using var readContext = CreateContext();
-        var stored = await new PostgresPledgeCategoryRepository(readContext).GetByIdAsync(category.Id);
+        var stored = await new PostgresPledgeCategoryRepository(readContext).GetByIdAsync(
+            category.Id
+        );
         Assert.NotNull(stored);
         Assert.Equal("Updated tracked category", stored.CategoryName);
         Assert.False(stored.Active);
@@ -150,7 +161,9 @@ public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture f
         var remaining = PledgeCategory.Create("Remaining category");
         await repository.AddAsync(remaining);
         await repository.RemoveAsync(original.Id);
-        await Assert.ThrowsAsync<KeyNotFoundException>(() => repository.RemoveAsync(PledgeCategoryId.New()));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() =>
+            repository.RemoveAsync(PledgeCategoryId.New())
+        );
 
         Assert.Equal(original.Id, Assert.Single(snapshot).Id);
         Assert.Equal(remaining.Id, Assert.Single(await repository.GetAllAsync()).Id);
@@ -168,13 +181,19 @@ public sealed class PostgresPledgeCategoryRepositoryTests(PostgresModelFixture f
             category.Update("Canceled category", false);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.UpdateAsync(category, cancellation.Token));
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => repository.RemoveAsync(category.Id, cancellation.Token));
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.UpdateAsync(category, cancellation.Token)
+            );
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                repository.RemoveAsync(category.Id, cancellation.Token)
+            );
             Assert.Empty(context.ChangeTracker.Entries());
         }
 
         await using var readContext = CreateContext();
-        var stored = await new PostgresPledgeCategoryRepository(readContext).GetByIdAsync(pledge.PledgeCategoryId);
+        var stored = await new PostgresPledgeCategoryRepository(readContext).GetByIdAsync(
+            pledge.PledgeCategoryId
+        );
         Assert.NotNull(stored);
         Assert.Equal("Test category", stored.CategoryName);
         Assert.True(stored.Active);

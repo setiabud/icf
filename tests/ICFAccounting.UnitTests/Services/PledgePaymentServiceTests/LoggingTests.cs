@@ -36,7 +36,8 @@ public sealed class LoggingTests
     public async Task GetByIdAsync_logs_retrieved_payment()
     {
         var payment = PledgePaymentServiceTestFixture.CreatePayment();
-        A.CallTo(() => _repository.GetByIdAsync(payment.Id, A<CancellationToken>._)).Returns(payment);
+        A.CallTo(() => _repository.GetByIdAsync(payment.Id, A<CancellationToken>._))
+            .Returns(payment);
 
         await _service.GetByIdAsync(payment.Id);
 
@@ -47,7 +48,8 @@ public sealed class LoggingTests
     public async Task GetByIdAsync_logs_payment_not_found()
     {
         var id = PledgePaymentId.New();
-        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._)).Returns((PledgePayment?)null);
+        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._))
+            .Returns((PledgePayment?)null);
 
         await _service.GetByIdAsync(id);
 
@@ -58,12 +60,24 @@ public sealed class LoggingTests
     public async Task GetByPledgeAsync_logs_retrieved_count()
     {
         var pledgeId = PledgeId.New();
-        A.CallTo(() => _repository.GetByPledgeAsync(pledgeId, A<PledgePaymentQuery?>._, A<CancellationToken>._))
-            .Returns(PagedPledgePaymentsResult.Create(
-                [PledgePaymentServiceTestFixture.CreatePayment(), PledgePaymentServiceTestFixture.CreatePayment()],
-                1,
-                20,
-                2));
+        A.CallTo(() =>
+                _repository.GetByPledgeAsync(
+                    pledgeId,
+                    A<PledgePaymentQuery?>._,
+                    A<CancellationToken>._
+                )
+            )
+            .Returns(
+                PagedPledgePaymentsResult.Create(
+                    [
+                        PledgePaymentServiceTestFixture.CreatePayment(),
+                        PledgePaymentServiceTestFixture.CreatePayment(),
+                    ],
+                    1,
+                    20,
+                    2
+                )
+            );
 
         await _service.GetByPledgeAsync(pledgeId);
 
@@ -74,9 +88,17 @@ public sealed class LoggingTests
     public async Task UpdateAsync_logs_updated_payment()
     {
         var payment = PledgePaymentServiceTestFixture.CreatePayment();
-        A.CallTo(() => _repository.GetByIdAsync(payment.Id, A<CancellationToken>._)).Returns(payment);
+        A.CallTo(() => _repository.GetByIdAsync(payment.Id, A<CancellationToken>._))
+            .Returns(payment);
 
-        await _service.UpdateAsync(payment.Id, payment.PledgeId, 25m, new DateTime(2026, 1, 20), null, true);
+        await _service.UpdateAsync(
+            payment.Id,
+            payment.PledgeId,
+            25m,
+            new DateTime(2026, 1, 20),
+            null,
+            true
+        );
 
         AssertSingleLog(4005, $"Updated pledge payment {payment.Id}.");
     }
@@ -85,7 +107,8 @@ public sealed class LoggingTests
     public async Task UpdateAsync_logs_payment_not_found_for_update()
     {
         var id = PledgePaymentId.New();
-        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._)).Returns((PledgePayment?)null);
+        A.CallTo(() => _repository.GetByIdAsync(id, A<CancellationToken>._))
+            .Returns((PledgePayment?)null);
 
         await _service.UpdateAsync(id, PledgeId.New(), 25m, new DateTime(2026, 1, 20), null, true);
 
@@ -106,7 +129,8 @@ public sealed class LoggingTests
     public async Task RemoveAsync_when_repository_throws_does_not_log_removal()
     {
         var id = PledgePaymentId.New();
-        A.CallTo(() => _repository.RemoveAsync(id, A<CancellationToken>._)).ThrowsAsync(new KeyNotFoundException());
+        A.CallTo(() => _repository.RemoveAsync(id, A<CancellationToken>._))
+            .ThrowsAsync(new KeyNotFoundException());
 
         await Assert.ThrowsAsync<KeyNotFoundException>(() => _service.RemoveAsync(id));
 

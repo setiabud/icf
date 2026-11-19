@@ -23,7 +23,8 @@ public static class CorsExtensions
     public static IServiceCollection AddDevelopmentCors(
         this IServiceCollection services,
         IConfiguration configuration,
-        IHostEnvironment environment)
+        IHostEnvironment environment
+    )
     {
         if (!environment.IsDevelopment())
         {
@@ -31,14 +32,20 @@ public static class CorsExtensions
         }
 
         var configuredOrigins = configuration.GetSection(DEVELOPMENT_ORIGINS_KEY).Get<string[]>();
-        var origins = configuredOrigins is { Length: > 0 } ? configuredOrigins : DefaultDevelopmentOrigins;
+        var origins = configuredOrigins is { Length: > 0 }
+            ? configuredOrigins
+            : DefaultDevelopmentOrigins;
 
-        services.AddCors(options => options.AddPolicy(DEVELOPMENT_POLICY_NAME, policy => policy
-            .WithOrigins(origins)
-            .WithMethods("GET", "POST", "PUT", "DELETE")
-            .WithHeaders("Content-Type", "Accept", "X-CSRF-TOKEN")
-            .AllowCredentials()
-            .WithExposedHeaders("Location")));
+        services.AddCors(options =>
+            options.AddPolicy(DEVELOPMENT_POLICY_NAME, policy =>
+                policy
+                    .WithOrigins(origins)
+                    .WithMethods("GET", "POST", "PUT", "DELETE")
+                    .WithHeaders("Content-Type", "Accept", "X-CSRF-TOKEN")
+                    .AllowCredentials()
+                    .WithExposedHeaders("Location")
+            )
+        );
 
         return services;
     }

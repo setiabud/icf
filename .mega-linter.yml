@@ -22,12 +22,14 @@ DISABLE:
   - COPYPASTE # Uncomment to disable checks of excessive copy-pastes
 
 DISABLE_LINTERS:
-  - BASH
   - BASH_EXEC
   - BASH_SHFMT
   - ACTION_ZIZMOR
   - CSHARP_ROSLYNATOR
+  - CSS_STYLELINT
   - SPELL_LYCHEE
+
+JSON_JSONLINT_FILTER_REGEX_EXCLUDE: '(^|/)launchSettings\.json$'
 
 SHOW_ELAPSED_TIME: true
 FILEIO_REPORTER: false

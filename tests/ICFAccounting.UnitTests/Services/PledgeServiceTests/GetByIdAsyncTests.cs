@@ -12,7 +12,8 @@ public sealed class GetByIdAsyncTests
     {
         var fixture = new PledgeServiceTestFixture();
         var pledge = Pledge.Create(2026, 100m, PledgerId.New(), PledgeCategoryId.New());
-        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._)).Returns(pledge);
+        A.CallTo(() => fixture.Repository.GetByIdAsync(pledge.Id, A<CancellationToken>._))
+            .Returns(pledge);
 
         var result = await fixture.Service.GetByIdAsync(pledge.Id);
 

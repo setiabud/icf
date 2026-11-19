@@ -26,7 +26,9 @@ public interface IPledgePaymentRepository
     /// <returns>The payment, or <see langword="null"/> if no entry has the identifier.</returns>
     /// <exception cref="OperationCanceledException">The cancellation token has been cancelled.</exception>
     Task<PledgePayment?> GetByIdAsync(
-        PledgePaymentId id, CancellationToken cancellationToken = default);
+        PledgePaymentId id,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Retrieves a page of payments made toward a pledge.
@@ -42,7 +44,8 @@ public interface IPledgePaymentRepository
     Task<PagedPledgePaymentsResult> GetByPledgeAsync(
         PledgeId pledgeId,
         PledgePaymentQuery? query = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Stores a pledge payment, inserting it if no entry has the identifier.

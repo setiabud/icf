@@ -55,14 +55,16 @@ public static class PledgerEndpointExtensions
         Guid id,
         IPledgerService pledgerService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: "Pledger ID cannot be empty.");
+                detail: "Pledger ID cannot be empty."
+            );
         }
 
         try
@@ -83,15 +85,21 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while removing pledger {PledgerId}.", id);
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while removing pledger {PledgerId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledger could not be removed.");
+                detail: "Pledger could not be removed."
+            );
         }
     }
 
@@ -100,48 +108,63 @@ public static class PledgerEndpointExtensions
         UpdatePledgerRequest request,
         IPledgerService pledgerService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: "Pledger ID cannot be empty.");
+                detail: "Pledger ID cannot be empty."
+            );
         }
 
-        if (string.IsNullOrWhiteSpace(request.PledgerName)
+        if (
+            string.IsNullOrWhiteSpace(request.PledgerName)
             || request.Active is not { } active
-            || request.EnableNotification is not { } enableNotification)
+            || request.EnableNotification is not { } enableNotification
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger update",
-                detail: "PledgerName is required and cannot be empty or whitespace, and Active and EnableNotification are required.");
+                detail: "PledgerName is required and cannot be empty or whitespace, and Active and EnableNotification are required."
+            );
         }
 
         try
         {
             var pledger = await pledgerService.UpdateAsync(
-                new PledgerId(id), request.PledgerName, active, request.Email, enableNotification, cancellationToken);
-            return pledger is null
-                ? Results.NotFound()
-                : Results.Ok(ToPledgerResponse(pledger));
+                new PledgerId(id),
+                request.PledgerName,
+                active,
+                request.Email,
+                enableNotification,
+                cancellationToken
+            );
+            return pledger is null ? Results.NotFound() : Results.Ok(ToPledgerResponse(pledger));
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger update",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while updating pledger {PledgerId}.", id);
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while updating pledger {PledgerId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledger could not be updated.");
+                detail: "Pledger could not be updated."
+            );
         }
     }
 
@@ -149,37 +172,43 @@ public static class PledgerEndpointExtensions
         Guid id,
         IPledgerService pledgerService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (id == Guid.Empty)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: "Pledger ID cannot be empty.");
+                detail: "Pledger ID cannot be empty."
+            );
         }
 
         try
         {
             var pledger = await pledgerService.GetByIdAsync(new PledgerId(id), cancellationToken);
-            return pledger is null
-                ? Results.NotFound()
-                : Results.Ok(ToPledgerResponse(pledger));
+            return pledger is null ? Results.NotFound() : Results.Ok(ToPledgerResponse(pledger));
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger ID",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            logger.LogError(exception, "An unexpected error occurred while retrieving pledger {PledgerId}.", id);
+            logger.LogError(
+                exception,
+                "An unexpected error occurred while retrieving pledger {PledgerId}.",
+                id
+            );
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledger could not be retrieved.");
+                detail: "Pledger could not be retrieved."
+            );
         }
     }
 
@@ -190,19 +219,27 @@ public static class PledgerEndpointExtensions
         int page = 1,
         int pageSize = 10,
         string sortBy = nameof(PledgerSortBy.PledgerName),
-        string sortOrder = nameof(SortOrder.Ascending))
+        string sortOrder = nameof(SortOrder.Ascending)
+    )
     {
-        if (!Enum.TryParse<PledgerSortBy>(sortBy, true, out var parsedSortBy)
+        if (
+            !Enum.TryParse<PledgerSortBy>(sortBy, true, out var parsedSortBy)
             || !Enum.IsDefined(parsedSortBy)
             || !string.Equals(sortBy, parsedSortBy.ToString(), StringComparison.OrdinalIgnoreCase)
             || !Enum.TryParse<SortOrder>(sortOrder, true, out var parsedSortOrder)
             || !Enum.IsDefined(parsedSortOrder)
-            || !string.Equals(sortOrder, parsedSortOrder.ToString(), StringComparison.OrdinalIgnoreCase))
+            || !string.Equals(
+                sortOrder,
+                parsedSortOrder.ToString(),
+                StringComparison.OrdinalIgnoreCase
+            )
+        )
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger query",
-                detail: "Sort By is invalid and SortOrder must be Ascending or Descending.");
+                detail: "Sort By is invalid and SortOrder must be Ascending or Descending."
+            );
         }
 
         PledgerQuery query;
@@ -215,27 +252,31 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger query",
-                detail: exception.Message);
+                detail: exception.Message
+            );
         }
 
         try
         {
             var pledgers = await pledgerService.GetAllAsync(query, cancellationToken);
-            return Results.Ok(new PledgerPageResponse
-            {
-                Items = pledgers.Items.Select(ToPledgerResponse).ToArray(),
-                Page = pledgers.Page,
-                PageSize = pledgers.PageSize,
-                TotalCount = pledgers.TotalCount,
-                TotalPages = pledgers.TotalPages
-            });
+            return Results.Ok(
+                new PledgerPageResponse
+                {
+                    Items = pledgers.Items.Select(ToPledgerResponse).ToArray(),
+                    Page = pledgers.Page,
+                    PageSize = pledgers.PageSize,
+                    TotalCount = pledgers.TotalCount,
+                    TotalPages = pledgers.TotalPages,
+                }
+            );
         }
         catch (ArgumentException exception)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger query",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -243,7 +284,8 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledgers could not be retrieved.");
+                detail: "Pledgers could not be retrieved."
+            );
         }
     }
 
@@ -251,14 +293,16 @@ public static class PledgerEndpointExtensions
         CreatePledgerRequest request,
         IPledgerService pledgerService,
         ILogger<Program> logger,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(request.PledgerName))
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger name",
-                detail: "PledgerName is required and cannot be empty or whitespace.");
+                detail: "PledgerName is required and cannot be empty or whitespace."
+            );
         }
 
         try
@@ -266,7 +310,8 @@ public static class PledgerEndpointExtensions
             var pledger = Pledger.Create(
                 request.PledgerName,
                 email: request.Email,
-                enableNotification: request.EnableNotification);
+                enableNotification: request.EnableNotification
+            );
             await pledgerService.AddAsync(pledger, cancellationToken);
 
             return Results.Created($"/pledgers/{pledger.Id.Value}", ToPledgerResponse(pledger));
@@ -276,7 +321,8 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid pledger",
-                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception));
+                detail: ProblemDetailsHelpers.GetClientSafeMessage(exception)
+            );
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -284,7 +330,8 @@ public static class PledgerEndpointExtensions
             return Results.Problem(
                 statusCode: StatusCodes.Status500InternalServerError,
                 title: "An unexpected error occurred",
-                detail: "Pledger could not be created.");
+                detail: "Pledger could not be created."
+            );
         }
     }
 
@@ -298,7 +345,7 @@ public static class PledgerEndpointExtensions
             Email = pledger.Email,
             EnableNotification = pledger.EnableNotification,
             CreatedAt = pledger.CreatedAt,
-            UpdatedAt = pledger.UpdatedAt
+            UpdatedAt = pledger.UpdatedAt,
         };
     }
 }

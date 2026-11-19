@@ -5,7 +5,15 @@ namespace ICFAccounting.UnitTests.Domain;
 
 public sealed class PledgeCategoryTests
 {
-    private static readonly DateTimeOffset StartTime = new DateTimeOffset(2026, 1, 15, 9, 30, 0, TimeSpan.Zero);
+    private static readonly DateTimeOffset StartTime = new DateTimeOffset(
+        2026,
+        1,
+        15,
+        9,
+        30,
+        0,
+        TimeSpan.Zero
+    );
 
     [Fact]
     public void Create_with_name_initializes_identity_and_audit_fields()

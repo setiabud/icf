@@ -1,5 +1,5 @@
-using ICFAccounting.Api.Extensions;
 using ICFAccounting.Api;
+using ICFAccounting.Api.Extensions;
 using ICFAccounting.Data;
 using ICFAccounting.Data.Extensions;
 using ICFAccounting.Data.Repositories;
@@ -15,7 +15,10 @@ public sealed class ServiceRegistrationTests
     [Fact]
     public async Task Provisioning_rejects_extra_arguments_before_starting_a_host()
     {
-        Assert.Equal(1, await Program.Main(["users", "create", "--password", "test-only-placeholder"]));
+        Assert.Equal(
+            1,
+            await Program.Main(["users", "create", "--password", "test-only-placeholder"])
+        );
     }
 
     [Fact]
@@ -35,7 +38,9 @@ public sealed class ServiceRegistrationTests
         var services = new ServiceCollection();
         var configuration = CreateConfiguration(connectionString);
 
-        var exception = Assert.Throws<InvalidOperationException>(() => services.AddDataServices(configuration));
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            services.AddDataServices(configuration)
+        );
 
         Assert.Contains("ConnectionStrings__ICFAccounting", exception.Message);
         Assert.Empty(services);
@@ -45,15 +50,27 @@ public sealed class ServiceRegistrationTests
     public void AddDataServices_registers_only_scoped_sql_repositories_and_context()
     {
         var services = new ServiceCollection();
-        services.AddDataServices(CreateConfiguration("Host=localhost;Database=icfaccounting;Username=postgres"));
+        services.AddDataServices(
+            CreateConfiguration("Host=localhost;Database=icfaccounting;Username=postgres")
+        );
 
         AssertScopedRegistration<IPledgerRepository, PostgresPledgerRepository>(services);
-        AssertScopedRegistration<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>(services);
+        AssertScopedRegistration<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>(
+            services
+        );
         AssertScopedRegistration<IPledgeRepository, PostgresPledgeRepository>(services);
-        AssertScopedRegistration<IPledgePaymentRepository, PostgresPledgePaymentRepository>(services);
-        Assert.Equal(ServiceLifetime.Scoped,
-            Assert.Single(services, service => service.ServiceType == typeof(ICFAccountingDbContext)).Lifetime);
-        Assert.DoesNotContain(services, service => service.ImplementationType?.Name.StartsWith("InMemory") == true);
+        AssertScopedRegistration<IPledgePaymentRepository, PostgresPledgePaymentRepository>(
+            services
+        );
+        Assert.Equal(
+            ServiceLifetime.Scoped,
+            Assert
+                .Single(services, service => service.ServiceType == typeof(ICFAccountingDbContext))
+                .Lifetime
+        );
+        Assert.DoesNotContain(services, service =>
+            service.ImplementationType?.Name.StartsWith("InMemory") == true
+        );
     }
 
     [Fact]
@@ -61,13 +78,13 @@ public sealed class ServiceRegistrationTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddDataServices(CreateConfiguration("Host=localhost;Database=icfaccounting;Username=postgres"));
+        services.AddDataServices(
+            CreateConfiguration("Host=localhost;Database=icfaccounting;Username=postgres")
+        );
         services.AddApplicationServices();
-        using var provider = services.BuildServiceProvider(new ServiceProviderOptions
-        {
-            ValidateScopes = true,
-            ValidateOnBuild = true
-        });
+        using var provider = services.BuildServiceProvider(
+            new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true }
+        );
         using var firstScope = provider.CreateScope();
         using var secondScope = provider.CreateScope();
         var first = firstScope.ServiceProvider;
@@ -79,30 +96,52 @@ public sealed class ServiceRegistrationTests
         Assert.Equal("Npgsql.EntityFrameworkCore.PostgreSQL", context.Database.ProviderName);
         Assert.Equal("icfaccounting", context.Database.GetDbConnection().Database);
         AssertScopeIsolation<IPledgerRepository, PostgresPledgerRepository>(first, second);
-        AssertScopeIsolation<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>(first, second);
+        AssertScopeIsolation<IPledgeCategoryRepository, PostgresPledgeCategoryRepository>(
+            first,
+            second
+        );
         AssertScopeIsolation<IPledgeRepository, PostgresPledgeRepository>(first, second);
-        AssertScopeIsolation<IPledgePaymentRepository, PostgresPledgePaymentRepository>(first, second);
+        AssertScopeIsolation<IPledgePaymentRepository, PostgresPledgePaymentRepository>(
+            first,
+            second
+        );
         Assert.Same(TimeProvider.System, first.GetRequiredService<TimeProvider>());
-        Assert.Same(first.GetRequiredService<TimeProvider>(), second.GetRequiredService<TimeProvider>());
-        Assert.Throws<InvalidOperationException>(() => provider.GetRequiredService<IPledgerRepository>());
+        Assert.Same(
+            first.GetRequiredService<TimeProvider>(),
+            second.GetRequiredService<TimeProvider>()
+        );
+        Assert.Throws<InvalidOperationException>(() =>
+            provider.GetRequiredService<IPledgerRepository>()
+        );
     }
 
     private static IConfiguration CreateConfiguration(string? connectionString)
     {
-        return new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["ConnectionStrings:ICFAccounting"] = connectionString
-        }).Build();
+        return new ConfigurationBuilder()
+            .AddInMemoryCollection(
+                new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:ICFAccounting"] = connectionString,
+                }
+            )
+            .Build();
     }
 
-    private static void AssertScopedRegistration<TService, TImplementation>(IServiceCollection services)
+    private static void AssertScopedRegistration<TService, TImplementation>(
+        IServiceCollection services
+    )
     {
-        var descriptor = Assert.Single(services, service => service.ServiceType == typeof(TService));
+        var descriptor = Assert.Single(services, service =>
+            service.ServiceType == typeof(TService)
+        );
         Assert.Equal(typeof(TImplementation), descriptor.ImplementationType);
         Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
     }
 
-    private static void AssertScopeIsolation<TService, TImplementation>(IServiceProvider first, IServiceProvider second)
+    private static void AssertScopeIsolation<TService, TImplementation>(
+        IServiceProvider first,
+        IServiceProvider second
+    )
         where TService : class
     {
         var repository = Assert.Single(first.GetServices<TService>());

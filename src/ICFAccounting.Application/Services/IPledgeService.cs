@@ -31,7 +31,10 @@ public interface IPledgeService
     /// <param name="query">The pagination and sorting options, or <see langword="null"/> to use defaults.</param>
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     Task<PagedPledgesResult> GetByPledgerAsync(
-        PledgerId pledgerId, PledgeQuery? query = null, CancellationToken cancellationToken = default);
+        PledgerId pledgerId,
+        PledgeQuery? query = null,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Retrieves a page of pledges in a category using the specified pagination and sorting options.
@@ -40,7 +43,10 @@ public interface IPledgeService
     /// <param name="query">The pagination and sorting options, or <see langword="null"/> to use defaults.</param>
     /// <param name="cancellationToken">A token used to cancel the operation.</param>
     Task<PagedPledgesResult> GetByCategoryAsync(
-        PledgeCategoryId pledgeCategoryId, PledgeQuery? query = null, CancellationToken cancellationToken = default);
+        PledgeCategoryId pledgeCategoryId,
+        PledgeQuery? query = null,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Updates a pledge and returns it, or returns null when no pledge has the given id.
@@ -60,7 +66,8 @@ public interface IPledgeService
         PledgerId pledgerId,
         PledgeCategoryId pledgeCategoryId,
         string? comment,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Removes a pledge by its identifier.

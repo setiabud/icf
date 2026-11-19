@@ -46,9 +46,12 @@ public sealed class PledgePaymentQueryTests
     [InlineData(PledgePaymentSortBy.PaymentDate, (SortOrder)(-1))]
     [InlineData(PledgePaymentSortBy.PaymentDate, (SortOrder)2)]
     public void Constructor_rejects_unsupported_sorting(
-        PledgePaymentSortBy sortBy, SortOrder sortOrder)
+        PledgePaymentSortBy sortBy,
+        SortOrder sortOrder
+    )
     {
-        Assert.Throws<ArgumentOutOfRangeException>(
-            () => new PledgePaymentQuery(sortBy: sortBy, sortOrder: sortOrder));
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new PledgePaymentQuery(sortBy: sortBy, sortOrder: sortOrder)
+        );
     }
 }

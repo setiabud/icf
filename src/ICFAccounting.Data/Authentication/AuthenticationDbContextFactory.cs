@@ -4,13 +4,18 @@ using Microsoft.EntityFrameworkCore.Design;
 namespace ICFAccounting.Data.Authentication;
 
 /// <summary>Creates the Identity context for explicit schema migrations.</summary>
-public sealed class AuthenticationDbContextFactory : IDesignTimeDbContextFactory<AuthenticationDbContext>
+public sealed class AuthenticationDbContextFactory
+    : IDesignTimeDbContextFactory<AuthenticationDbContext>
 {
     public AuthenticationDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__ICFAccounting");
+        var connectionString = Environment.GetEnvironmentVariable(
+            "ConnectionStrings__ICFAccounting"
+        );
         var options = new DbContextOptionsBuilder<AuthenticationDbContext>()
-            .UseNpgsql(connectionString, postgres => postgres.MigrationsHistoryTable("__IdentityMigrationsHistory", "auth"))
+            .UseNpgsql(connectionString, postgres =>
+                postgres.MigrationsHistoryTable("__IdentityMigrationsHistory", "auth")
+            )
             .Options;
         return new AuthenticationDbContext(options);
     }

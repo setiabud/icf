@@ -15,9 +15,8 @@ namespace ICFAccounting.IntegrationTests.Api;
 [Collection(nameof(PostgresTestCollection))]
 public sealed class PledgerEndpointsTests : PostgresApiTestBase
 {
-    public PledgerEndpointsTests(PostgresModelFixture fixture) : base(fixture)
-    {
-    }
+    public PledgerEndpointsTests(PostgresModelFixture fixture)
+        : base(fixture) { }
 
     [Fact]
     public async Task Post_with_required_fields_returns_created_details_and_location()
@@ -27,7 +26,7 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         {
             PledgerName = "Community Fund",
             Email = "community@example.org",
-            EnableNotification = true
+            EnableNotification = true,
         };
         var beforeRequest = DateTime.UtcNow;
 
@@ -48,7 +47,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
 
         using var scope = _factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
-        var storedPledger = await repository.GetByIdAsync(new PledgerId(pledger.Id), CancellationToken.None);
+        var storedPledger = await repository.GetByIdAsync(
+            new PledgerId(pledger.Id),
+            CancellationToken.None
+        );
         Assert.NotNull(storedPledger);
         Assert.Equal(pledger.PledgerName, storedPledger.PledgerName);
         Assert.Equal(pledger.Active, storedPledger.Active);
@@ -65,7 +67,9 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [InlineData("""{"pledgerName":"   "}""")]
     [InlineData("""{"pledgerName":"\t\r\n"}""")]
     [InlineData("""{"pledgerName":"Community Fund","email":"invalid"}""")]
-    public async Task Post_with_invalid_name_or_email_returns_bad_request_problem_details(string json)
+    public async Task Post_with_invalid_name_or_email_returns_bad_request_problem_details(
+        string json
+    )
     {
         using var client = CreateClient(_factory, allowAutoRedirect: false);
         using var scope = _factory.Services.CreateScope();
@@ -92,7 +96,9 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(factory);
 
         using var response = await client.PostAsJsonAsync(
-            "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "Community Fund" }
+        );
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgerResponse>();
@@ -104,12 +110,17 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Post_when_service_rejects_pledger_returns_bad_request_problem_details()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgerService>(_ => new RejectingPledgerService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgerService>(_ => new RejectingPledgerService())
+            )
+        );
         using var client = CreateClient(factory, allowAutoRedirect: false);
 
         using var response = await client.PostAsJsonAsync(
-            "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "Community Fund" }
+        );
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
@@ -124,12 +135,17 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Post_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())
+            )
+        );
         using var client = CreateClient(factory, allowAutoRedirect: false);
 
         using var response = await client.PostAsJsonAsync(
-            "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "Community Fund" }
+        );
 
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType?.MediaType);
@@ -139,7 +155,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal("An unexpected error occurred", problem.Title);
         Assert.Equal("Pledger could not be created.", problem.Detail);
         Assert.Null(response.Headers.Location);
-        Assert.DoesNotContain("Internal repository failure", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain(
+            "Internal repository failure",
+            await response.Content.ReadAsStringAsync()
+        );
     }
 
     [Fact]
@@ -149,8 +168,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(factory);
         using var scope = factory.Services.CreateScope();
         var repository = scope.ServiceProvider.GetRequiredService<IPledgerRepository>();
-        var pledgers = Enumerable.Range(1, 12)
-            .Select(number => Pledger.Create($"Pledger {number:D2}")).ToArray();
+        var pledgers = Enumerable
+            .Range(1, 12)
+            .Select(number => Pledger.Create($"Pledger {number:D2}"))
+            .ToArray();
         foreach (var pledger in pledgers.Reverse())
         {
             await repository.AddAsync(pledger, CancellationToken.None);
@@ -165,8 +186,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal(10, result.PageSize);
         Assert.Equal(12, result.TotalCount);
         Assert.Equal(2, result.TotalPages);
-        Assert.Equal(pledgers.Take(10).Select(pledger => pledger.PledgerName),
-            result.Items.Select(pledger => pledger.PledgerName));
+        Assert.Equal(
+            pledgers.Take(10).Select(pledger => pledger.PledgerName),
+            result.Items.Select(pledger => pledger.PledgerName)
+        );
         Assert.Equal(pledgers[0].Id.Value, result.Items[0].Id);
         Assert.Equal(pledgers[0].Active, result.Items[0].Active);
         Assert.Equal(pledgers[0].CreatedAt, result.Items[0].CreatedAt);
@@ -175,7 +198,13 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
 
     [Theory]
     [InlineData("?page=2&pageSize=2", "Charlie,delta", 2, 2, 3)]
-    [InlineData("?page=1&pageSize=2&sortBy=pledgername&sortOrder=DESCENDING", "Echo,delta", 1, 2, 3)]
+    [InlineData(
+        "?page=1&pageSize=2&sortBy=pledgername&sortOrder=DESCENDING",
+        "Echo,delta",
+        1,
+        2,
+        3
+    )]
     [InlineData("?page=2&pageSize=2&sortOrder=descending", "Charlie,bravo", 2, 2, 3)]
     [InlineData("?pageSize=100&sortOrder=ASCENDING", "Alpha,bravo,Charlie,delta,Echo", 1, 100, 1)]
     [InlineData("?page=3&pageSize=2", "Echo", 3, 2, 3)]
@@ -183,7 +212,12 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [InlineData("?page=4&pageSize=2", "", 4, 2, 3)]
     [InlineData("?page=2147483647&pageSize=100", "", int.MaxValue, 100, 1)]
     public async Task Get_with_query_returns_sorted_page(
-        string query, string expectedNames, int page, int pageSize, int totalPages)
+        string query,
+        string expectedNames,
+        int page,
+        int pageSize,
+        int totalPages
+    )
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
@@ -199,7 +233,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var result = await response.Content.ReadFromJsonAsync<PledgerPageResponse>();
         Assert.NotNull(result);
-        Assert.Equal(expectedNames, string.Join(",", result.Items.Select(pledger => pledger.PledgerName)));
+        Assert.Equal(
+            expectedNames,
+            string.Join(",", result.Items.Select(pledger => pledger.PledgerName))
+        );
         Assert.Equal(page, result.Page);
         Assert.Equal(pageSize, result.PageSize);
         Assert.Equal(5, result.TotalCount);
@@ -244,7 +281,11 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Theory]
     [InlineData("", 1, 10)]
     [InlineData("?page=3&pageSize=5", 3, 5)]
-    public async Task Get_with_empty_repository_returns_empty_page(string query, int page, int pageSize)
+    public async Task Get_with_empty_repository_returns_empty_page(
+        string query,
+        int page,
+        int pageSize
+    )
     {
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory);
@@ -264,8 +305,11 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync("/pledgers");
@@ -277,7 +321,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal(500, problem.Status);
         Assert.Equal("An unexpected error occurred", problem.Title);
         Assert.Equal("Pledgers could not be retrieved.", problem.Detail);
-        Assert.DoesNotContain("Internal repository failure", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain(
+            "Internal repository failure",
+            await response.Content.ReadAsStringAsync()
+        );
     }
 
     [Fact]
@@ -310,7 +357,9 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory, allowAutoRedirect: false);
         using var postResponse = await client.PostAsJsonAsync(
-            "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "Community Fund" }
+        );
         var created = await postResponse.Content.ReadFromJsonAsync<PledgerResponse>();
 
         using var response = await client.GetAsync(postResponse.Headers.Location);
@@ -360,8 +409,11 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Get_by_id_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.GetAsync($"/pledgers/{Guid.NewGuid()}");
@@ -373,7 +425,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal(500, problem.Status);
         Assert.Equal("An unexpected error occurred", problem.Title);
         Assert.Equal("Pledger could not be retrieved.", problem.Detail);
-        Assert.DoesNotContain("Internal repository failure", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain(
+            "Internal repository failure",
+            await response.Content.ReadAsStringAsync()
+        );
     }
 
     [Fact]
@@ -391,7 +446,7 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
             PledgerName = "Mission Fund",
             Active = false,
             Email = "mission@example.org",
-            EnableNotification = true
+            EnableNotification = true,
         };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{pledger.Id.Value}", request);
@@ -423,7 +478,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(factory);
         var request = new UpdatePledgerRequest
         {
-            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+            PledgerName = "Mission Fund",
+            Active = true,
+            Email = null,
+            EnableNotification = false,
         };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.NewGuid()}", request);
@@ -437,7 +495,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(_factory);
         var request = new UpdatePledgerRequest
         {
-            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+            PledgerName = "Mission Fund",
+            Active = true,
+            Email = null,
+            EnableNotification = false,
         };
 
         using var response = await client.PutAsJsonAsync("/pledgers/abc", request);
@@ -451,7 +512,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var client = CreateClient(_factory);
         var request = new UpdatePledgerRequest
         {
-            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+            PledgerName = "Mission Fund",
+            Active = true,
+            Email = null,
+            EnableNotification = false,
         };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.Empty}", request);
@@ -469,7 +533,9 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [InlineData("""{"pledgerName":"Mission Fund","active":null}""")]
     [InlineData("""{"pledgerName":"Mission Fund","active":true,"email":null}""")]
     [InlineData("""{"pledgerName":"Mission Fund","active":true,"enableNotification":false}""")]
-    [InlineData("""{"pledgerName":"Mission Fund","active":true,"email":"invalid","enableNotification":false}""")]
+    [InlineData(
+        """{"pledgerName":"Mission Fund","active":true,"email":"invalid","enableNotification":false}"""
+    )]
     public async Task Put_with_invalid_body_returns_bad_request_without_updating(string json)
     {
         using var factory = CreateIsolatedFactory();
@@ -494,12 +560,18 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Put_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())
+            )
+        );
         using var client = CreateClient(factory);
         var request = new UpdatePledgerRequest
         {
-            PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
+            PledgerName = "Mission Fund",
+            Active = true,
+            Email = null,
+            EnableNotification = false,
         };
 
         using var response = await client.PutAsJsonAsync($"/pledgers/{Guid.NewGuid()}", request);
@@ -511,7 +583,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal(500, problem.Status);
         Assert.Equal("An unexpected error occurred", problem.Title);
         Assert.Equal("Pledger could not be updated.", problem.Detail);
-        Assert.DoesNotContain("Internal repository failure", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain(
+            "Internal repository failure",
+            await response.Content.ReadAsStringAsync()
+        );
     }
 
     [Fact]
@@ -537,7 +612,9 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         using var factory = CreateIsolatedFactory();
         using var client = CreateClient(factory, allowAutoRedirect: false);
         using var createResponse = await client.PostAsJsonAsync(
-            "/pledgers", new CreatePledgerRequest { PledgerName = "Community Fund" });
+            "/pledgers",
+            new CreatePledgerRequest { PledgerName = "Community Fund" }
+        );
         var location = createResponse.Headers.Location;
         Assert.NotNull(location);
 
@@ -601,8 +678,11 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     [Fact]
     public async Task Delete_when_repository_fails_returns_sanitized_internal_server_error()
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddSingleton<IPledgerRepository>(new FailingPledgerRepository())
+            )
+        );
         using var client = CreateClient(factory);
 
         using var response = await client.DeleteAsync($"/pledgers/{Guid.NewGuid()}");
@@ -614,24 +694,34 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
         Assert.Equal(500, problem.Status);
         Assert.Equal("An unexpected error occurred", problem.Title);
         Assert.Equal("Pledger could not be removed.", problem.Detail);
-        Assert.DoesNotContain("Internal repository failure", await response.Content.ReadAsStringAsync());
+        Assert.DoesNotContain(
+            "Internal repository failure",
+            await response.Content.ReadAsStringAsync()
+        );
     }
 
-    public static TheoryData<string, string, string> ServiceRejectionRequests => new()
-    {
-        { "GET", "/pledgers", "Invalid pledger query" },
-        { "GET", $"/pledgers/{Guid.NewGuid()}", "Invalid pledger ID" },
-        { "PUT", $"/pledgers/{Guid.NewGuid()}", "Invalid pledger update" },
-        { "DELETE", $"/pledgers/{Guid.NewGuid()}", "Invalid pledger ID" }
-    };
+    public static TheoryData<string, string, string> ServiceRejectionRequests =>
+        new()
+        {
+            { "GET", "/pledgers", "Invalid pledger query" },
+            { "GET", $"/pledgers/{Guid.NewGuid()}", "Invalid pledger ID" },
+            { "PUT", $"/pledgers/{Guid.NewGuid()}", "Invalid pledger update" },
+            { "DELETE", $"/pledgers/{Guid.NewGuid()}", "Invalid pledger ID" },
+        };
 
     [Theory]
     [MemberData(nameof(ServiceRejectionRequests))]
     public async Task Request_when_service_rejects_argument_returns_bad_request_problem_details(
-        string method, string path, string expectedTitle)
+        string method,
+        string path,
+        string expectedTitle
+    )
     {
-        using var factory = _factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            services.AddScoped<IPledgerService>(_ => new RejectingPledgerService())));
+        using var factory = _factory.WithWebHostBuilder(builder =>
+            builder.ConfigureServices(services =>
+                services.AddScoped<IPledgerService>(_ => new RejectingPledgerService())
+            )
+        );
         using var client = CreateClient(factory);
         using var request = new HttpRequestMessage(new HttpMethod(method), path);
         if (method == "PUT")
@@ -639,8 +729,12 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
             request.Content = JsonContent.Create(
                 new UpdatePledgerRequest
                 {
-                    PledgerName = "Mission Fund", Active = true, Email = null, EnableNotification = false
-                });
+                    PledgerName = "Mission Fund",
+                    Active = true,
+                    Email = null,
+                    EnableNotification = false,
+                }
+            );
         }
 
         using var response = await client.SendAsync(request);
@@ -663,35 +757,37 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
     private sealed class FailingPledgerRepository : IPledgerRepository
     {
         public Task<PagedPledgersResult> GetAllAsync(
-            PledgerQuery? query = null, CancellationToken cancellationToken = default)
-            => throw new InvalidOperationException("Internal repository failure");
+            PledgerQuery? query = null,
+            CancellationToken cancellationToken = default
+        ) => throw new InvalidOperationException("Internal repository failure");
 
-        public Task AddAsync(Pledger pledger, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task AddAsync(Pledger pledger, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
-        public Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
-        public Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task UpdateAsync(Pledger pledger, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
 
-        public Task RemoveAsync(PledgerId id, CancellationToken cancellationToken)
-            => throw new InvalidOperationException("Internal repository failure");
+        public Task RemoveAsync(PledgerId id, CancellationToken cancellationToken) =>
+            throw new InvalidOperationException("Internal repository failure");
     }
 
     private sealed class RejectingPledgerService : IPledgerService
     {
         public const string RejectionMessage = "PledgerName exceeds the maximum length.";
 
-        public Task AddAsync(Pledger pledger, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(pledger));
+        public Task AddAsync(Pledger pledger, CancellationToken cancellationToken) =>
+            throw new ArgumentException(RejectionMessage, nameof(pledger));
 
-        public Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(id));
+        public Task<Pledger?> GetByIdAsync(PledgerId id, CancellationToken cancellationToken) =>
+            throw new ArgumentException(RejectionMessage, nameof(id));
 
         public Task<PagedPledgersResult> GetAllAsync(
-            PledgerQuery? query = null, CancellationToken cancellationToken = default)
-            => throw new ArgumentException(RejectionMessage, nameof(query));
+            PledgerQuery? query = null,
+            CancellationToken cancellationToken = default
+        ) => throw new ArgumentException(RejectionMessage, nameof(query));
 
         public Task<Pledger?> UpdateAsync(
             PledgerId id,
@@ -699,10 +795,10 @@ public sealed class PledgerEndpointsTests : PostgresApiTestBase
             bool active,
             string? email,
             bool enableNotification,
-            CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(pledgerName));
+            CancellationToken cancellationToken
+        ) => throw new ArgumentException(RejectionMessage, nameof(pledgerName));
 
-        public Task RemoveAsync(PledgerId id, CancellationToken cancellationToken)
-            => throw new ArgumentException(RejectionMessage, nameof(id));
+        public Task RemoveAsync(PledgerId id, CancellationToken cancellationToken) =>
+            throw new ArgumentException(RejectionMessage, nameof(id));
     }
 }
