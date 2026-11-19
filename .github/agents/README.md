@@ -54,27 +54,6 @@ propose test scenarios for order validation
 ✅ **Bounded scope** - Clear responsibilities prevent scope creep  
 ✅ **Human-in-the-loop** - Agents advise; humans decide
 
-## Governance
-
-- Agent definitions are **version-controlled** in this repository
-- Changes require **pull request review** (treat as code)
-- See [Agent Governance Guide](../../docs/guides/agent-governance.md) for details
-
-## Creating New Agents
-
-See [Agent Design Guide](../../docs/guides/agent-design-guide.md) for instructions on:
-- Defining agent responsibilities
-- Writing effective instructions
-- Testing and iterating on agent behavior
-- Submitting agents for team use
-
-## Workshop Context
-
-These agents are used in **Part 2: Advanced GitHub Copilot** workshop. See:
-- [Agent Catalog](../../docs/guides/custom-agent-catalog.md) - Full agent registry
-- [Lab 07](../../docs/labs/lab-07-custom-agents-intro.md) - Hands-on introduction
-- [Lab 10](../../docs/labs/lab-10-capstone-build-agent.md) - Build your own agent
-
 ---
 
 **Related Resources:**

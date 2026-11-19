@@ -22,6 +22,14 @@ DISABLE:
   - COPYPASTE # Uncomment to disable checks of excessive copy-pastes
   # - SPELL # Uncomment to disable checks of spelling mistakes
 
+DISABLE_LINTERS:
+  - BASH
+
+DISABLE_ERRORS_LINTERS: 
+  - ACTIONS
+  - SPELL_LYCHEE
+
+
 SHOW_ELAPSED_TIME: true
 SPELL_CSPELL_DISABLE_ERRORS: true
 FILEIO_REPORTER: false
