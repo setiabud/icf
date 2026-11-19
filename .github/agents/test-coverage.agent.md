@@ -140,8 +140,8 @@ Provide a structured coverage analysis report:
 
 #### Coverage by Layer
 
-| Layer          | Coverage | Target | Status   | Priority Gaps          |
-|----------------|----------|--------|----------|------------------------|
+| Layer          | Coverage | Target | Status | Priority Gaps          |
+|----------------|----------|--------|--------|------------------------|
 | Domain         | X%       | 90%    | [✅⚠️❌] | [Count] critical gaps  |
 | Application    | X%       | 80%    | [✅⚠️❌] | [Count] important gaps |
 | Infrastructure | X%       | 60%    | [✅⚠️❌] | [Count] gaps           |
