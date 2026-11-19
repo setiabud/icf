@@ -179,7 +179,7 @@ graph TD
 - [ ] [Additional criteria]
 
 **API Specification:**
-```
+```text
 POST /api/resource
 Request: { "field": "value" }
 Response: 201 Created

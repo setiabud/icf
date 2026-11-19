@@ -2,7 +2,7 @@
 applyTo: '**/*.cs'
 ---
 
-# GitHub Copilot Instructions for .NET 
+# GitHub Copilot Instructions for .NET
 
 > These instructions are automatically applied to all GitHub Copilot suggestions when working with C# files.
 
@@ -74,7 +74,7 @@ See [csharp.instructions.md](csharp.instructions.md) for full C#/.NET coding sta
 - Keep one logical change per commit; use scope to denote layer/feature.
 
 **Examples**
-```
+```text
 feat(api): add order endpoint
 fix(domain): correct order validation logic
 test(order): add unit tests for order creation
@@ -110,7 +110,7 @@ When refactoring, prefer these constraints to keep code small and intention-reve
 ## 9) Practical Scaffolds & Prompts (use verbatim)
 
 ### 9.1 Generate a new Aggregate (Domain)
-```
+```text
 Create a DDD aggregate in [project].Domain/Order:
 - Strongly-typed IDs (OrderId, CustomerId)
 - Private ctor + static factory Order.Create(...)
@@ -121,7 +121,7 @@ Create a DDD aggregate in [project].Domain/Order:
 ```
 
 ### 9.2 Minimal API endpoint (Api) + DI wiring
-```
+```http
 In [project].Api (Minimal API):
 - Add endpoints: GET /orders/{id}, POST /orders
 - Map requests to Application services; no business logic in Api
@@ -130,7 +130,7 @@ In [project].Api (Minimal API):
 ```
 
 ### 9.3 Unit test pattern (xUnit + FakeItEasy)
-```
+```csharp
 Create tests in tests/[project].UnitTests/OrdersTests/:
 - One test class per method (CreateTests.cs, RegisterOrderItemTests.cs)
 - Use FakeItEasy for collaborator interfaces
@@ -138,7 +138,7 @@ Create tests in tests/[project].UnitTests/OrdersTests/:
 ```
 
 ### 9.4 Conventional commit + PR helper
-```
+```text
 Write a Conventional Commit subject (<=72 chars) and a PR description with:
 - Intent
 - Scope (layer/feature)
@@ -157,7 +157,7 @@ Write a Conventional Commit subject (<=72 chars) and a PR description with:
 ---
 
 ### Appendix A — Expected Layout (example)
-```
+```text
 src/
   Sales.Domain/
   Sales.Application/

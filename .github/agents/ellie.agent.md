@@ -140,7 +140,7 @@ Brief description and business context
 ## Diagrams
 ```mermaid
 [Mermaid diagram code]
-```
+```text
 
 ## Dependencies
 [Related systems/features]
@@ -153,7 +153,7 @@ Brief description and business context
 
 ## Risks
 [Identified risks]
-```
+```text
 
 ### Mermaid Diagram Guidelines
 - **Use flowchart** for workflows and process flows
@@ -222,7 +222,7 @@ Brief description and business context
 ## Document Organization
 All outputs follow the repository's documentation structure as defined in `.github/copilot-instructions.md`:
 
-```
+```text
 docs/
 ├── requirements/              # Main requirements documents
 │   ├── {feature}-requirements.md

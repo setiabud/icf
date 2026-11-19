@@ -110,7 +110,7 @@ Calculate percentage for each layer.
 For each gap, suggest:
 - **What to test:** Specific method/class/scenario
 - **Test type:** Unit (fast, isolated) vs Integration (slower, real dependencies) vs E2E
-- **Test framework approach:** 
+- **Test framework approach:**
   - .NET: xUnit `[Fact]` for single case, `[Theory]` for parameterized
   - Spring Boot: JUnit `@Test` for single, `@ParameterizedTest` for parameterized
 - **Mock strategy:** What dependencies need mocking (FakeItEasy vs Mockito)
@@ -141,7 +141,7 @@ Provide a structured coverage analysis report:
 #### Coverage by Layer
 
 | Layer | Coverage | Target | Status | Priority Gaps |
-|-------|----------|--------|--------|---------------|
+| ------ | ---------- | ------- | -------- | ---------------- |
 | Domain | X% | 90% | [✅⚠️❌] | [Count] critical gaps |
 | Application | X% | 80% | [✅⚠️❌] | [Count] important gaps |
 | Infrastructure | X% | 60% | [✅⚠️❌] | [Count] gaps |

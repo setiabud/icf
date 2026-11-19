@@ -75,7 +75,7 @@ So that [benefit/value]
 
 ### Dependencies
 
-```
+```text
 [Story A] → [Story B]
 [Story C] → [Story D]
 ```

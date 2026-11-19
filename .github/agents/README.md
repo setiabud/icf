@@ -36,7 +36,7 @@ Custom agents are chat participants (invoked with `@agentName`) that have:
 4. Use **Agent Mode** for multi-step workflows
 
 ### Example Usage
-```
+```text
 Select "Architecture Reviewer" from dropdown:
 analyze the task management domain model
 

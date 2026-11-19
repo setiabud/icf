@@ -41,12 +41,8 @@
         "POSTGRES_USER": "postgres",
         "POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD to a strong local development password}"
       },
-      "ports": [
-        "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
-      ],
-      "volumes": [
-        "postgres-data:/var/lib/postgresql/data"
-      ],
+      "ports": ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"],
+      "volumes": ["postgres-data:/var/lib/postgresql/data"],
       "healthcheck": {
         "test": [
           "CMD-SHELL",

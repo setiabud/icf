@@ -109,7 +109,7 @@ Provide your test strategy in this structured format:
 
 ### Recommended Test Organization
 
-```
+```text
 tests/
   [Project].UnitTests/
     [Feature]/
