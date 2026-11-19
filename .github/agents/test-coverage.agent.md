@@ -142,10 +142,10 @@ Provide a structured coverage analysis report:
 
 | Layer          | Coverage | Target | Status | Priority Gaps          |
 |----------------|----------|--------|--------|------------------------|
-| Domain         | X%       | 90%    | [✅⚠️❌] | [Count] critical gaps  |
-| Application    | X%       | 80%    | [✅⚠️❌] | [Count] important gaps |
-| Infrastructure | X%       | 60%    | [✅⚠️❌] | [Count] gaps           |
-| API            | X%       | 70%    | [✅⚠️❌] | [Count] gaps           |
+| Domain         | X%       | 90%    | Meets  | [Count] critical gaps  |
+| Application    | X%       | 80%    | Below  | [Count] important gaps |
+| Infrastructure | X%       | 60%    | Gaps   | [Count] gaps           |
+| API            | X%       | 70%    | Gaps   | [Count] gaps           |
 
 ---
 
