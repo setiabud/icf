@@ -315,3 +315,6 @@ DerivedData/
 *.xcodeproj/xcuserdata/
 *.xcworkspace/xcuserdata/
 *.xcuserstate
+
+megalinter-reports/
+*.megalinter-setup.bak
