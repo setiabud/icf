@@ -1,16 +1,15 @@
-using ICFAccounting.Application.Services;
 using Microsoft.Extensions.Logging;
 
-namespace ICFAccounting.ReminderFunction;
+namespace ICFAccounting.Application.Services;
 
 /// <summary>
-/// Placeholder sender until the email provider is implemented.
+/// Reminder email sender implementation.
 /// </summary>
-public sealed class PledgeSummaryEmailSenderPlaceholder(
-    ILogger<PledgeSummaryEmailSenderPlaceholder> logger
-) : IPledgeSummaryEmailSender
+public sealed class PledgeSummaryEmailSenderService(
+    ILogger<PledgeSummaryEmailSenderService> logger
+) : IPledgeSummaryEmailSenderService
 {
-    private readonly ILogger<PledgeSummaryEmailSenderPlaceholder> _logger =
+    private readonly ILogger<PledgeSummaryEmailSenderService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <inheritdoc />

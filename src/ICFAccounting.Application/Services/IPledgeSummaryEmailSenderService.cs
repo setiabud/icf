@@ -3,7 +3,7 @@ namespace ICFAccounting.Application.Services;
 /// <summary>
 /// Sends pledge summaries to pledgers.
 /// </summary>
-public interface IPledgeSummaryEmailSender
+public interface IPledgeSummaryEmailSenderService
 {
     /// <summary>
     /// Sends a pledge summary asynchronously.

@@ -7,14 +7,14 @@ namespace ICFAccounting.ReminderFunction;
 public sealed class MonthlyPledgeReminderFunction(
     ILogger<MonthlyPledgeReminderFunction> logger,
     IPledgeSummaryService pledgeSummaryService,
-    IPledgeSummaryEmailSender pledgeSummaryEmailSender)
+    IPledgeSummaryEmailSenderService pledgeSummaryEmailSender)
 {
     public const string Schedule = "0 0 0 5 * *";
     private readonly ILogger<MonthlyPledgeReminderFunction> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IPledgeSummaryService _pledgeSummaryService =
         pledgeSummaryService ?? throw new ArgumentNullException(nameof(pledgeSummaryService));
-    private readonly IPledgeSummaryEmailSender _pledgeSummaryEmailSender =
+    private readonly IPledgeSummaryEmailSenderService _pledgeSummaryEmailSender =
         pledgeSummaryEmailSender ?? throw new ArgumentNullException(nameof(pledgeSummaryEmailSender));
 
     [Function("MonthlyPledgeReminder")]
