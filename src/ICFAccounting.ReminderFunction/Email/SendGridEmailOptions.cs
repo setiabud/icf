@@ -1,0 +1,11 @@
+namespace ICFAccounting.ReminderFunction.Email;
+
+public sealed class SendGridEmailOptions
+{
+    public const string SectionName = "SendGrid";
+
+    public string ApiKey { get; set; } = string.Empty;
+    public string TemplateId { get; set; } = string.Empty;
+    public string SenderEmail { get; set; } = string.Empty;
+    public string SenderName { get; set; } = string.Empty;
+}

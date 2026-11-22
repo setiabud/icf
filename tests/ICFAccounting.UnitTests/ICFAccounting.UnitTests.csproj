@@ -23,5 +23,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ICFAccounting.Application\ICFAccounting.Application.csproj" />
     <ProjectReference Include="..\..\src\ICFAccounting.Domain\ICFAccounting.Domain.csproj" />
+    <ProjectReference Include="..\..\src\ICFAccounting.ReminderFunction\ICFAccounting.ReminderFunction.csproj" />
   </ItemGroup>
 </Project>
