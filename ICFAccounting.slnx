@@ -4,6 +4,7 @@
     <Project Path="src/ICFAccounting.Application/ICFAccounting.Application.csproj" />
     <Project Path="src/ICFAccounting.Data/ICFAccounting.Data.csproj" />
     <Project Path="src/ICFAccounting.Domain/ICFAccounting.Domain.csproj" />
+    <Project Path="src/ICFAccounting.ReminderFunction/ICFAccounting.ReminderFunction.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ICFAccounting.IntegrationTests/ICFAccounting.IntegrationTests.csproj" />

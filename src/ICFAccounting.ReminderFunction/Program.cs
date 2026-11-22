@@ -5,10 +5,17 @@ using Microsoft.Azure.Functions.Worker.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
+using ICFAccounting.Application.Services;
+using ICFAccounting.Data.Extensions;
+using ICFAccounting.ReminderFunction;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddDataServices(builder.Configuration);
+builder.Services.AddScoped<IPledgeSummaryService, PledgeSummaryService>();
+builder.Services.AddScoped<IPledgeSummaryEmailSender, PledgeSummaryEmailSenderPlaceholder>();
 
 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
 {

@@ -19,4 +19,10 @@
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ICFAccounting.Application\ICFAccounting.Application.csproj" />
+    <ProjectReference Include="..\ICFAccounting.Data\ICFAccounting.Data.csproj" />
+    <ProjectReference Include="..\ICFAccounting.Domain\ICFAccounting.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
