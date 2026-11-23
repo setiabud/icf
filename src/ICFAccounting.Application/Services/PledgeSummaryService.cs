@@ -63,7 +63,13 @@ public sealed class PledgeSummaryService(
                 categoriesById,
                 cancellationToken
             );
-            summaries.Add(new PledgerPledgeSummary(pledger.PledgerName, pledger.Email, html));
+            summaries.Add(
+                new PledgerPledgeSummary(
+                    pledger.PledgerName,
+                    pledger.Email,
+                    html
+                )
+            );
         }
 
         return summaries;

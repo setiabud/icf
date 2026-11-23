@@ -7,15 +7,15 @@ namespace ICFAccounting.ReminderFunction;
 public sealed class MonthlyPledgeReminderFunction(
     ILogger<MonthlyPledgeReminderFunction> logger,
     IPledgeSummaryService pledgeSummaryService,
-    IPledgeSummaryEmailSenderService pledgeSummaryEmailSender)
+    IPledgeSummarySheetWriterService pledgeSummarySheetWriter)
 {
     public const string Schedule = "0 0 0 5 * *";
     private readonly ILogger<MonthlyPledgeReminderFunction> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly IPledgeSummaryService _pledgeSummaryService =
         pledgeSummaryService ?? throw new ArgumentNullException(nameof(pledgeSummaryService));
-    private readonly IPledgeSummaryEmailSenderService _pledgeSummaryEmailSender =
-        pledgeSummaryEmailSender ?? throw new ArgumentNullException(nameof(pledgeSummaryEmailSender));
+    private readonly IPledgeSummarySheetWriterService _pledgeSummarySheetWriter =
+        pledgeSummarySheetWriter ?? throw new ArgumentNullException(nameof(pledgeSummarySheetWriter));
 
     [Function("MonthlyPledgeReminder")]
     public async Task Run(
@@ -35,10 +35,7 @@ public sealed class MonthlyPledgeReminderFunction(
         }
 
         var summaries = await _pledgeSummaryService.CreateAsync(cancellationToken);
-        foreach (var summary in summaries)
-        {
-            await _pledgeSummaryEmailSender.SendAsync(summary, cancellationToken);
-        }
-        _logger.LogInformation("Created {SummaryCount} pledge summaries.", summaries.Count);
+        await _pledgeSummarySheetWriter.WriteAsync(summaries, cancellationToken);
+        _logger.LogInformation("Wrote {SummaryCount} pledge summaries to Google Sheet.", summaries.Count);
     }
 }

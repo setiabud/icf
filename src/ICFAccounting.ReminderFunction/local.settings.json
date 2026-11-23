@@ -3,9 +3,8 @@
     "Values": {
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-        "Mailercloud__SenderEmail": "",
-        "Mailercloud__SenderName": "Pledge Office",
-        "Mailercloud__Subject": "ICF Pledge Summary",
-        "Mailercloud__ApiKey": ""
+        "GoogleSheets__SpreadsheetId": "",
+        "GoogleSheets__Range": "Monthly Summary!A:C",
+        "GoogleSheets__CredentialsFile": ""
     }
 }

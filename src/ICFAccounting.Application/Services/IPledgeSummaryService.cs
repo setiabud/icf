@@ -1,7 +1,7 @@
 namespace ICFAccounting.Application.Services;
 
 /// <summary>
-/// Creates pledge summaries for pledgers who have email notifications enabled.
+/// Creates pledge summaries for active pledgers who have notification enabled and an email address.
 /// </summary>
 public interface IPledgeSummaryService
 {

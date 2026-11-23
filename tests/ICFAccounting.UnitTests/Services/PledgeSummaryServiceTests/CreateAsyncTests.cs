@@ -113,7 +113,6 @@ public sealed class CreateAsyncTests
             .Returns(PagedPledgersResult.Create([pledger], 1, 100, 1));
         A.CallTo(() => categoryRepository.GetAllAsync(A<CancellationToken>._))
             .Returns([]);
-
         var service = new PledgeSummaryService(
             pledgerRepository,
             pledgeRepository,

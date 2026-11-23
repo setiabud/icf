@@ -7,7 +7,7 @@ using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
 using ICFAccounting.Application.Services;
 using ICFAccounting.Data.Extensions;
-using ICFAccounting.ReminderFunction.Email;
+using ICFAccounting.ReminderFunction.GoogleSheets;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
@@ -16,19 +16,13 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDataServices(builder.Configuration);
 builder.Services.AddScoped<IPledgeSummaryService, PledgeSummaryService>();
 builder.Services
-    .AddOptions<MailercloudEmailOptions>()
-    .Bind(builder.Configuration.GetSection(MailercloudEmailOptions.SectionName))
-    .Validate(options => !string.IsNullOrWhiteSpace(options.ApiKey), "Mailercloud API key is required.")
-    .Validate(options => !string.IsNullOrWhiteSpace(options.SenderEmail), "Mailercloud sender email is required.")
-    .Validate(options => !string.IsNullOrWhiteSpace(options.Subject), "Mailercloud subject is required.")
+    .AddOptions<GoogleSheetsOptions>()
+    .Bind(builder.Configuration.GetSection(GoogleSheetsOptions.SectionName))
+    .Validate(options => !string.IsNullOrWhiteSpace(options.SpreadsheetId), "Google Sheets spreadsheet ID is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Range), "Google Sheets range is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.CredentialsFile), "Google service-account credentials file is required.")
     .ValidateOnStart();
-builder.Services.AddHttpClient<MailercloudPledgeSummaryEmailSenderService>(client =>
-{
-    client.BaseAddress = new Uri("https://email-api.mailercloud.com/");
-});
-builder.Services.AddScoped<IPledgeSummaryEmailSenderService>(provider =>
-    provider.GetRequiredService<MailercloudPledgeSummaryEmailSenderService>()
-);
+builder.Services.AddScoped<IPledgeSummarySheetWriterService, GoogleSheetsPledgeSummaryWriterService>();
 
 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
 {
