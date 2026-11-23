@@ -102,6 +102,9 @@ Desktop.ini
 .env.development
 .env.test
 .env.production
+**/local.settings.json
+**/google*-service-account*.json
+**/*-service-account*.json
 
 # Database
 *.db
