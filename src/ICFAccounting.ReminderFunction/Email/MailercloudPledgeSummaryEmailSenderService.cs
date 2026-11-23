@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using ICFAccounting.Application.Services;
@@ -7,17 +6,17 @@ using Microsoft.Extensions.Options;
 
 namespace ICFAccounting.ReminderFunction.Email;
 
-public sealed class SendGridPledgeSummaryEmailSenderService(
+public sealed class MailercloudPledgeSummaryEmailSenderService(
     HttpClient httpClient,
-    IOptions<SendGridEmailOptions> options,
-    ILogger<SendGridPledgeSummaryEmailSenderService> logger
+    IOptions<MailercloudEmailOptions> options,
+    ILogger<MailercloudPledgeSummaryEmailSenderService> logger
 ) : IPledgeSummaryEmailSenderService
 {
     private readonly HttpClient _httpClient =
         httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-    private readonly SendGridEmailOptions _options =
+    private readonly MailercloudEmailOptions _options =
         options?.Value ?? throw new ArgumentNullException(nameof(options));
-    private readonly ILogger<SendGridPledgeSummaryEmailSenderService> _logger =
+    private readonly ILogger<MailercloudPledgeSummaryEmailSenderService> _logger =
         logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task SendAsync(
@@ -27,29 +26,35 @@ public sealed class SendGridPledgeSummaryEmailSenderService(
     {
         ArgumentNullException.ThrowIfNull(summary);
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, "mail/send");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "email");
+        request.Headers.TryAddWithoutValidation("Authorization", _options.ApiKey);
 
         var payload = new
         {
-            personalizations = new[]
+            version = "1.0",
+            email = new
             {
-                new
+                from = _options.SenderEmail,
+                fromName = _options.SenderName,
+                subject = _options.Subject,
+                html = summary.Html,
+                recipients = new
                 {
-                    to = new[] { new { email = summary.Email } },
-                    dynamic_template_data = new
+                    to = new[]
                     {
-                        pledgerName = summary.PledgerName,
-                        summaryHtml = summary.Html
+                        new
+                        {
+                            name = summary.PledgerName,
+                            email = summary.Email
+                        }
                     }
                 }
             },
-            from = new
+            metadata = new
             {
-                email = _options.SenderEmail,
-                name = _options.SenderName
-            },
-            template_id = _options.TemplateId
+                campaignType = "TRANSACTIONAL",
+                messageId = Guid.NewGuid().ToString()
+            }
         };
 
         request.Content = new StringContent(
@@ -62,7 +67,7 @@ public sealed class SendGridPledgeSummaryEmailSenderService(
         if (response.IsSuccessStatusCode)
         {
             _logger.LogInformation(
-                "Pledge summary email accepted by SendGrid for {PledgerName}.",
+                "Pledge summary email accepted by Mailercloud for {PledgerName}.",
                 summary.PledgerName
             );
             return;
@@ -70,12 +75,12 @@ public sealed class SendGridPledgeSummaryEmailSenderService(
 
         var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
         _logger.LogWarning(
-            "SendGrid rejected a pledge summary email with status {StatusCode}. Response: {ResponseBody}",
+            "Mailercloud rejected a pledge summary email with status {StatusCode}. Response: {ResponseBody}",
             (int)response.StatusCode,
             responseBody
         );
         throw new InvalidOperationException(
-            $"SendGrid rejected the email with HTTP status {(int)response.StatusCode}."
+            $"Mailercloud rejected the email with HTTP status {(int)response.StatusCode}."
         );
     }
 }

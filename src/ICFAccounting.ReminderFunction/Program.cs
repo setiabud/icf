@@ -16,18 +16,18 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDataServices(builder.Configuration);
 builder.Services.AddScoped<IPledgeSummaryService, PledgeSummaryService>();
 builder.Services
-    .AddOptions<SendGridEmailOptions>()
-    .Bind(builder.Configuration.GetSection(SendGridEmailOptions.SectionName))
-    .Validate(options => !string.IsNullOrWhiteSpace(options.ApiKey), "SendGrid API key is required.")
-    .Validate(options => !string.IsNullOrWhiteSpace(options.TemplateId), "SendGrid template ID is required.")
-    .Validate(options => !string.IsNullOrWhiteSpace(options.SenderEmail), "SendGrid sender email is required.")
+    .AddOptions<MailercloudEmailOptions>()
+    .Bind(builder.Configuration.GetSection(MailercloudEmailOptions.SectionName))
+    .Validate(options => !string.IsNullOrWhiteSpace(options.ApiKey), "Mailercloud API key is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.SenderEmail), "Mailercloud sender email is required.")
+    .Validate(options => !string.IsNullOrWhiteSpace(options.Subject), "Mailercloud subject is required.")
     .ValidateOnStart();
-builder.Services.AddHttpClient<SendGridPledgeSummaryEmailSenderService>(client =>
+builder.Services.AddHttpClient<MailercloudPledgeSummaryEmailSenderService>(client =>
 {
-    client.BaseAddress = new Uri("https://api.sendgrid.com/v3/");
+    client.BaseAddress = new Uri("https://email-api.mailercloud.com/");
 });
 builder.Services.AddScoped<IPledgeSummaryEmailSenderService>(provider =>
-    provider.GetRequiredService<SendGridPledgeSummaryEmailSenderService>()
+    provider.GetRequiredService<MailercloudPledgeSummaryEmailSenderService>()
 );
 
 if (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
